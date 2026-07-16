@@ -2710,7 +2710,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
   <div class="gt-header">
     <div class="gt-header-left">
-      <h2>📋 Gestor de Tareas</h2>
+      <h2>📋 Gestor de Tareas <span id="gt-saveDot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4AE3A8;opacity:0;transition:opacity .3s;margin-left:4px;vertical-align:middle"></span></h2>
       <p>ATUNTRO S.A. — Seguimiento de compromisos operativos y administrativos</p>
     </div>
     <div class="gt-header-btns">
@@ -3259,13 +3259,13 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
   //  AUTH — Sistema de autenticación
   // ══════════════════════════════════════════════════════════════════════
   var FIREBASE_CONFIG = {
-    apiKey: "AIzaSyBmebQ8XsZFWsHAPNnOAYeHAkgkwSHZKp4",
-    authDomain: "atuntro-ciclo.firebaseapp.com",
-    databaseURL: "https://atuntro-ciclo-default-rtdb.firebaseio.com",
-    projectId: "atuntro-ciclo",
-    storageBucket: "atuntro-ciclo.firebasestorage.app",
-    messagingSenderId: "561565252212",
-    appId: "1:561565252212:web:1ad4cc8a0bbb9ee2afaf21"
+    apiKey: "AIzaSyDT0hq4WYxcAxxKvGNmTlH9Ha2lp6fW3y0",
+    authDomain: "atuntro-portal.firebaseapp.com",
+    databaseURL: "https://atuntro-portal-default-rtdb.firebaseio.com",
+    projectId: "atuntro-portal",
+    storageBucket: "atuntro-portal.firebasestorage.app",
+    messagingSenderId: "390090673795",
+    appId: "1:390090673795:web:e01a5d03e5543c8dc415b6"
   };
   var AUTH_PATH = 'atuntro_portal_auth_v1';
   var DEFAULT_USERS = {
@@ -3567,6 +3567,53 @@ const GT = (() => {
   let nextId      = 200;
   let editingId   = null;
 
+  /* ── Firebase (sincronización entre dispositivos) ───── */
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDT0hq4WYxcAxxKvGNmTlH9Ha2lp6fW3y0",
+    authDomain: "atuntro-portal.firebaseapp.com",
+    databaseURL: "https://atuntro-portal-default-rtdb.firebaseio.com",
+    projectId: "atuntro-portal",
+    storageBucket: "atuntro-portal.firebasestorage.app",
+    messagingSenderId: "390090673795",
+    appId: "1:390090673795:web:e01a5d03e5543c8dc415b6"
+  };
+  const FB_PATH = 'atuntro_gestor/data';
+  let _fbHandler = null;
+
+  function _getDb() {
+    try {
+      if (typeof firebase === 'undefined') return null;
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      return firebase.database();
+    } catch(e) { return null; }
+  }
+
+  function flashSaveDot() {
+    const d = document.getElementById('gt-saveDot');
+    if (!d) return;
+    d.style.opacity = '1';
+    setTimeout(() => { d.style.opacity = '0'; }, 1300);
+  }
+
+  function startRealtimeSync() {
+    const db = _getDb();
+    if (!db) return;
+    const ref = db.ref(FB_PATH);
+    if (_fbHandler) ref.off('value', _fbHandler);
+    _fbHandler = snap => {
+      const data = snap.val();
+      if (!data) return; // nada remoto aún — lo que hay en local se sube en el próximo save()
+      tasks        = data.tasks        || tasks;
+      responsables = data.responsables || responsables;
+      adminPass    = data.adminPass    || adminPass;
+      nextId       = data.nextId       || nextId;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, adminPass, nextId })); } catch(e) {}
+      renderAll();
+      flashSaveDot();
+    };
+    ref.on('value', _fbHandler);
+  }
+
   /* ── Storage ────────────────────────────────────────── */
   function load() {
     try {
@@ -3593,6 +3640,8 @@ const GT = (() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, adminPass, nextId }));
     } catch(e) {}
+    const db = _getDb();
+    if (db) { db.ref(FB_PATH).set({ tasks, responsables, adminPass, nextId }).then(flashSaveDot).catch(()=>{}); }
   }
 
   /* ── Stats ──────────────────────────────────────────── */
@@ -3935,7 +3984,7 @@ const GT = (() => {
   }
 
   /* ── Init ───────────────────────────────────────────── */
-  function init() { load(); renderAll(); }
+  function init() { load(); renderAll(); startRealtimeSync(); }
 
   return {
     init, applyFilters, clearFilters, cycleStatus,
@@ -4164,13 +4213,13 @@ var CKOPS = (function() {
    FIREBASE CONFIG
    ══════════════════════════════════════════ */
 const FIREBASE_CONFIG = {
-  apiKey:"PEGAR_AQUI",
-  authDomain:"atuntro-ciclo.firebaseapp.com",
-  databaseURL:"https://atuntro-ciclo-default-rtdb.firebaseio.com",
-  projectId:"atuntro-ciclo",
-  storageBucket:"atuntro-ciclo.appspot.com",
-  messagingSenderId:"PEGAR_AQUI",
-  appId:"PEGAR_AQUI"
+  apiKey:"AIzaSyDT0hq4WYxcAxxKvGNmTlH9Ha2lp6fW3y0",
+  authDomain:"atuntro-portal.firebaseapp.com",
+  databaseURL:"https://atuntro-portal-default-rtdb.firebaseio.com",
+  projectId:"atuntro-portal",
+  storageBucket:"atuntro-portal.firebasestorage.app",
+  messagingSenderId:"390090673795",
+  appId:"1:390090673795:web:e01a5d03e5543c8dc415b6"
 };
 const FB_PATH = 'checklist_ops_v3';
 
@@ -5756,13 +5805,13 @@ setInterval(()=>{if(currentUser){reRenderAll();updateProgress();}},60000);
    FIREBASE
 ════════════════════════════════ */
 const firebaseConfig = {
-  apiKey: "AIzaSyBmebQ8XsZFWsHAPNnOAYeHAkgkwSHZKp4",
-  authDomain: "atuntro-ciclo.firebaseapp.com",
-  databaseURL: "https://atuntro-ciclo-default-rtdb.firebaseio.com",
-  projectId: "atuntro-ciclo",
-  storageBucket: "atuntro-ciclo.firebasestorage.app",
-  messagingSenderId: "561565252212",
-  appId: "1:561565252212:web:1ad4cc8a0bbb9ee2afaf21"
+  apiKey: "AIzaSyDT0hq4WYxcAxxKvGNmTlH9Ha2lp6fW3y0",
+  authDomain: "atuntro-portal.firebaseapp.com",
+  databaseURL: "https://atuntro-portal-default-rtdb.firebaseio.com",
+  projectId: "atuntro-portal",
+  storageBucket: "atuntro-portal.firebasestorage.app",
+  messagingSenderId: "390090673795",
+  appId: "1:390090673795:web:e01a5d03e5543c8dc415b6"
 };
 let db = null; /* lazily set in CKADM.init() — portal must init Firebase first */
 function _getDb() { if (!db) db = firebase.database(); return db; }
@@ -6331,6 +6380,44 @@ function graciaSeed(){
   return s;
 }
 
+/* ============ FIREBASE (sincronizacion entre dispositivos) ============ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDT0hq4WYxcAxxKvGNmTlH9Ha2lp6fW3y0",
+  authDomain: "atuntro-portal.firebaseapp.com",
+  databaseURL: "https://atuntro-portal-default-rtdb.firebaseio.com",
+  projectId: "atuntro-portal",
+  storageBucket: "atuntro-portal.firebasestorage.app",
+  messagingSenderId: "390090673795",
+  appId: "1:390090673795:web:e01a5d03e5543c8dc415b6"
+};
+const FB_PATH = 'atuntro_equipos/data';
+let _fbHandler = null;
+
+function _getDb(){
+  try{
+    if(typeof firebase === 'undefined') return null;
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    return firebase.database();
+  }catch(e){ return null; }
+}
+
+function startRealtimeSync(){
+  const db = _getDb();
+  if(!db) return;
+  const ref = db.ref(FB_PATH);
+  if(_fbHandler) ref.off('value', _fbHandler);
+  _fbHandler = snap => {
+    const data = snap.val();
+    if(!data) return; // nada remoto aun -- lo local se sube en el proximo persist()
+    state = data;
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+    document.getElementById('eq-vesselSub').textContent = VESSEL_INFO[currentVessel];
+    render();
+    flashSave();
+  };
+  ref.on('value', _fbHandler);
+}
+
 /* ============ STATE / STORAGE ============ */
 const STORAGE_KEY = 'atuntro_equipos_v1';
 let state = null;
@@ -6349,6 +6436,8 @@ function persist(){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     flashSave();
   }catch(e){}
+  const db = _getDb();
+  if(db){ db.ref(FB_PATH).set(state).catch(()=>{}); }
 }
 function flashSave(){
   const d=document.getElementById('eq-saveDot');
@@ -6848,6 +6937,7 @@ function init(){
   state = loadState();
   document.getElementById('eq-vesselSub').textContent = VESSEL_INFO.fatima;
   render();
+  startRealtimeSync();
 }
 
   return {
@@ -8716,13 +8806,53 @@ const INPUT_IDS=[
   'sim_dias','sim_tm_yf','sim_tm_skj','sim_tm_rec','sim_tm_com','sim_px_com',
 ];
 
-// ── PERSISTENCIA LOCAL (sin Firebase; este modulo guarda solo en este dispositivo) ──
+// ── FIREBASE SYNC ──
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDT0hq4WYxcAxxKvGNmTlH9Ha2lp6fW3y0",
+  authDomain: "atuntro-portal.firebaseapp.com",
+  databaseURL: "https://atuntro-portal-default-rtdb.firebaseio.com",
+  projectId: "atuntro-portal",
+  storageBucket: "atuntro-portal.firebasestorage.app",
+  messagingSenderId: "390090673795",
+  appId: "1:390090673795:web:e01a5d03e5543c8dc415b6"
+};
+const FB_PATH = 'atuntro_simulador/mariafatima';
+
+function _getDb(){
+  try{
+    if(typeof firebase === 'undefined') return null;
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    return firebase.database();
+  }catch(e){ return null; }
+}
+
+let isTyping = false;
+let typingTimeout = null;
+let saveDebounce = null;
+let lastRemoteJSON = null;
+let _fbHandler = null;
+
+function markTyping(){
+  isTyping = true;
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(()=>{ isTyping = false; }, 600);
+}
+
 function sv(){
+  markTyping();
   const vals={};
   INPUT_IDS.forEach(id=>{const el=document.getElementById(id);if(el) vals[id]=el.value;});
   const payload = {vals, provs, invItems, repoItems, updatedAt: Date.now()};
-  try{ localStorage.setItem(SK, JSON.stringify(payload)); }catch(e){}
+  const json = JSON.stringify(payload);
+  try{ localStorage.setItem(SK, json); }catch(e){}
+  if(json === lastRemoteJSON) return; // nada cambio, evita loop con el listener remoto
   flashSave();
+  clearTimeout(saveDebounce);
+  saveDebounce = setTimeout(()=>{
+    lastRemoteJSON = json;
+    const db = _getDb();
+    if(db){ db.ref(FB_PATH).set(payload).catch(()=>{}); }
+  }, 600);
 }
 
 function applyRemoteData(data){
@@ -8738,6 +8868,7 @@ function applyRemoteData(data){
 }
 
 function load(){
+  // fallback local mientras carga Firebase
   try{
     const raw=localStorage.getItem(SK);
     if(raw){
@@ -8745,6 +8876,42 @@ function load(){
       applyRemoteData(data);
     }
   }catch(e){}
+
+  const db = _getDb();
+  if(!db) return;
+  const ref = db.ref(FB_PATH);
+  if(_fbHandler) ref.off('value', _fbHandler);
+  _fbHandler = snap => {
+    const data = snap.val();
+    if(!data) return;
+
+    const json = JSON.stringify(data);
+    if(json === lastRemoteJSON) return;
+
+    if(isTyping){
+      return; // no pisar lo que el usuario esta escribiendo ahora mismo
+    }
+
+    lastRemoteJSON = json;
+    applyRemoteData(data);
+    try{ localStorage.setItem(SK, json); }catch(e){}
+
+    // re-render todo lo que depende de arrays
+    renderProvs();
+    const c=document.getElementById('inv_container');
+    if(c) renderInvFull(+document.getElementById('sim_dias').value||0, c);
+    renderRepo();
+    syncTalla('yf');
+    syncTalla('skj');
+    cp();
+    cr();
+    if(document.getElementById('screen-comp')?.classList.contains('active')) calcComp();
+    if(document.getElementById('screen-sim')?.classList.contains('active')) calcSim();
+    if(document.getElementById('screen-auditoria')?.classList.contains('active')) calcAuditoria();
+
+    flashSave();
+  };
+  ref.on('value', _fbHandler);
 }
 
 function flashSave(){
