@@ -136,7 +136,7 @@
     .dash-logo-img { height: 40px; width: auto; filter: drop-shadow(0 2px 8px rgba(65,168,232,0.25)); }
     .dash-logo-text h2 { font-size: 16px; font-weight: 700; }
     .dash-logo-text p  { font-size: 11px; color: var(--gray-500); letter-spacing: 1px; text-transform: uppercase; }
-    .dash-right { display: flex; align-items: center; gap: 12px; }
+    .dash-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; row-gap: 10px; }
     .role-badge {
       background: rgba(65,168,232,0.15);
       border: 1px solid rgba(65,168,232,0.35);
@@ -254,6 +254,7 @@
       .logo-title { font-size: 22px; }
       .role-grid { grid-template-columns: 1fr; max-width: 320px; }
       .dash-header { flex-direction: column; align-items: flex-start; }
+      .dash-right { width: 100%; }
     }
 
 /* ════ GESTOR DE TAREAS CSS ════ */
@@ -1102,7 +1103,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 /* ══════════════════════════════════════════════════════════════
    CHECKLIST OPERACIONAL — Scoped CSS (.ckops-wrap)
 ══════════════════════════════════════════════════════════════ */
-.ckops-wrap { box-sizing: border-box; background: #f0f2f5; min-height: 100vh; }
+.ckops-wrap { box-sizing: border-box; background: #f0f2f5; min-height: 100vh; min-width: 0; width: 100%; }
 
 
 
@@ -1444,48 +1445,48 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
 .ckops-wrap button, .ckops-wrap select, .ckops-wrap .step-chk, .ckops-wrap .person-btn, .ckops-wrap .vtab, .ckops-wrap .login-btn {touch-action:manipulation}
 @media(max-width:640px){
-  .app{padding:10px}
+  .ckops-wrap .app{padding:10px}
   /* Header */
-  .header{padding:10px 14px;gap:8px}
-  .header-left h1{font-size:14px}
-  .hdr-right{gap:6px}
-  .vessel-tabs{flex:1 1 100%;order:2;justify-content:center}
-  .vtab{flex:1;text-align:center;padding:7px 6px}
-  .user-chip{order:1}
-  .sync-pill{order:3;font-size:9px}
-  .hdr-btn{padding:5px 8px;font-size:10px}
+  .ckops-wrap .header{padding:10px 14px;gap:8px}
+  .ckops-wrap .header-left h1{font-size:14px}
+  .ckops-wrap .hdr-right{gap:6px}
+  .ckops-wrap .vessel-tabs{flex:1 1 100%;order:2;justify-content:center}
+  .ckops-wrap .vtab{flex:1;text-align:center;padding:7px 6px}
+  .ckops-wrap .user-chip{order:1}
+  .ckops-wrap .sync-pill{order:3;font-size:9px}
+  .ckops-wrap .hdr-btn{padding:5px 8px;font-size:10px}
   /* Dates — 2×2 grid */
-  .dates-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}
-  .df{min-width:0}
+  .ckops-wrap .dates-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}
+  .ckops-wrap .df{min-width:0}
   /* Area tabs — 2×2 */
-  .atab{min-width:calc(50% - 3px);flex:0 0 calc(50% - 3px)}
+  .ckops-wrap .atab{min-width:calc(50% - 3px);flex:0 0 calc(50% - 3px)}
   /* Progress */
-  .prog-label{min-width:0;font-size:11px;white-space:normal;max-width:120px}
+  .ckops-wrap .prog-label{min-width:0;font-size:11px;white-space:normal;max-width:120px}
   /* Touch targets — checkboxes y botones más grandes */
-  .step-chk{width:26px;height:26px;border-radius:6px}
-  .step-chk.done::after{font-size:14px}
-  .mini-btn{width:28px;height:28px;font-size:12px}
+  .ckops-wrap .step-chk{width:26px;height:26px;border-radius:6px}
+  .ckops-wrap .step-chk.done::after{font-size:14px}
+  .ckops-wrap .mini-btn{width:28px;height:28px;font-size:12px}
   /* Steps — más holgura */
-  .step{padding:11px 0;gap:10px}
-  .step-txt{font-size:14px}
+  .ckops-wrap .step{padding:11px 0;gap:10px}
+  .ckops-wrap .step-txt{font-size:14px}
   /* PIN en pantalla chica */
-  .pin-input{font-size:22px;letter-spacing:7px;padding:12px 44px 12px 14px}
+  .ckops-wrap .pin-input{font-size:22px;letter-spacing:7px;padding:12px 44px 12px 14px}
   /* Modals */
-  .modal{padding:16px}
+  .ckops-wrap .modal{padding:16px}
   /* Notas */
-  .notes-ta{font-size:13px}
+  .ckops-wrap .notes-ta{font-size:13px}
 }
 @media(max-width:380px){
-  .atab{min-width:100%;flex:0 0 100%}
-  .pin-input{font-size:18px;letter-spacing:5px}
-  .dates-bar{grid-template-columns:1fr}
+  .ckops-wrap .atab{min-width:100%;flex:0 0 100%}
+  .ckops-wrap .pin-input{font-size:18px;letter-spacing:5px}
+  .ckops-wrap .dates-bar{grid-template-columns:1fr}
 }
 
 
 /* ══════════════════════════════════════════════════════════════
    CHECKLIST ADMINISTRATIVO — Scoped CSS (.ckadm-wrap)
 ══════════════════════════════════════════════════════════════ */
-.ckadm-wrap { box-sizing: border-box; background: #f0f2f5; min-height: 100vh; }
+.ckadm-wrap { box-sizing: border-box; background: #f0f2f5; min-height: 100vh; min-width: 0; width: 100%; }
 
 
 
@@ -2271,6 +2272,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 /* ════════════════════════════════════════════
    CONTROL DE EQUIPOS — estilos con scope propio
 ════════════════════════════════════════════ */
+.equipos-wrap{min-width:0;width:100%}
 .equipos-wrap .app{max-width:1180px;margin:0 auto;padding:20px}
 
 /* Header */
@@ -2310,6 +2312,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
 /* Viajes panel */
 .equipos-wrap table.vjt{border-collapse:collapse;width:100%;max-width:520px;font-size:12px}
+@media(max-width:360px){
+  .equipos-wrap table.vjt{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+}
 .equipos-wrap table.vjt th{background:#245e93;color:#fff;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:6px 8px;text-align:left}
 .equipos-wrap table.vjt td{padding:5px 8px;border-bottom:1px solid #eee}
 .equipos-wrap table.vjt input[type=text]{border:1.5px solid #e2e2de;border-radius:5px;padding:5px 8px;font-size:12px;font-family:inherit;outline:none;width:80px;color:#0000FF}
@@ -2376,6 +2381,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 /* ════════════════════════════════════════════
    SIMULADOR DE VIAJE — estilos con scope propio
 ════════════════════════════════════════════ */
+.simulador-wrap{min-width:0;width:100%}
 .simulador-wrap .app{max-width:1100px;margin:0 auto;padding:20px 16px 40px}
 
 .simulador-wrap .header{background:#1F4E79;border-radius:12px;padding:16px 22px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -2393,8 +2399,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .simulador-wrap .card{background:#fff;border-radius:10px;padding:18px 20px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .simulador-wrap .card-title{font-size:12px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 
-.simulador-wrap .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.simulador-wrap .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.simulador-wrap .grid-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.simulador-wrap .grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 
 .simulador-wrap .kpi{background:#fff;border-radius:10px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .simulador-wrap .kpi-label{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
@@ -2431,6 +2437,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
 /* ── TABLA DE ESPECIES (TM absolutas) ── */
 .simulador-wrap .esp-table{width:100%;border-collapse:collapse}
+@media(max-width:360px){
+  .simulador-wrap .esp-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+}
 .simulador-wrap .esp-table th{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.5px;padding:4px 8px 8px;text-align:left}
 .simulador-wrap .esp-table th.right{text-align:right}
 .simulador-wrap .esp-table td{padding:5px 8px;border-bottom:1px solid #f5f2ee;vertical-align:middle}
@@ -2469,13 +2478,13 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 /* ── BREAKEVEN ── */
 .simulador-wrap .brkevn{background:#1F4E79;border-radius:10px;padding:18px 20px;color:#fff;margin-bottom:12px}
 .simulador-wrap .brkevn-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;opacity:.65;margin-bottom:10px}
-.simulador-wrap .brkevn-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.simulador-wrap .brkevn-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .simulador-wrap .brkevn-item .bl{font-size:11px;opacity:.6;margin-bottom:3px}
 .simulador-wrap .brkevn-item .bv{font-size:20px;font-weight:700}
 .simulador-wrap .brkevn-item .bs{font-size:10px;opacity:.55;margin-top:2px}
 
 /* ── CASHFLOW ── */
-.simulador-wrap .cashflow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px}
+.simulador-wrap .cashflow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
 .simulador-wrap .cf-phase{border-radius:8px;padding:13px 14px;text-align:center}
 .simulador-wrap .cf-phase.zarpe{background:#FAEEDA;border:1px solid #FAC775}
 .simulador-wrap .cf-phase.mar{background:#E6F1FB;border:1px solid #B5D4F4}
@@ -2522,6 +2531,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .simulador-wrap .pill{display:inline-block;background:#f0f7ff;border:1px solid #B5D4F4;border-radius:6px;padding:2px 9px;font-size:11px;font-weight:700;color:#185FA5;margin-left:6px}
 
 /* Inventory rows — full width table layout */
+.simulador-wrap .inv-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .simulador-wrap .inv-header-row, .simulador-wrap .inv-row{display:grid;grid-template-columns:200px 70px 110px 100px 80px 140px 150px 26px;gap:6px;align-items:center;margin-bottom:6px;padding:0 2px}
 .simulador-wrap .inv-header-row{margin-bottom:8px;padding-bottom:8px;border-bottom:1.5px solid #f0ece6}
 .simulador-wrap .inv-header-row span{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.4px}
@@ -2543,8 +2553,15 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .simulador-wrap .sem-dot.crit{background:#D85A30}
 
 @media(max-width:620px){
-.simulador-wrap .grid-2, .simulador-wrap .grid-4{grid-template-columns:1fr 1fr}
-.simulador-wrap .brkevn-grid, .simulador-wrap .cashflow{grid-template-columns:1fr}
+.simulador-wrap .grid-2, .simulador-wrap .grid-4{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.simulador-wrap .brkevn-grid, .simulador-wrap .cashflow{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:480px){
+.simulador-wrap .grid-2{grid-template-columns:minmax(0,1fr)}
+.simulador-wrap .grid-4{grid-template-columns:minmax(0,1fr)}
+.simulador-wrap .talla-subrow .tl-label{width:56px;font-size:10px}
+.simulador-wrap .talla-subrow .tl-tm{width:34px}
+.simulador-wrap .diff-input{width:48px}
 }
 </style>
 </head>
@@ -2997,6 +3014,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -3281,17 +3299,33 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
   };
   var AUTH = { db: null, users: JSON.parse(JSON.stringify(DEFAULT_USERS)), ready: false };
 
-  function authInit() {
+  // Inicia sesión anónima con Firebase lo antes posible (antes de que cualquier
+  // módulo intente leer/escribir en la base). Las reglas de la base exigen
+  // "auth != null" — esto abre esa puerta de forma automática e invisible,
+  // sin pedir nada a la persona que usa el portal.
+  var _fbAuthReady = (function ensureFirebaseAuth() {
     try {
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-      AUTH.db = firebase.database();
-      AUTH.db.ref(AUTH_PATH + '/users').once('value').then(function(snap) {
-        if (snap.exists()) { AUTH.users = snap.val(); }
-        else { AUTH.db.ref(AUTH_PATH + '/users').set(DEFAULT_USERS); }
-        AUTH.ready = true;
-        authCheckSession();
-      }).catch(function() { AUTH.ready = true; authCheckSession(); });
-    } catch(e) { AUTH.ready = true; authCheckSession(); }
+      return firebase.auth().signInAnonymously()
+        .then(function(){ return true; })
+        .catch(function(e){ console.warn('Firebase anon auth falló:', e && e.message); return false; });
+    } catch(e) {
+      return Promise.resolve(false);
+    }
+  })();
+
+  function authInit() {
+    _fbAuthReady.then(function() {
+      try {
+        AUTH.db = firebase.database();
+        AUTH.db.ref(AUTH_PATH + '/users').once('value').then(function(snap) {
+          if (snap.exists()) { AUTH.users = snap.val(); }
+          else { AUTH.db.ref(AUTH_PATH + '/users').set(DEFAULT_USERS); }
+          AUTH.ready = true;
+          authCheckSession();
+        }).catch(function() { AUTH.ready = true; authCheckSession(); });
+      } catch(e) { AUTH.ready = true; authCheckSession(); }
+    });
   }
 
   function authCheckSession() {
@@ -6502,9 +6536,9 @@ function renderViajesBar(){
   const v = V();
   const rows = v.viajes.map(vj=>`<tr>
       <td><b>${escHtml(vj.id)}</b></td>
-      <td><input type="text" value="${escHtml(vj.inicio||'')}" placeholder="dd/mm/aa" oninput="updateViajeFecha('${vj.id}','inicio',this.value)"></td>
-      <td><input type="text" value="${escHtml(vj.fin||'')}" placeholder="dd/mm/aa" oninput="updateViajeFecha('${vj.id}','fin',this.value)"></td>
-      <td><button class="del-btn" onclick="deleteViaje('${vj.id}')">✕</button></td>
+      <td><input type="text" value="${escHtml(vj.inicio||'')}" placeholder="dd/mm/aa" oninput="EQUIPOS.updateViajeFecha('${vj.id}','inicio',this.value)"></td>
+      <td><input type="text" value="${escHtml(vj.fin||'')}" placeholder="dd/mm/aa" oninput="EQUIPOS.updateViajeFecha('${vj.id}','fin',this.value)"></td>
+      <td><button class="del-btn" onclick="EQUIPOS.deleteViaje('${vj.id}')">✕</button></td>
     </tr>`).join('');
   return `<div class="panel">
     <div class="panel-title">Viajes (${v.viajes.length}) — columnas compartidas por Motores, Winches y Cables</div>
@@ -6514,7 +6548,7 @@ function renderViajesBar(){
       <input type="text" id="newViajeId" placeholder="ID ej. V79">
       <input type="text" id="newViajeInicio" placeholder="Zarpe dd/mm/aa">
       <input type="text" id="newViajeFin" placeholder="Salida dd/mm/aa">
-      <button class="mini-btn" onclick="addViaje()">+ Agregar viaje</button>
+      <button class="mini-btn" onclick="EQUIPOS.addViaje()">+ Agregar viaje</button>
     </div>
   </div>`;
 }
@@ -6578,8 +6612,8 @@ function renderMotoresTab(){
   v.categorias.forEach(cat=>{
     html += `<div class="panel">
       <div class="cat-head">
-        <input class="cat-name" value="${escHtml(cat.nombre)}" oninput="updateCategoriaNombre('${cat.id}',this.value)">
-        <button class="del-btn" title="Eliminar categoría" onclick="deleteCategoria('${cat.id}')">✕</button>
+        <input class="cat-name" value="${escHtml(cat.nombre)}" oninput="EQUIPOS.updateCategoriaNombre('${cat.id}',this.value)">
+        <button class="del-btn" title="Eliminar categoría" onclick="EQUIPOS.deleteCategoria('${cat.id}')">✕</button>
       </div>
       <div class="table-scroll"><table class="eqt"><thead><tr>
         <th style="min-width:200px">Equipo</th>
@@ -6597,28 +6631,28 @@ function renderMotoresTab(){
         const total = sumVals(e.horas);
         html += `<tr>
           <td class="td-equipo">
-            <input type="text" class="name-input" value="${escHtml(e.nombre)}" oninput="updateEquipoField('${cat.id}','${e.id}','nombre',this.value)">
+            <input type="text" class="name-input" value="${escHtml(e.nombre)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','nombre',this.value)">
           </td>
-          <td><input type="text" class="num-input" value="${escHtml(e.hist)}" oninput="updateEquipoField('${cat.id}','${e.id}','hist',this.value)"></td>
-          <td><input type="text" class="num-input" value="${escHtml(e.h26)}" oninput="updateEquipoField('${cat.id}','${e.id}','h26',this.value)"></td>
-          <td><input type="text" class="num-input" value="${escHtml(e.umbral)}" oninput="updateEquipoField('${cat.id}','${e.id}','umbral',this.value)"></td>
-          ${v.viajes.map(vj=>`<td><input type="text" class="num-input" value="${escHtml(e.horas[vj.id]!==undefined?e.horas[vj.id]:'')}" oninput="updateEquipoHoras('${cat.id}','${e.id}','${vj.id}',this.value)"></td>`).join('')}
+          <td><input type="text" class="num-input" value="${escHtml(e.hist)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','hist',this.value)"></td>
+          <td><input type="text" class="num-input" value="${escHtml(e.h26)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','h26',this.value)"></td>
+          <td><input type="text" class="num-input" value="${escHtml(e.umbral)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','umbral',this.value)"></td>
+          ${v.viajes.map(vj=>`<td><input type="text" class="num-input" value="${escHtml(e.horas[vj.id]!==undefined?e.horas[vj.id]:'')}" oninput="EQUIPOS.updateEquipoHoras('${cat.id}','${e.id}','${vj.id}',this.value)"></td>`).join('')}
           <td><input type="text" class="readonly-total" value="${total}" readonly></td>
           <td>
-            <select class="estado-select" onchange="setEquipoEstadoManual('${cat.id}','${e.id}',this.value)">
+            <select class="estado-select" onchange="EQUIPOS.setEquipoEstadoManual('${cat.id}','${e.id}',this.value)">
               ${ESTADO_OPTIONS.map(o=>`<option value="${o}" ${((e.estadoManual||'auto')===o)?'selected':''}>${o==='auto'?'Automático':ESTADOS[o].label}</option>`).join('')}
             </select><br>
             <span class="badge ${est.cls}" id="badge_${e.id}">${est.label}</span>
           </td>
-          <td><textarea class="nota-input" placeholder="Nota / historial..." oninput="updateEquipoField('${cat.id}','${e.id}','nota',this.value)">${escHtml(e.nota||'')}</textarea></td>
-          <td><button class="del-btn" onclick="deleteEquipo('${cat.id}','${e.id}')">✕</button></td>
+          <td><textarea class="nota-input" placeholder="Nota / historial..." oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','nota',this.value)">${escHtml(e.nota||'')}</textarea></td>
+          <td><button class="del-btn" onclick="EQUIPOS.deleteEquipo('${cat.id}','${e.id}')">✕</button></td>
         </tr>`;
       });
       html += `</tbody></table></div>
-      <button class="mini-btn outline" style="margin-top:10px" onclick="addEquipo('${cat.id}')">+ Agregar equipo</button>
+      <button class="mini-btn outline" style="margin-top:10px" onclick="EQUIPOS.addEquipo('${cat.id}')">+ Agregar equipo</button>
     </div>`;
   });
-  html += `<button class="mini-btn outline" onclick="addCategoria()">+ Agregar categoría</button>`;
+  html += `<button class="mini-btn outline" onclick="EQUIPOS.addCategoria()">+ Agregar categoría</button>`;
   return html;
 }
 
@@ -6660,21 +6694,21 @@ function renderWinchesTab(){
   v.winches.forEach(w=>{
     const est = calcEstadoWinche(w);
     html += `<tr>
-      <td><input type="text" class="name-input" value="${escHtml(w.nombre)}" oninput="updateWincheNombre('${w.id}',this.value)"></td>
-      ${v.viajes.map(vj=>`<td><input type="text" class="num-input" value="${escHtml(w.horas[vj.id]!==undefined?w.horas[vj.id]:'')}" oninput="updateWincheVal('${w.id}','horas','${vj.id}',this.value)"></td><td><input type="text" class="num-input" value="${escHtml(w.lances[vj.id]!==undefined?w.lances[vj.id]:'')}" oninput="updateWincheVal('${w.id}','lances','${vj.id}',this.value)"></td>`).join('')}
+      <td><input type="text" class="name-input" value="${escHtml(w.nombre)}" oninput="EQUIPOS.updateWincheNombre('${w.id}',this.value)"></td>
+      ${v.viajes.map(vj=>`<td><input type="text" class="num-input" value="${escHtml(w.horas[vj.id]!==undefined?w.horas[vj.id]:'')}" oninput="EQUIPOS.updateWincheVal('${w.id}','horas','${vj.id}',this.value)"></td><td><input type="text" class="num-input" value="${escHtml(w.lances[vj.id]!==undefined?w.lances[vj.id]:'')}" oninput="EQUIPOS.updateWincheVal('${w.id}','lances','${vj.id}',this.value)"></td>`).join('')}
       <td><input type="text" class="readonly-total" id="wtoth_${w.id}" value="${sumVals(w.horas)}" readonly></td>
       <td><input type="text" class="readonly-total" id="wtotl_${w.id}" value="${sumVals(w.lances)}" readonly></td>
       <td>
-        <select class="estado-select" onchange="setWincheEstadoManual('${w.id}',this.value)">
+        <select class="estado-select" onchange="EQUIPOS.setWincheEstadoManual('${w.id}',this.value)">
           ${ESTADO_OPTIONS.map(o=>`<option value="${o}" ${((w.estadoManual||'auto')===o)?'selected':''}>${o==='auto'?'Automático':ESTADOS[o].label}</option>`).join('')}
         </select><br>
         <span class="badge ${est.cls}" id="wbadge_${w.id}">${est.label}</span>
       </td>
-      <td><button class="del-btn" onclick="deleteWinche('${w.id}')">✕</button></td>
+      <td><button class="del-btn" onclick="EQUIPOS.deleteWinche('${w.id}')">✕</button></td>
     </tr>`;
   });
   html += `</tbody></table></div>
-  <button class="mini-btn outline" style="margin-top:10px" onclick="addWinche()">+ Agregar winche</button>
+  <button class="mini-btn outline" style="margin-top:10px" onclick="EQUIPOS.addWinche()">+ Agregar winche</button>
   </div>`;
   return html;
 }
@@ -6721,24 +6755,24 @@ function renderCablesTab(){
     const est = calcEstadoCable(c);
     const dias = diasUso(c.ultimoCambio);
     html += `<tr>
-      <td><input type="text" class="name-input" style="min-width:130px" value="${escHtml(c.funcion)}" oninput="updateCableField('${c.id}','funcion',this.value)"></td>
-      <td><input type="text" style="min-width:210px" value="${escHtml(c.esp)}" oninput="updateCableField('${c.id}','esp',this.value)"></td>
-      <td><input type="date" value="${escHtml(c.ultimoCambio||'')}" oninput="updateCableField('${c.id}','ultimoCambio',this.value)"></td>
+      <td><input type="text" class="name-input" style="min-width:130px" value="${escHtml(c.funcion)}" oninput="EQUIPOS.updateCableField('${c.id}','funcion',this.value)"></td>
+      <td><input type="text" style="min-width:210px" value="${escHtml(c.esp)}" oninput="EQUIPOS.updateCableField('${c.id}','esp',this.value)"></td>
+      <td><input type="date" value="${escHtml(c.ultimoCambio||'')}" oninput="EQUIPOS.updateCableField('${c.id}','ultimoCambio',this.value)"></td>
       <td id="cdias_${c.id}">${dias===null?'N/A':dias+' d'}</td>
-      ${v.viajes.map(vj=>`<td><input type="text" class="num-input" value="${escHtml(c.lances[vj.id]!==undefined?c.lances[vj.id]:'')}" oninput="updateCableLances('${c.id}','${vj.id}',this.value)"></td>`).join('')}
+      ${v.viajes.map(vj=>`<td><input type="text" class="num-input" value="${escHtml(c.lances[vj.id]!==undefined?c.lances[vj.id]:'')}" oninput="EQUIPOS.updateCableLances('${c.id}','${vj.id}',this.value)"></td>`).join('')}
       <td><input type="text" class="readonly-total" id="ctot_${c.id}" value="${sumVals(c.lances)}" readonly></td>
-      <td><input type="text" class="num-input" value="${escHtml(c.vidaUtilRef)}" oninput="updateCableField('${c.id}','vidaUtilRef',this.value)"></td>
+      <td><input type="text" class="num-input" value="${escHtml(c.vidaUtilRef)}" oninput="EQUIPOS.updateCableField('${c.id}','vidaUtilRef',this.value)"></td>
       <td>
-        <select class="estado-select" onchange="setCableEstadoManual('${c.id}',this.value)">
+        <select class="estado-select" onchange="EQUIPOS.setCableEstadoManual('${c.id}',this.value)">
           ${ESTADO_OPTIONS.map(o=>`<option value="${o}" ${((c.estadoManual||'auto')===o)?'selected':''}>${o==='auto'?'Automático':ESTADOS[o].label}</option>`).join('')}
         </select><br>
         <span class="badge ${est.cls}" id="cbadge_${c.id}">${est.label}</span>
       </td>
-      <td><button class="del-btn" onclick="deleteCable('${c.id}')">✕</button></td>
+      <td><button class="del-btn" onclick="EQUIPOS.deleteCable('${c.id}')">✕</button></td>
     </tr>`;
   });
   html += `</tbody></table></div>
-  <button class="mini-btn outline" style="margin-top:10px" onclick="addCable()">+ Agregar cable / aparejo</button>
+  <button class="mini-btn outline" style="margin-top:10px" onclick="EQUIPOS.addCable()">+ Agregar cable / aparejo</button>
   </div>`;
   return html;
 }
@@ -7257,7 +7291,7 @@ function init(){
   </div>
 
   <!-- KPIs -->
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px">
     <div class="kpi"><div class="kpi-label">Ingreso proyectado</div><div class="kpi-value" id="p_ing_kpi">—</div><div class="kpi-sub" id="p_ing_tm_kpi"></div></div>
     <div class="kpi"><div class="kpi-label">Precio promedio carga</div><div class="kpi-value" id="p_pxprom_kpi">—</div><div class="kpi-sub">Ingreso total ÷ TM totales</div></div>
     <div class="kpi"><div class="kpi-label">Costo / TM</div><div class="kpi-value" id="p_ctm_kpi">—</div><div class="kpi-sub">Costo total ÷ TM estimadas</div></div>
@@ -7290,7 +7324,7 @@ function init(){
     <!-- Desglose caja propia vs crédito -->
     <div style="margin-top:16px;padding-top:14px;border-top:1px dashed rgba(0,0,0,.1)">
       <div style="font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Desglose de la caja de zarpe</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:10px">
         <div class="field" style="margin:0">
           <label>Crédito de proveedores ($)</label>
           <input type="number" id="p_credito_prov" value="0" min="0" oninput="SIMULADOR.sv();SIMULADOR.cp()" style="border:1.5px solid #e0ddd8;border-radius:7px;padding:8px 10px;font-size:13px;font-family:inherit;color:#1a1a18;background:#fafaf8;outline:none;transition:.2s;width:100%">
@@ -7302,7 +7336,7 @@ function init(){
           <div style="font-size:10px;color:#bbb;margin-top:3px">Anticipo zarpe + saldo viaje anterior</div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
         <div style="background:#FAEEDA;border-radius:8px;padding:12px 14px">
           <div style="font-size:10px;font-weight:700;color:#412402;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Caja total requerida</div>
           <div style="font-size:18px;font-weight:700;color:#BA7517" id="caja_total_disp">—</div>
@@ -7484,7 +7518,7 @@ function init(){
         <!-- Precios ancla tomados de proyección -->
         <div style="background:#f8f7f5;border-radius:8px;padding:10px 12px;margin-bottom:12px">
           <div style="font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Precios efectivos — tomados de Proyección</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
             <div>
               <div style="font-size:10px;color:#888;margin-bottom:2px">Yellow Fin (ponderado tallas)</div>
               <div style="font-size:15px;font-weight:700;color:#2E75B6" id="sim_px_yf_disp">—</div>
@@ -7532,7 +7566,7 @@ function init(){
         <div class="card-title">Resultado del escenario</div>
 
         <!-- Fila 1: Ingreso neto + Costo de viaje -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-bottom:8px">
           <div style="background:#E1F5EE;border-radius:8px;padding:14px 16px">
             <div style="font-size:10px;font-weight:700;color:#085041;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Ingreso neto</div>
             <div style="font-size:22px;font-weight:700;color:#1D9E75" id="sim_ing">—</div>
@@ -7546,7 +7580,7 @@ function init(){
         </div>
 
         <!-- Fila 2: Remanente inventario + Margen con inventario -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-bottom:12px">
           <div style="background:#E6F1FB;border-radius:8px;padding:14px 16px">
             <div style="font-size:10px;font-weight:700;color:#042C53;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Remanente inventario</div>
             <div style="font-size:22px;font-weight:700;color:#185FA5" id="sim_inv_rem_kpi">—</div>
@@ -7567,7 +7601,7 @@ function init(){
           <button onclick="SIMULADOR.addRepoItem()" style="font-size:11px;color:#2E75B6;background:none;border:none;cursor:pointer;padding:0;margin-top:4px">+ Agregar ítem a reponer</button>
 
           <!-- Resumen próxima salida -->
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px">
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px">
             <div style="background:#E1F5EE;border-radius:7px;padding:10px 12px;text-align:center">
               <div style="font-size:10px;font-weight:700;color:#085041;text-transform:uppercase;margin-bottom:4px">Remanente inventario</div>
               <div style="font-size:16px;font-weight:700" id="sim_repo_avit">—</div>
@@ -7614,6 +7648,7 @@ function init(){
       <strong>Ejemplo:</strong> Combustible: 20,000 gal inventario de salida · 1,000 gal/día · $2.10/gal → 10 días = 10,000 gal consumidos (<strong>$21,000 costo del viaje</strong>) · 10,000 gal remanentes (<strong>$21,000 para próxima salida</strong>)
     </div>
     <!-- Headers -->
+    <div class="inv-scroll">
     <div class="inv-header-row">
       <span>Ítem</span>
       <span style="text-align:center">Unidad</span>
@@ -7625,6 +7660,7 @@ function init(){
       <span></span>
     </div>
     <div id="inv_container"></div>
+    </div>
     <button onclick="SIMULADOR.addInvItem()" style="margin-top:8px;font-size:11px;color:#2E75B6;background:none;border:none;cursor:pointer;padding:0">+ Agregar ítem</button>
   </div>
 
@@ -7744,18 +7780,18 @@ function renderProvs(){
   c.innerHTML=provs.map((p,i)=>`
     <div class="prov-row">
       <input class="prov-name" type="text" value="${eh(p.name)}" placeholder="Categoría"
-        oninput="provs[${i}].name=this.value;sv()">
+        oninput="SIMULADOR.provs[${i}].name=this.value;SIMULADOR.sv()">
       <input type="range" id="pslider${i}" min="0" max="${p.max}" value="${p.value}" step="100"
-        oninput="provs[${i}].value=+this.value;document.getElementById('pmanual${i}').value=this.value;updProvPill();sv();cp()">
+        oninput="SIMULADOR.provs[${i}].value=+this.value;document.getElementById('pmanual${i}').value=this.value;SIMULADOR.updProvPill();SIMULADOR.sv();SIMULADOR.cp()">
       <input type="number" id="pmanual${i}" class="prov-manual" value="${p.value}" min="0" step="100" placeholder="0"
-        oninput="const v=+this.value||0;provs[${i}].value=v;const sl=document.getElementById('pslider${i}');if(v>provs[${i}].max){provs[${i}].max=Math.ceil(v/1000)*1000;sl.max=provs[${i}].max;}sl.value=v;updProvPill();sv();cp()">
-      <button onclick="provs.splice(${i},1);renderProvs();sv();cp()" style="font-size:15px;color:#ccc;background:none;border:none;cursor:pointer;padding:0 0 0 2px" title="Eliminar">×</button>
+        oninput="const v=+this.value||0;SIMULADOR.provs[${i}].value=v;const sl=document.getElementById('pslider${i}');if(v>SIMULADOR.provs[${i}].max){SIMULADOR.provs[${i}].max=Math.ceil(v/1000)*1000;sl.max=SIMULADOR.provs[${i}].max;}sl.value=v;SIMULADOR.updProvPill();SIMULADOR.sv();SIMULADOR.cp()">
+      <button onclick="SIMULADOR.provs.splice(${i},1);SIMULADOR.renderProvs();SIMULADOR.sv();SIMULADOR.cp()" style="font-size:15px;color:#ccc;background:none;border:none;cursor:pointer;padding:0 0 0 2px" title="Eliminar">×</button>
     </div>`).join('');
-  updProvPill();
+  SIMULADOR.updProvPill();
 }
 
 function updProvLabel(i){
-  updProvPill();
+  SIMULADOR.updProvPill();
 }
 
 function updProvPill(){
@@ -7766,7 +7802,7 @@ function updProvPill(){
 
 function addProv(){
   provs.push({name:'Nueva',max:15000,value:0});
-  renderProvs();sv();cp();
+  SIMULADOR.renderProvs();SIMULADOR.sv();SIMULADOR.cp();
 }
 
 function getTotalProv(){return provs.reduce((s,p)=>s+p.value,0);}
@@ -7942,7 +7978,7 @@ function cp(){
   const rol  =tm_total*rolTM;
   const costo=prov+rol;           // sin sal
   const ing_neta=ing_total-sal;   // sal descuenta el ingreso
-  updProvPill();
+  SIMULADOR.updProvPill();
 
   // Resultados
   const margen=ing_neta-costo;
@@ -8246,7 +8282,7 @@ function showScreen(name,btn){
   btn.classList.add('active');
   if(name==='comp') calcComp();
   if(name==='auditoria') calcAuditoria();
-  if(name==='sim'){ calcSim(); renderInv(); renderRepo(); }
+  if(name==='sim'){ SIMULADOR.calcSim(); SIMULADOR.renderInv(); SIMULADOR.renderRepo(); }
 }
 
 // ── INVENTARIO ──
@@ -8268,9 +8304,9 @@ function renderInv(){
   // Full render only when item count changed or first load
   const existing=c.querySelectorAll('.inv-row').length;
   if(existing!==invItems.length){
-    renderInvFull(dias, c);
+    SIMULADOR.renderInvFull(dias, c);
   } else {
-    updateInvCalc(dias, c);
+    SIMULADOR.updateInvCalc(dias, c);
   }
 
   const pill=document.getElementById('inv_pill');
@@ -8281,20 +8317,20 @@ function renderInvFull(dias, c){
   c.innerHTML=invItems.map((it,i)=>`
     <div class="inv-row" data-idx="${i}">
       <input type="text" value="${eh(it.name)}" placeholder="Nombre del ítem"
-        oninput="invItems[${i}].name=this.value;sv()">
+        oninput="SIMULADOR.invItems[${i}].name=this.value;SIMULADOR.sv()">
       <input type="text" value="${eh(it.unidad)}" placeholder="u"
-        oninput="invItems[${i}].unidad=this.value;sv()" style="text-align:center">
+        oninput="SIMULADOR.invItems[${i}].unidad=this.value;SIMULADOR.sv()" style="text-align:center">
       <input type="number" value="${it.salida||''}" placeholder="0" min="0" step="1"
-        oninput="invItems[${i}].salida=+this.value;sv();updateInvCalc(+document.getElementById('sim_dias').value||0,document.getElementById('inv_container'));calcSim()">
+        oninput="SIMULADOR.invItems[${i}].salida=+this.value;SIMULADOR.sv();SIMULADOR.updateInvCalc(+document.getElementById('sim_dias').value||0,document.getElementById('inv_container'));SIMULADOR.calcSim()">
       <input type="number" value="${it.xdia||''}" placeholder="0" min="0" step="0.1"
-        oninput="invItems[${i}].xdia=+this.value;sv();updateInvCalc(+document.getElementById('sim_dias').value||0,document.getElementById('inv_container'));calcSim()">
+        oninput="SIMULADOR.invItems[${i}].xdia=+this.value;SIMULADOR.sv();SIMULADOR.updateInvCalc(+document.getElementById('sim_dias').value||0,document.getElementById('inv_container'));SIMULADOR.calcSim()">
       <input type="number" value="${it.costo_unit||''}" placeholder="0" min="0" step="0.01"
-        oninput="invItems[${i}].costo_unit=+this.value;sv();updateInvCalc(+document.getElementById('sim_dias').value||0,document.getElementById('inv_container'));calcSim()">
+        oninput="SIMULADOR.invItems[${i}].costo_unit=+this.value;SIMULADOR.sv();SIMULADOR.updateInvCalc(+document.getElementById('sim_dias').value||0,document.getElementById('inv_container'));SIMULADOR.calcSim()">
       <div class="inv-cons" id="inv_cons_${i}">—</div>
       <div class="inv-rem ok" id="inv_rem_${i}" style="display:flex;flex-direction:column;align-items:flex-end">—</div>
-      <button onclick="invItems.splice(${i},1);renderInvFull(+document.getElementById('sim_dias').value||0,document.getElementById('inv_container'));renderInv();sv()" style="font-size:15px;color:#ccc;background:none;border:none;cursor:pointer;padding:0">×</button>
+      <button onclick="SIMULADOR.invItems.splice(${i},1);SIMULADOR.renderInvFull(+document.getElementById('sim_dias').value||0,document.getElementById('inv_container'));SIMULADOR.renderInv();SIMULADOR.sv()" style="font-size:15px;color:#ccc;background:none;border:none;cursor:pointer;padding:0">×</button>
     </div>`).join('');
-  updateInvCalc(dias, c);
+  SIMULADOR.updateInvCalc(dias, c);
 }
 
 function updateInvCalc(dias, c){
@@ -8447,9 +8483,9 @@ function renderInvStatus(dias){
 function addInvItem(){
   invItems.push({name:'Nuevo ítem',unidad:'u',salida:0,xdia:0,costo_unit:0});
   const c=document.getElementById('inv_container');
-  if(c) renderInvFull(+document.getElementById('sim_dias').value||0, c);
-  renderInv();
-  sv();
+  if(c) SIMULADOR.renderInvFull(+document.getElementById('sim_dias').value||0, c);
+  SIMULADOR.renderInv();
+  SIMULADOR.sv();
 }
 
 // ── REPOSICIÓN PRÓXIMA SALIDA ──
@@ -8464,17 +8500,17 @@ function renderRepo(){
     <div style="display:grid;grid-template-columns:1fr 110px 20px;gap:6px;align-items:center;margin-bottom:6px">
       <input type="text" value="${eh(it.name)}" placeholder="Ítem a reponer (ej. Víveres)"
         style="border:1.5px solid #e0ddd8;border-radius:5px;padding:6px 8px;font-size:12px;font-family:inherit;outline:none;background:#fafaf8;transition:.2s;width:100%"
-        oninput="repoItems[${i}].name=this.value;sv()">
+        oninput="SIMULADOR.repoItems[${i}].name=this.value;SIMULADOR.sv()">
       <input type="number" value="${it.monto||''}" placeholder="$0" min="0" step="100"
         style="border:1.5px solid #e0ddd8;border-radius:5px;padding:6px 8px;font-size:12px;font-family:inherit;outline:none;background:#fafaf8;transition:.2s;text-align:right;width:100%"
-        oninput="repoItems[${i}].monto=+this.value;sv();calcRepo()">
-      <button onclick="repoItems.splice(${i},1);renderRepo();calcRepo();sv()" style="font-size:15px;color:#ccc;background:none;border:none;cursor:pointer;padding:0">×</button>
+        oninput="SIMULADOR.repoItems[${i}].monto=+this.value;SIMULADOR.sv();SIMULADOR.calcRepo()">
+      <button onclick="SIMULADOR.repoItems.splice(${i},1);SIMULADOR.renderRepo();SIMULADOR.calcRepo();SIMULADOR.sv()" style="font-size:15px;color:#ccc;background:none;border:none;cursor:pointer;padding:0">×</button>
     </div>`).join('');
 }
 
 function addRepoItem(){
   repoItems.push({name:'',monto:0});
-  renderRepo();sv();
+  SIMULADOR.renderRepo();SIMULADOR.sv();
 }
 
 function calcRepo(){
@@ -8576,7 +8612,7 @@ function calcSim(){
   if(remEl){remEl.textContent=invRem>0?fmt(invRem):'$0';remEl.style.color=invRem>0?'#185FA5':'#aaa';}
 
   // Calcular reposición
-  calcRepo();
+  SIMULADOR.calcRepo();
 
   // Detalle inventario (pequeño, debajo de los KPIs)
   const simInvBox=document.getElementById('sim_inv_detalle');
@@ -8620,7 +8656,7 @@ function calcSim(){
 
   // Actualizar inventario sin destruir inputs
   const c2=document.getElementById('inv_container');
-  if(c2) updateInvCalc(dias,c2);
+  if(c2) SIMULADOR.updateInvCalc(dias,c2);
 }
 // ── AUDITORÍA ──
 function calcAuditoria(){
@@ -8897,16 +8933,16 @@ function load(){
     try{ localStorage.setItem(SK, json); }catch(e){}
 
     // re-render todo lo que depende de arrays
-    renderProvs();
+    SIMULADOR.renderProvs();
     const c=document.getElementById('inv_container');
-    if(c) renderInvFull(+document.getElementById('sim_dias').value||0, c);
-    renderRepo();
-    syncTalla('yf');
-    syncTalla('skj');
-    cp();
-    cr();
+    if(c) SIMULADOR.renderInvFull(+document.getElementById('sim_dias').value||0, c);
+    SIMULADOR.renderRepo();
+    SIMULADOR.syncTalla('yf');
+    SIMULADOR.syncTalla('skj');
+    SIMULADOR.cp();
+    SIMULADOR.cr();
     if(document.getElementById('screen-comp')?.classList.contains('active')) calcComp();
-    if(document.getElementById('screen-sim')?.classList.contains('active')) calcSim();
+    if(document.getElementById('screen-sim')?.classList.contains('active')) SIMULADOR.calcSim();
     if(document.getElementById('screen-auditoria')?.classList.contains('active')) calcAuditoria();
 
     flashSave();
@@ -8932,13 +8968,13 @@ function eh(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repla
 
 function init(){
   load();
-  renderProvs();
-  renderInv();
-  renderRepo();
-  syncTalla('yf');
-  syncTalla('skj');
-  cp();
-  cr();
+  SIMULADOR.renderProvs();
+  SIMULADOR.renderInv();
+  SIMULADOR.renderRepo();
+  SIMULADOR.syncTalla('yf');
+  SIMULADOR.syncTalla('skj');
+  SIMULADOR.cp();
+  SIMULADOR.cr();
 }
 
   return {
@@ -8958,7 +8994,10 @@ function init(){
     sv,
     syncTalla,
     updProvPill,
-    updateInvCalc
+    updateInvCalc,
+    get provs(){ return provs; },
+    get invItems(){ return invItems; },
+    get repoItems(){ return repoItems; }
   };
 })();
 </script>
