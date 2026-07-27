@@ -299,6 +299,20 @@
       .role-grid { grid-template-columns: 1fr; max-width: 320px; }
       .dash-header { flex-direction: column; align-items: flex-start; }
       .dash-right { width: 100%; }
+      /* La campana: el panel flotante se sale del borde en pantallas
+         angostas. En móvil lo fijamos centrado sobre la pantalla. */
+      .alert-bell-panel {
+        position: fixed;
+        top: 70px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: 92vw;
+        max-width: 400px;
+        max-height: 72vh;
+        box-shadow: 0 12px 50px rgba(0,0,0,0.5);
+      }
+      .alert-bell-panel.open { animation: none; }
     }
 
 /* ════ GESTOR DE TAREAS CSS ════ */
@@ -2444,6 +2458,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .simulador-wrap .header h1{font-size:16px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px}
 .simulador-wrap .header p{font-size:11px;color:#a8c4e0;margin-top:2px}
 .simulador-wrap .vessel-tag{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;color:#fff}
+.simulador-wrap .vessel-tabs-sim{display:flex;gap:5px}
+.simulador-wrap .vtab-sim{padding:6px 14px;border-radius:18px;border:1.5px solid rgba(255,255,255,0.35);background:transparent;color:rgba(255,255,255,0.8);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s;white-space:nowrap}
+.simulador-wrap .vtab-sim.active{background:#fff;color:#1F4E79;border-color:#fff}
+.simulador-wrap .vtab-sim:hover:not(.active){background:rgba(255,255,255,0.15)}
 
 .simulador-wrap .nav{display:flex;gap:6px;margin-bottom:14px;background:#fff;border-radius:10px;padding:6px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow-x:auto;-webkit-overflow-scrolling:touch}
 .simulador-wrap .ntab{flex:0 0 auto;padding:10px 14px;border-radius:7px;border:none;background:transparent;font-size:13px;font-weight:500;color:#888;cursor:pointer;transition:all .2s;font-family:inherit;text-align:center;white-space:nowrap;touch-action:manipulation;-webkit-tap-highlight-color:rgba(46,117,182,0.2);position:relative;z-index:5}
@@ -7433,8 +7451,14 @@ function init(){
     <h1>Simulador de Rentabilidad <span class="save-dot" id="saveDot"></span></h1>
     <p>Proyección pre-zarpe · Cierre real · Comparativo · Simulación · Auditoría</p>
   </div>
-  <span class="vessel-tag">María Fátima · 180 TM</span>
-  <button type="button" class="ghost-btn-sim" onclick="goBackFromSimulador()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:16px;padding:6px 13px;font-size:11px;cursor:pointer;font-family:inherit">← Portal</button>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <div class="vessel-tabs-sim">
+      <button type="button" class="vtab-sim active" id="sim_tab_fatima" onclick="SIMULADOR.switchVessel('fatima')">María Fátima</button>
+      <button type="button" class="vtab-sim" id="sim_tab_gracia" onclick="SIMULADOR.switchVessel('gracia')">María de Gracia</button>
+    </div>
+    <span class="vessel-tag" id="sim_vesselTag">María Fátima · 180 TM</span>
+    <button type="button" class="ghost-btn-sim" onclick="goBackFromSimulador()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:16px;padding:6px 13px;font-size:11px;cursor:pointer;font-family:inherit">← Portal</button>
+  </div>
 </div>
 
 <div class="nav">
@@ -8176,11 +8200,19 @@ function init(){
 ════════════════════════════════════════════ */
 var SIMULADOR = (function() {
 
-const SK='atuntro_mf_v4';
+// ── Barco activo: María Fátima (180 TM) o María de Gracia (215 TM) ──
+const VESSEL_META = {
+  fatima: { nombre:'María Fátima',    cap:180 },
+  gracia: { nombre:'María de Gracia', cap:215 },
+};
+let currentVessel = 'fatima';
+function SK_FOR(v){ return (v==='gracia') ? 'atuntro_sim_gracia_v4' : 'atuntro_mf_v4'; }
+function FB_PATH_FOR(v){ return 'atuntro_simulador/' + (v==='gracia'?'mariadegracia':'mariafatima'); }
+let SK = SK_FOR('fatima');            // se recalcula al cambiar de barco
 let chartSens=null, chartComp=null;
 
 // ── AVITUALLAMIENTO Y TRABAJOS DE SALIDA (antes "Otros proveedores") ──
-let provs=[
+function defaultProvs(){ return [
   {name:'Combustible',max:200000,value:0},
   {name:'Víveres',max:20000,value:0},
   {name:'Carnada',max:10000,value:0},
@@ -8188,7 +8220,8 @@ let provs=[
   {name:'Repuestos',max:15000,value:0},
   {name:'Muellaje',max:5000,value:0},
   {name:'Trabajos de salida',max:10000,value:0},
-];
+]; }
+let provs=defaultProvs();
 
 function renderProvs(){
   const c=document.getElementById('prov_container');
@@ -8703,14 +8736,15 @@ function showScreen(name,btn){
 
 // ── INVENTARIO ──
 // Cada ítem: {name, unidad, salida, xdia, costo_unit}
-let invItems=[
+function defaultInvItems(){ return [
   {name:'Víveres',unidad:'rac',salida:0,xdia:0,costo_unit:0},
   {name:'Agua potable',unidad:'lt',salida:0,xdia:0,costo_unit:0},
   {name:'Carnada',unidad:'kg',salida:0,xdia:0,costo_unit:0},
   {name:'Sal',unidad:'sac',salida:0,xdia:0,costo_unit:0},
   {name:'Aceite motor',unidad:'lt',salida:0,xdia:0,costo_unit:0},
   {name:'Hielo',unidad:'TM',salida:0,xdia:0,costo_unit:0},
-];
+]; }
+let invItems=defaultInvItems();
 
 function renderInv(){
   const dias=+document.getElementById('sim_dias').value||0;
@@ -8905,9 +8939,8 @@ function addInvItem(){
 }
 
 // ── REPOSICIÓN PRÓXIMA SALIDA ──
-let repoItems=[
-  {name:'',monto:0},
-];
+function defaultRepoItems(){ return [ {name:'',monto:0} ]; }
+let repoItems=defaultRepoItems();
 
 function renderRepo(){
   const c=document.getElementById('repo_container');
@@ -9268,7 +9301,7 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "390090673795",
   appId: "1:390090673795:web:e01a5d03e5543c8dc415b6"
 };
-const FB_PATH = 'atuntro_simulador/mariafatima';
+let FB_PATH = FB_PATH_FOR('fatima');   // se recalcula al cambiar de barco
 
 function _getDb(){
   try{
@@ -9382,8 +9415,67 @@ function fmt(n){
 function setText(id,val){const el=document.getElementById(id);if(el) el.textContent=val;}
 function eh(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
+let _inputDefaults = null;
+function captureDefaults(){
+  if(_inputDefaults) return;
+  _inputDefaults = {};
+  INPUT_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) _inputDefaults[id]=el.value; });
+}
+
 function init(){
+  currentVessel = 'fatima';
+  SK = SK_FOR(currentVessel);
+  FB_PATH = FB_PATH_FOR(currentVessel);
+  captureDefaults();   // guarda los valores iniciales del HTML (tallas 100%, etc.)
+  updateVesselUI();
   load();
+  SIMULADOR.renderProvs();
+  SIMULADOR.renderInv();
+  SIMULADOR.renderRepo();
+  SIMULADOR.syncTalla('yf');
+  SIMULADOR.syncTalla('skj');
+  SIMULADOR.cp();
+  SIMULADOR.cr();
+}
+
+// Refleja el barco activo en el encabezado (nombre + capacidad) y pestañas.
+function updateVesselUI(){
+  const meta = VESSEL_META[currentVessel];
+  const tag = document.getElementById('sim_vesselTag');
+  if(tag) tag.textContent = meta.nombre + ' · ' + meta.cap + ' TM';
+  document.querySelectorAll('.simulador-wrap .vtab-sim').forEach(b=>b.classList.remove('active'));
+  const btn = document.getElementById('sim_tab_'+currentVessel);
+  if(btn) btn.classList.add('active');
+}
+
+// Cambia de barco: persiste el actual, desconecta Firebase, y carga el otro.
+function switchVessel(v){
+  if(v===currentVessel) return;
+  // desconectar el listener remoto del barco anterior
+  const db=_getDb();
+  if(db && _fbHandler){ try{ db.ref(FB_PATH).off('value', _fbHandler); }catch(e){} _fbHandler=null; }
+  lastRemoteJSON = null;
+
+  currentVessel = v;
+  SK = SK_FOR(v);
+  FB_PATH = FB_PATH_FOR(v);
+  updateVesselUI();
+
+  // Resetear arrays a sus defaults antes de cargar los del nuevo barco,
+  // para no arrastrar datos del barco anterior si el nuevo aún no tiene nada.
+  provs = defaultProvs();
+  invItems = defaultInvItems();
+  repoItems = defaultRepoItems();
+  // limpiar inputs a los valores iniciales del HTML; la capacidad al del barco
+  INPUT_IDS.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    if(id==='p_cap'){ el.value = VESSEL_META[v].cap; }
+    else if(_inputDefaults && _inputDefaults[id]!==undefined){ el.value=_inputDefaults[id]; }
+  });
+  const capEl=document.getElementById('carga_cap'); if(capEl) capEl.textContent=VESSEL_META[v].cap;
+
+  load();  // carga datos del nuevo barco (local + Firebase)
   SIMULADOR.renderProvs();
   SIMULADOR.renderInv();
   SIMULADOR.renderRepo();
@@ -9395,6 +9487,7 @@ function init(){
 
   return {
     init,
+    switchVessel,
     addInvItem,
     addProv,
     addRepoItem,
