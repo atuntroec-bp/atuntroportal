@@ -131,12 +131,56 @@
     .dash-header {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 36px; flex-wrap: wrap; gap: 16px;
+      position: relative; z-index: 3000;
     }
     .dash-logo { display: flex; align-items: center; gap: 14px; }
     .dash-logo-img { height: 40px; width: auto; filter: drop-shadow(0 2px 8px rgba(65,168,232,0.25)); }
     .dash-logo-text h2 { font-size: 16px; font-weight: 700; }
     .dash-logo-text p  { font-size: 11px; color: var(--gray-500); letter-spacing: 1px; text-transform: uppercase; }
     .dash-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; row-gap: 10px; }
+
+    /* ─── CAMPANA DE ALERTAS ─────────────────────────── */
+    .alert-bell-wrap { position: relative; z-index: 3000; }
+    .alert-bell {
+      position: relative; background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.14); color: #fff;
+      font-size: 17px; line-height: 1; width: 40px; height: 38px; border-radius: 12px;
+      cursor: pointer; transition: all .2s; display: flex; align-items: center; justify-content: center;
+    }
+    .alert-bell:hover { background: rgba(255,255,255,0.16); }
+    .alert-bell.has-alerts { animation: bellPulse 2.4s ease-in-out infinite; border-color: rgba(240,165,0,0.55); }
+    @keyframes bellPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(240,165,0,0.0); }
+      50%     { box-shadow: 0 0 0 5px rgba(240,165,0,0.18); }
+    }
+    .alert-bell-count {
+      position: absolute; top: -6px; right: -6px; min-width: 19px; height: 19px; padding: 0 5px;
+      background: #E65100; color: #fff; font-size: 11px; font-weight: 700;
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--navy-dark); box-sizing: border-box;
+    }
+    .alert-bell-panel {
+      position: absolute; top: 48px; right: 0; width: 340px; max-width: 86vw;
+      background: #fff; color: #1a1a18; border-radius: 12px; z-index: 3001;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35); padding: 10px;
+      display: none; max-height: 60vh; overflow-y: auto;
+    }
+    .alert-bell-panel.open { display: block; animation: fadeUp .2s ease both; }
+    .bell-panel-title { font-size: 12px; font-weight: 700; color: #1F4E79; padding: 6px 8px 10px; border-bottom: 1px solid #eee; margin-bottom: 6px; }
+    .bell-item { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 8px; cursor: pointer; transition: background .15s; }
+    .bell-item:hover { background: #f4f7fb; }
+    .bell-item-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .bell-item-dot.PENDIENTE { background: #D85A30; }
+    .bell-item-dot.INCOMPLETO { background: #BA7517; }
+    .bell-item-txt { flex: 1; font-size: 12px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bell-item-est { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; }
+    .bell-item-est.PENDIENTE { background: #FAECE7; color: #4A1B0C; }
+    .bell-item-est.INCOMPLETO { background: #FAEEDA; color: #412402; }
+    .bell-empty { font-size: 12px; color: #888; text-align: center; padding: 18px 10px; }
+    .bell-more { font-size: 11px; color: #2E75B6; text-align: center; padding: 8px; cursor: pointer; }
+    .bell-cta { margin-top: 6px; padding: 10px; text-align: center; font-size: 12px; font-weight: 600; color: #fff; background: #1F4E79; border-radius: 8px; cursor: pointer; transition: background .2s; }
+    .bell-cta:hover { background: #2E75B6; }
+
     .role-badge {
       background: rgba(65,168,232,0.15);
       border: 1px solid rgba(65,168,232,0.35);
@@ -350,6 +394,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .gt-status-cell:hover .gt-badge{filter:brightness(.92)}
 .gt-edit-icon{font-size:11px;color:#ddd;cursor:pointer;padding:2px 5px;border-radius:4px;transition:.15s;display:inline-block}
 .gt-edit-icon:hover{color:#2E75B6;background:#E6F1FB}
+/* Modo admin: columna extra para eliminar tareas una por una */
+.gt-table-wrap.gt-admin-mode .gt-table-head{grid-template-columns:34px 42px 1fr 110px 124px 100px 44px}
+.gt-table-wrap.gt-admin-mode .gt-task-row{grid-template-columns:34px 42px 1fr 110px 124px 100px 44px}
+.gt-del-cell{display:flex;align-items:center;justify-content:center}
+.gt-row-del{background:none;border:none;cursor:pointer;font-size:15px;opacity:.55;transition:.15s;padding:2px 4px;border-radius:6px;line-height:1}
+.gt-row-del:hover{opacity:1;background:#FAECE7;transform:scale(1.1)}
 
 /* ── Modales base ── */
 .gt-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;align-items:center;justify-content:center}
@@ -970,6 +1020,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .gt-status-cell:hover .gt-badge{filter:brightness(.92)}
 .gt-edit-icon{font-size:11px;color:#ddd;cursor:pointer;padding:2px 5px;border-radius:4px;transition:.15s;display:inline-block}
 .gt-edit-icon:hover{color:#2E75B6;background:#E6F1FB}
+/* Modo admin: columna extra para eliminar tareas una por una */
+.gt-table-wrap.gt-admin-mode .gt-table-head{grid-template-columns:34px 42px 1fr 110px 124px 100px 44px}
+.gt-table-wrap.gt-admin-mode .gt-task-row{grid-template-columns:34px 42px 1fr 110px 124px 100px 44px}
+.gt-del-cell{display:flex;align-items:center;justify-content:center}
+.gt-row-del{background:none;border:none;cursor:pointer;font-size:15px;opacity:.55;transition:.15s;padding:2px 4px;border-radius:6px;line-height:1}
+.gt-row-del:hover{opacity:1;background:#FAECE7;transform:scale(1.1)}
 
 /* ── Modales base ── */
 .gt-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;align-items:center;justify-content:center}
@@ -2663,6 +2719,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
         </div>
       </div>
       <div class="dash-right">
+        <div class="alert-bell-wrap" id="alert-bell-wrap">
+          <button class="alert-bell" id="alert-bell" onclick="toggleAlertBell()" title="Tareas pendientes de tu área">
+            🔔<span class="alert-bell-count" id="alert-bell-count" style="display:none">0</span>
+          </button>
+          <div class="alert-bell-panel" id="alert-bell-panel"></div>
+        </div>
         <span class="role-badge" id="role-badge-text">—</span>
         <div class="user-pill" id="user-pill" style="display:none">
           <div class="user-pill-avatar" id="user-avatar">?</div>
@@ -3483,20 +3545,55 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
   // ══ WIDGET TAREAS PENDIENTES ═══════════════════════════════════════════════
   var _pendingCollapsed = false, _pendingCollapsedGt = false;
-  function loadPendingTasks() {
+
+  // Departamentos visibles según el rol logueado (misma lógica que el Gestor).
+  var PENDING_ROLE_DEPTS = {
+    operaciones:  ['Operativo'],
+    contabilidad: ['Contabilidad'],
+    admin:        ['Administrativo','Operativo','Contabilidad'],
+    master:       ['Administrativo','Operativo','Contabilidad'],
+  };
+  function pendingCurrentRole() {
     try {
-      var raw = localStorage.getItem('atuntro_gestor_v1');
-      var data = raw ? JSON.parse(raw) : null;
-      var tasks = data ? (data.tasks || []) : [];
-      var pending = tasks.filter(function(t){ return t.estado !== 'COMPLETO'; });
+      var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
+      if (sess && sess.id && AUTH.users && AUTH.users[sess.id]) return AUTH.users[sess.id].role || 'admin';
+    } catch(e) {}
+    return 'admin';
+  }
+  function pendingAllowedDepts() { return PENDING_ROLE_DEPTS[pendingCurrentRole()] || PENDING_ROLE_DEPTS.admin; }
+
+  // Lee tareas: primero intenta Firebase; si aún no responde, usa localStorage.
+  function _readTasks(cb) {
+    var fallback = function() {
+      try {
+        var raw = localStorage.getItem('atuntro_gestor_v1');
+        var data = raw ? JSON.parse(raw) : null;
+        return data ? (data.tasks || []) : [];
+      } catch(e) { return []; }
+    };
+    try {
+      if (typeof firebase !== 'undefined' && firebase.apps.length) {
+        firebase.database().ref('atuntro_gestor/data').once('value')
+          .then(function(snap){
+            var d = snap.val();
+            cb(d && d.tasks ? d.tasks : fallback());
+          })
+          .catch(function(){ cb(fallback()); });
+        return;
+      }
+    } catch(e) {}
+    cb(fallback());
+  }
+
+  function loadPendingTasks() {
+    _readTasks(function(tasks){
+      var ok = pendingAllowedDepts();
+      var mine = tasks.filter(function(t){ return ok.indexOf(t.dept) !== -1; });
+      var pending = mine.filter(function(t){ return t.estado !== 'COMPLETO'; });
       renderPendingWidget('pending-tasks-list', 'pending-count-badge', pending);
       renderPendingWidget('pending-tasks-list-gt', 'pending-count-badge-gt', pending);
-    } catch(e) {
-      ['pending-tasks-list','pending-tasks-list-gt'].forEach(function(id){
-        var el = document.getElementById(id);
-        if (el) el.innerHTML = '<div class="pending-empty"><div class="pending-empty-icon">⚠️</div>No se pudo leer el Gestor de Tareas.</div>';
-      });
-    }
+      updateAlertBell(mine);
+    });
   }
   function renderPendingWidget(listId, badgeId, pending) {
     var list = document.getElementById(listId), badge = document.getElementById(badgeId);
@@ -3526,6 +3623,54 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
         '</div>';
       }).join('');
   }
+  // ══ CAMPANA DE ALERTAS (esquina del dashboard) ═══════════════════════════
+  // Cuenta tareas pendientes/incompletas del área del rol y muestra el número.
+  function updateAlertBell(mineTasks) {
+    var bell  = document.getElementById('alert-bell');
+    var badge = document.getElementById('alert-bell-count');
+    var panel = document.getElementById('alert-bell-panel');
+    if (!bell || !badge) return;
+    var pend = mineTasks.filter(function(t){ return t.estado !== 'COMPLETO'; });
+    var n = pend.length;
+    badge.textContent = n;
+    badge.style.display = n > 0 ? 'flex' : 'none';
+    bell.classList.toggle('has-alerts', n > 0);
+
+    if (panel) {
+      if (!n) {
+        panel.innerHTML = '<div class="bell-empty">✅ Sin tareas pendientes en tu área.</div>';
+      } else {
+        var order = {INCOMPLETO:0, PENDIENTE:1};
+        var sorted = pend.slice().sort(function(a,b){
+          var oa = order[a.estado]!==undefined?order[a.estado]:2, ob = order[b.estado]!==undefined?order[b.estado]:2;
+          return oa!==ob ? oa-ob : (a.fecha||'').localeCompare(b.fecha||'');
+        });
+        var lbl = {INCOMPLETO:'En progreso', PENDIENTE:'Pendiente'};
+        panel.innerHTML =
+          '<div class="bell-panel-title">🔔 ' + n + ' tarea' + (n>1?'s':'') + ' por atender</div>' +
+          sorted.slice(0,8).map(function(t){
+            return '<div class="bell-item" onclick="openGestor()">' +
+              '<span class="bell-item-dot ' + escHtml(t.estado) + '"></span>' +
+              '<span class="bell-item-txt" title="' + escHtml(t.tarea||'') + '">' + escHtml(t.tarea||'') + '</span>' +
+              '<span class="bell-item-est ' + escHtml(t.estado) + '">' + (lbl[t.estado]||t.estado) + '</span>' +
+            '</div>';
+          }).join('') +
+          (n>8 ? '<div class="bell-more" onclick="openGestor()">+ '+(n-8)+' más — ver todas</div>' : '') +
+          '<div class="bell-cta" onclick="openGestor()">Abrir Gestor de Tareas →</div>';
+      }
+    }
+  }
+  function toggleAlertBell() {
+    var panel = document.getElementById('alert-bell-panel');
+    if (panel) panel.classList.toggle('open');
+  }
+  // Cerrar el panel al hacer clic fuera
+  document.addEventListener('click', function(e){
+    var wrap = document.getElementById('alert-bell-wrap');
+    var panel = document.getElementById('alert-bell-panel');
+    if (wrap && panel && !wrap.contains(e.target)) panel.classList.remove('open');
+  });
+
   function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function togglePendingTasks() {
     _pendingCollapsed = !_pendingCollapsed;
@@ -3539,6 +3684,20 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     if(b) b.className='pending-tasks-body '+(_pendingCollapsedGt?'collapsed':'expanded');
     if(ic) ic.textContent=_pendingCollapsedGt?'▼':'▲';
   }
+
+  // Refresco en vivo de la campana y el widget cuando cambian las tareas en Firebase,
+  // aunque no se haya abierto el Gestor.
+  function startPendingLiveSync() {
+    try {
+      if (typeof firebase === 'undefined' || !firebase.apps.length) { setTimeout(startPendingLiveSync, 1500); return; }
+      firebase.database().ref('atuntro_gestor/data').on('value', function(){
+        // solo re-render si el dashboard está visible
+        var dash = document.getElementById('screen-dashboard');
+        if (dash && dash.classList.contains('active')) loadPendingTasks();
+      });
+    } catch(e) { setTimeout(startPendingLiveSync, 1500); }
+  }
+  startPendingLiveSync();
 
   document.addEventListener('DOMContentLoaded', authInit);
 </script>
@@ -3562,6 +3721,40 @@ const GT = (() => {
     PENDIENTE: { fill:'#D85A30', bg:'#FAECE7', tx:'#4A1B0C' },
   };
   const DEPT_CLS = { Administrativo:'gt-dept-admin', Operativo:'gt-dept-oper', Contabilidad:'gt-dept-cont' };
+
+  /* ── Control de acceso por área ─────────────────────── */
+  // Qué departamentos puede VER cada rol del portal.
+  // operaciones → solo Operativo · contabilidad → solo Contabilidad
+  // admin y master → todo (control total)
+  const ROLE_DEPTS = {
+    operaciones:  ['Operativo'],
+    contabilidad: ['Contabilidad'],
+    admin:        ['Administrativo','Operativo','Contabilidad'],
+    master:       ['Administrativo','Operativo','Contabilidad'],
+  };
+  let currentRole = 'admin';  // se sobrescribe en init() con el rol real de la sesión
+
+  // Lee el rol del usuario logueado en el portal desde la sesión.
+  function detectRole() {
+    try {
+      const sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
+      if (sess && sess.id && typeof AUTH !== 'undefined' && AUTH.users && AUTH.users[sess.id]) {
+        return AUTH.users[sess.id].role || 'admin';
+      }
+    } catch(e) {}
+    return 'admin';
+  }
+
+  // Departamentos visibles para el rol actual.
+  function allowedDepts() { return ROLE_DEPTS[currentRole] || ROLE_DEPTS.admin; }
+  // ¿El rol actual ve todo? (admin / master)
+  function seesAll() { return allowedDepts().length >= 3; }
+  // Filtra un arreglo de tareas dejando solo las visibles para el rol actual.
+  function visibleForRole(arr) {
+    if (seesAll()) return arr;
+    const ok = allowedDepts();
+    return arr.filter(t => ok.includes(t.dept));
+  }
 
   /* ── Responsables iniciales (desde Excel LISTAS) ────── */
   const SEED_RESP = [
@@ -3600,6 +3793,7 @@ const GT = (() => {
   let adminPass   = DEFAULT_PASS;
   let nextId      = 200;
   let editingId   = null;
+  let adminUnlocked = false;   // true tras validar la contraseña admin del Gestor
 
   /* ── Firebase (sincronización entre dispositivos) ───── */
   const FIREBASE_CONFIG = {
@@ -3680,10 +3874,11 @@ const GT = (() => {
 
   /* ── Stats ──────────────────────────────────────────── */
   function stats() {
-    const c = tasks.filter(t => t.estado === 'COMPLETO').length;
-    const i = tasks.filter(t => t.estado === 'INCOMPLETO').length;
-    const p = tasks.filter(t => t.estado === 'PENDIENTE').length;
-    const n = tasks.length;
+    const vis = visibleForRole(tasks);
+    const c = vis.filter(t => t.estado === 'COMPLETO').length;
+    const i = vis.filter(t => t.estado === 'INCOMPLETO').length;
+    const p = vis.filter(t => t.estado === 'PENDIENTE').length;
+    const n = vis.length;
     return { c, i, p, n, pct: n ? Math.round(c / n * 100) : 0 };
   }
 
@@ -3736,7 +3931,7 @@ const GT = (() => {
   /* ── Bars by responsable ────────────────────────────── */
   function renderBars() {
     const map = {};
-    tasks.forEach(t => {
+    visibleForRole(tasks).forEach(t => {
       if (!map[t.resp]) map[t.resp] = {c:0,i:0,p:0};
       map[t.resp][t.estado==='COMPLETO'?'c':t.estado==='INCOMPLETO'?'i':'p']++;
     });
@@ -3779,7 +3974,7 @@ const GT = (() => {
   function buildRespFilter() {
     const sel = document.getElementById('gt-f-resp');
     const cur = sel.value;
-    const active = [...new Set(tasks.map(t => t.resp))].sort();
+    const active = [...new Set(visibleForRole(tasks).map(t => t.resp))].sort();
     sel.innerHTML = '<option value="">Todos los responsables</option>' +
       active.map(r => `<option${r===cur?' selected':''}>${esc(r)}</option>`).join('');
   }
@@ -3795,15 +3990,33 @@ const GT = (() => {
     const fE = document.getElementById('gt-f-est').value;
     const fD = document.getElementById('gt-f-dept').value;
     const fR = document.getElementById('gt-f-resp').value;
-    const visible = tasks.filter(t => {
+    const base = visibleForRole(tasks);  // primero limita por área del rol
+    const visible = base.filter(t => {
       const mQ = !q || t.tarea.toLowerCase().includes(q)||(t.obs||'').toLowerCase().includes(q)||t.resp.toLowerCase().includes(q);
       return mQ && (!fE||t.estado===fE) && (!fD||t.dept===fD) && (!fR||t.resp===fR);
     });
     const info = document.getElementById('gt-results-info');
     const filtered = q||fE||fD||fR;
     info.style.display = filtered ? 'block' : 'none';
-    if (filtered) info.textContent = `Mostrando ${visible.length} de ${tasks.length} tareas`;
+    if (filtered) info.textContent = `Mostrando ${visible.length} de ${base.length} tareas`;
     const list = document.getElementById('gt-task-list');
+    // Activa/desactiva la columna de eliminar según el estado admin
+    const wrap = list.closest('.gt-table-wrap');
+    if (wrap) wrap.classList.toggle('gt-admin-mode', adminUnlocked);
+    // Agrega/quita el encabezado de la columna eliminar
+    const head = wrap ? wrap.querySelector('.gt-table-head') : null;
+    if (head) {
+      let delTh = head.querySelector('.gt-th-del');
+      if (adminUnlocked && !delTh) {
+        delTh = document.createElement('div');
+        delTh.className = 'gt-th gt-th-del';
+        delTh.style.textAlign = 'center';
+        delTh.textContent = '🗑';
+        head.appendChild(delTh);
+      } else if (!adminUnlocked && delTh) {
+        delTh.remove();
+      }
+    }
     if (!visible.length) {
       list.innerHTML = '<div class="gt-empty">Sin tareas que coincidan con los filtros.</div>';
       return;
@@ -3824,6 +4037,7 @@ const GT = (() => {
         <div class="gt-col-dept">${deptBadge(t.dept)}</div>
         <div class="gt-col-resp gt-resp-cell">${esc(t.resp)}</div>
         <div class="gt-status-cell" onclick="GT.cycleStatus(${t.id})" title="Click para cambiar estado">${statusBadge(t.estado)}</div>
+        ${adminUnlocked ? `<div class="gt-del-cell"><button class="gt-row-del" onclick="GT.deleteTask(${t.id})" title="Eliminar esta tarea">🗑</button></div>` : ''}
       </div>`;
     }).join('');
   }
@@ -3860,11 +4074,13 @@ const GT = (() => {
     } else {
       buildModalRespSel('');
       document.getElementById('gm-tarea').value  = '';
-      document.getElementById('gm-dept').value   = 'Administrativo';
+      document.getElementById('gm-dept').value   = seesAll() ? 'Administrativo' : allowedDepts()[0];
       document.getElementById('gm-estado').value = 'PENDIENTE';
       document.getElementById('gm-fecha').value  = today();
       document.getElementById('gm-obs').value    = '';
     }
+    // Un rol de área solo puede crear/editar tareas de su propio departamento.
+    document.getElementById('gm-dept').disabled = !seesAll();
     show('gt-modal-bg');
   }
 
@@ -3908,8 +4124,10 @@ const GT = (() => {
     const val   = document.getElementById('gt-pin-input').value;
     const errEl = document.getElementById('gt-pin-error');
     if (val === adminPass) {
+      adminUnlocked = true;   // habilita eliminar tareas una por una
       closePin();
       openAdmin();
+      applyFilters();          // re-render para mostrar los botones 🗑
     } else {
       errEl.textContent = 'Contraseña incorrecta. Intente de nuevo.';
       const inp = document.getElementById('gt-pin-input');
@@ -3979,6 +4197,20 @@ const GT = (() => {
     renderRespList();
   }
 
+  /* ── Eliminar tarea individual (solo admin) ─────────── */
+  function deleteTask(id) {
+    if (!adminUnlocked) {
+      alert('Para eliminar tareas, primero ingrese al panel de administración (🔒 Admin).');
+      return;
+    }
+    const t = tasks.find(t => t.id === id);
+    if (!t) return;
+    const resumen = `#${t.id} — ${t.tarea}`;
+    if (!confirm('¿Eliminar esta tarea?\n\n' + resumen + '\n\nEsta acción no se puede deshacer.')) return;
+    tasks = tasks.filter(t => t.id !== id);
+    save(); renderAll();
+  }
+
   /* ── Reset / Clear ──────────────────────────────────── */
   function resetTasks() {
     if (!confirm('¿Limpiar todas las tareas?\n\nEl cuadro quedará vacío para ingresar registros nuevos.\nEsta acción no se puede deshacer.')) return;
@@ -4017,8 +4249,32 @@ const GT = (() => {
     renderKPIs(); renderDonut(); renderBars(); buildRespFilter(); applyFilters();
   }
 
+  // Ajusta el dropdown de filtro "departamento" según el rol:
+  // las áreas no-admin solo ven su propio departamento (sin opción de elegir otro).
+  function applyRoleToDeptFilter() {
+    const sel = document.getElementById('gt-f-dept');
+    if (!sel) return;
+    if (seesAll()) {
+      sel.innerHTML = '<option value="">Todas las áreas</option>' +
+        ['Administrativo','Operativo','Contabilidad'].map(d => `<option value="${d}">${d}</option>`).join('');
+      sel.disabled = false;
+    } else {
+      const d = allowedDepts()[0];
+      sel.innerHTML = `<option value="${d}">${d}</option>`;
+      sel.value = d;
+      sel.disabled = true;   // el área no puede cambiar de departamento
+    }
+  }
+
   /* ── Init ───────────────────────────────────────────── */
-  function init() { load(); renderAll(); startRealtimeSync(); }
+  function init() {
+    currentRole  = detectRole();
+    adminUnlocked = false;     // cada vez que se entra al Gestor se re-bloquea eliminar
+    load();
+    applyRoleToDeptFilter();
+    renderAll();
+    startRealtimeSync();
+  }
 
   return {
     init, applyFilters, clearFilters, cycleStatus,
@@ -4026,11 +4282,9 @@ const GT = (() => {
     openPin, closePin, closePinBg, checkPin,
     openAdmin, closeAdmin, closeAdminBg,
     addResponsable, removeResponsable,
-    resetTasks, changePass
+    resetTasks, changePass, deleteTask
   };
 })();
-
-GT.init();
 </script>
 
 
@@ -4070,16 +4324,16 @@ GT.init();
 </div>
 
 <!-- ══ HISTORY MODAL ══ -->
-<div class="modal-bg" id="ckops-histModal">
+<div class="modal-bg" id="ckops-histModal" onclick="if(event.target===this)this.classList.remove('show')">
   <div class="modal">
     <h3>Historial del punto</h3>
     <div id="ckops-histBody"></div>
-    <button class="modal-close" onclick="document.getElementById('histModal').classList.remove('show')">Cerrar</button>
+    <button class="modal-close" onclick="document.getElementById('ckops-histModal').classList.remove('show')">Cerrar</button>
   </div>
 </div>
 
 <!-- ══ PEOPLE MODAL ══ -->
-<div class="modal-bg" id="ckops-peopleModal">
+<div class="modal-bg" id="ckops-peopleModal" onclick="if(event.target===this)this.classList.remove('show')">
   <div class="modal">
     <h3>Gestionar personas y PINs</h3>
     <div id="ckops-peopleList"></div>
@@ -4089,7 +4343,7 @@ GT.init();
       <button onclick="addPerson()">Agregar</button>
     </div>
     <p style="font-size:10px;color:#aaa;margin-top:8px">El PIN identifica a la persona — no es seguridad de datos sensibles.</p>
-    <button class="modal-close" onclick="document.getElementById('peopleModal').classList.remove('show')">Cerrar</button>
+    <button class="modal-close" onclick="document.getElementById('ckops-peopleModal').classList.remove('show')">Cerrar</button>
   </div>
 </div>
 
@@ -4113,6 +4367,7 @@ GT.init();
         <button class="vtab" id="ckops-tab_gracia" onclick="switchVessel('gracia',this)">María de Gracia</button>
       </div>
       <button class="hdr-btn" id="ckops-peopleBtn" style="display:none" onclick="openPeople()">⚙ Personas</button>
+      <button class="hdr-btn" onclick="exportCumplimientoPDF()" title="Descargar reporte de cumplimiento en PDF">📄 PDF</button>
       <button class="hdr-btn" onclick="resetVessel()">↺ Reiniciar</button>
       <div class="sync-pill"><span class="sync-dot" id="ckops-syncDot"></span><span id="ckops-syncLbl">…</span></div>
     </div>
@@ -5095,6 +5350,128 @@ function resetVessel(){
 }
 
 /* ══════════════════════════════════════════
+   REPORTE PDF DE CUMPLIMIENTO
+   Genera una vista imprimible y abre el diálogo
+   "Guardar como PDF" del navegador.
+   ══════════════════════════════════════════ */
+function exportCumplimientoPDF(){
+  const vname = currentVessel==='fatima' ? 'María Fátima' : 'María de Gracia';
+  const trip  = vesselState()._trip || {};
+  const hoy   = new Date();
+  const p = n => String(n).padStart(2,'0');
+  const fechaGen = p(hoy.getDate())+'/'+p(hoy.getMonth()+1)+'/'+hoy.getFullYear()+' '+p(hoy.getHours())+':'+p(hoy.getMinutes());
+  const fmtD = s => { if(!s) return '—'; const d=new Date(s+'T00:00:00'); return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear(); };
+
+  // ── Recolectar datos por área ──
+  let totalAll=0, doneAll=0;
+  const areasHtml = AREAS.map(area=>{
+    const ad = areaData(area.id);
+    let rows='';
+    let aTotal=0, aDone=0;
+    area.sections.forEach((sec,secIdx)=>{
+      const items = getSectionItems(area, secIdx);
+      if(!items.length) return;
+      rows += `<tr class="sec-row"><td colspan="4">${escH(sec.head||'')}</td></tr>`;
+      items.forEach(it=>{
+        const ss = ad.steps[it.id] || {};
+        const done = !!ss.done;
+        aTotal++; totalAll++;
+        if(done){ aDone++; doneAll++; }
+        const lastMark = (ss.hist||[]).filter(h=>h.action==='marcado').slice(-1)[0];
+        const quien = done ? (lastMark?escH(lastMark.by):(ss.resp?escH(ss.resp):'—')) : (ss.resp?escH(ss.resp):'—');
+        const cuando = done && lastMark ? fmtDt(lastMark.at) : '—';
+        rows += `<tr>
+          <td class="c-chk">${done?'<span class="ok">✔</span>':'<span class="no">○</span>'}</td>
+          <td class="c-txt">${escH(it.text||'')}</td>
+          <td class="c-resp">${quien}</td>
+          <td class="c-when">${cuando}</td>
+        </tr>`;
+      });
+    });
+    if(!aTotal) return '';
+    const pct = aTotal?Math.round(aDone/aTotal*100):0;
+    return `<div class="area-block">
+      <div class="area-head">
+        <span class="area-title">${escH(area.title)}</span>
+        <span class="area-prog">${aDone}/${aTotal} · ${pct}%</span>
+      </div>
+      <table class="ctab">
+        <thead><tr><th class="c-chk"></th><th>Ítem</th><th class="c-resp">Responsable</th><th class="c-when">Marcado</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+
+  const pctAll = totalAll?Math.round(doneAll/totalAll*100):0;
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Cumplimiento — ${escH(vname)}${trip.id?(' — Viaje '+escH(trip.id)):''}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,Helvetica,sans-serif;color:#1a1a18;padding:26px 30px;font-size:11px}
+  .rpt-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1F4E79;padding-bottom:12px;margin-bottom:16px}
+  .rpt-title{font-size:19px;font-weight:800;color:#1F4E79;letter-spacing:.5px}
+  .rpt-sub{font-size:11px;color:#666;margin-top:3px}
+  .rpt-meta{text-align:right;font-size:10px;color:#555;line-height:1.7}
+  .rpt-meta b{color:#1a1a18}
+  .summary{display:flex;gap:10px;margin-bottom:18px}
+  .sum-card{flex:1;border:1px solid #d5dee8;border-radius:8px;padding:10px 12px;background:#f4f7fb}
+  .sum-num{font-size:22px;font-weight:800;color:#1F4E79}
+  .sum-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:#888;margin-top:2px}
+  .sum-bar{height:9px;background:#e2e8f0;border-radius:5px;overflow:hidden;margin-top:6px}
+  .sum-fill{height:100%;background:linear-gradient(90deg,#1D9E75,#2E75B6)}
+  .area-block{margin-bottom:15px;break-inside:avoid}
+  .area-head{display:flex;justify-content:space-between;align-items:center;background:#1F4E79;color:#fff;padding:6px 11px;border-radius:6px 6px 0 0}
+  .area-title{font-size:12px;font-weight:700}
+  .area-prog{font-size:11px;font-weight:700;opacity:.92}
+  table.ctab{width:100%;border-collapse:collapse;border:1px solid #d5dee8;border-top:none}
+  .ctab th{background:#2E75B6;color:#fff;font-size:9px;text-transform:uppercase;letter-spacing:.4px;padding:5px 8px;text-align:left;font-weight:700}
+  .ctab td{padding:5px 8px;border-bottom:1px solid #eef2f6;vertical-align:top}
+  .ctab tr:nth-child(even) td{background:#fafcfe}
+  .sec-row td{background:#eaf0f6!important;font-weight:700;color:#1F4E79;font-size:10px;padding:5px 8px}
+  .c-chk{width:26px;text-align:center}
+  .c-resp{width:130px;color:#444}
+  .c-when{width:120px;color:#777;font-size:10px}
+  .ok{color:#1D9E75;font-weight:800;font-size:13px}
+  .no{color:#c9c9c9;font-size:13px}
+  .rpt-foot{margin-top:18px;padding-top:10px;border-top:1px solid #ddd;font-size:9px;color:#999;text-align:center}
+  @media print{body{padding:0}@page{margin:14mm}}
+</style></head><body>
+  <div class="rpt-head">
+    <div>
+      <div class="rpt-title">Reporte de Cumplimiento Operativo</div>
+      <div class="rpt-sub">${escH(vname)} · Checklist de Operaciones</div>
+    </div>
+    <div class="rpt-meta">
+      <div>N° Viaje: <b>${trip.id?escH(trip.id):'—'}</b></div>
+      <div>Arribo: <b>${fmtD(trip.arribo)}</b> · Descarga: <b>${fmtD(trip.descarga)}</b> · Zarpe: <b>${fmtD(trip.zarpe)}</b></div>
+      <div>Generado: <b>${fechaGen}</b></div>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="sum-card"><div class="sum-num">${pctAll}%</div><div class="sum-lbl">Cumplimiento total</div>
+      <div class="sum-bar"><div class="sum-fill" style="width:${pctAll}%"></div></div></div>
+    <div class="sum-card"><div class="sum-num">${doneAll}</div><div class="sum-lbl">Ítems completados</div></div>
+    <div class="sum-card"><div class="sum-num">${totalAll-doneAll}</div><div class="sum-lbl">Ítems pendientes</div></div>
+    <div class="sum-card"><div class="sum-num">${totalAll}</div><div class="sum-lbl">Total de ítems</div></div>
+  </div>
+
+  ${areasHtml || '<p style="color:#888">No hay ítems para reportar.</p>'}
+
+  <div class="rpt-foot">ATUNTRO S.A. — Documento generado automáticamente desde el Portal Operativo — ${fechaGen}</div>
+  <script>window.onload=function(){setTimeout(function(){window.print();},350);};<\/script>
+</body></html>`;
+
+  const w = window.open('', '_blank');
+  if(!w){ alert('El navegador bloqueó la ventana emergente. Permite las ventanas emergentes para descargar el PDF.'); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+
+/* ══════════════════════════════════════════
    UTILS
    ══════════════════════════════════════════ */
 function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -5157,6 +5534,7 @@ thresholds=loadThr();
   window.markTyping       = markTyping;
   window.onPinInput       = onPinInput;
   window.refreshUrgency   = refreshUrgency;
+  window.exportCumplimientoPDF = exportCumplimientoPDF;
   /* NOTE: toggleStep, updateNote, updateStepText, saveTripInfo are routed
      via Block 3 dispatchers — do NOT set window.X here or the dispatcher
      gets overridden. Expose via return object instead. */
@@ -6443,7 +6821,7 @@ function startRealtimeSync(){
   _fbHandler = snap => {
     const data = snap.val();
     if(!data) return; // nada remoto aun -- lo local se sube en el proximo persist()
-    state = data;
+    state = normalizeState(data);
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
     document.getElementById('eq-vesselSub').textContent = VESSEL_INFO[currentVessel];
     render();
@@ -6454,6 +6832,41 @@ function startRealtimeSync(){
 
 /* ============ STATE / STORAGE ============ */
 const STORAGE_KEY = 'atuntro_equipos_v1';
+
+// Garantiza que cada barco tenga todas las propiedades esperadas.
+// Sin esto, un estado guardado (viejo o remoto) al que le falte
+// 'categorias', 'winches', 'cables' o 'viajes' rompe el render de
+// Motores/Winches (forEach sobre undefined) y la pestaña "no abre".
+function normalizeVessel(v, seedFn){
+  if(!v || typeof v !== 'object') return seedFn();
+  if(!Array.isArray(v.viajes))      v.viajes = [];
+  if(!Array.isArray(v.categorias))  v.categorias = [];
+  if(!Array.isArray(v.winches))     v.winches = [];
+  if(!Array.isArray(v.cables))      v.cables = [];
+  // Firebase puede convertir arrays vacíos/dispersos en objetos: re-normalizar
+  ['viajes','categorias','winches','cables'].forEach(k=>{
+    if(v[k] && !Array.isArray(v[k])) v[k] = Object.values(v[k]);
+  });
+  v.categorias.forEach(cat=>{
+    if(!Array.isArray(cat.equipos)) cat.equipos = cat.equipos ? Object.values(cat.equipos) : [];
+    cat.equipos.forEach(e=>{ if(!e.horas || typeof e.horas!=='object') e.horas = {}; });
+  });
+  v.winches.forEach(w=>{
+    if(!w.horas  || typeof w.horas!=='object')  w.horas  = {};
+    if(!w.lances || typeof w.lances!=='object') w.lances = {};
+  });
+  v.cables.forEach(c=>{
+    if(!c.lances || typeof c.lances!=='object') c.lances = {};
+  });
+  return v;
+}
+function normalizeState(st){
+  if(!st || typeof st !== 'object') return { fatima: fatimaSeed(), gracia: graciaSeed() };
+  st.fatima = normalizeVessel(st.fatima, fatimaSeed);
+  st.gracia = normalizeVessel(st.gracia, graciaSeed);
+  return st;
+}
+
 let state = null;
 let currentVessel = 'fatima';
 let currentTab = 'resumen';
@@ -6461,7 +6874,7 @@ let currentTab = 'resumen';
 function loadState(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw) return JSON.parse(raw);
+    if(raw) return normalizeState(JSON.parse(raw));
   }catch(e){}
   return { fatima: fatimaSeed(), gracia: graciaSeed() };
 }
@@ -6608,6 +7021,7 @@ function refreshEquipoRow(catId,eqId){
 
 function renderMotoresTab(){
   const v = V();
+  if(!v.categorias) v.categorias = [];
   let html = '';
   v.categorias.forEach(cat=>{
     html += `<div class="panel">
@@ -6683,6 +7097,8 @@ function refreshWincheRow(id){
 }
 function renderWinchesTab(){
   const v = V();
+  if(!v.winches) v.winches = [];
+  if(!v.viajes) v.viajes = [];
   let html = `<div class="panel"><div class="panel-title">Winches</div>
   <div class="table-scroll"><table class="eqt"><thead>
   <tr><th rowspan="2" style="min-width:220px">Winche</th>
