@@ -60,6 +60,56 @@
     }
     .screen.active { display: flex; }
 
+    /* ═══════════════════════════════════════════════════════════
+       IMPRESIÓN — permitir que el contenido fluya en varias páginas.
+       Sin esto, el fondo fixed y las alturas 100vh hacen que el
+       navegador imprima solo la primera página (como captura).
+       ═══════════════════════════════════════════════════════════ */
+    @media print {
+      /* fondo decorativo fuera */
+      .bg, .waves { display: none !important; }
+      /* liberar alturas de viewport y overflow en todos los contenedores */
+      html, body {
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        background: #fff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      /* ocultar todas las pantallas… */
+      .screen { display: none !important; }
+      /* …salvo la activa, que fluye normalmente */
+      .screen.active {
+        display: block !important;
+        position: static !important;
+        min-height: 0 !important;
+        height: auto !important;
+        padding: 0 !important;
+        align-items: stretch !important;
+      }
+      /* neutralizar 100vh / overflow en los wraps de cada módulo */
+      .docs-wrap, .simulador-wrap, .ckops-wrap, .ckadm-wrap, .equipos-wrap,
+      .docs-wrap .app, .simulador-wrap .app {
+        min-height: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
+        width: 100% !important;
+        background: #fff !important;
+      }
+      /* ocultar campana/overlays flotantes */
+      .alert-bell-wrap, .gt-modal-overlay, .modal-bg, .ovl { display: none !important; }
+      /* evitar cortes feos dentro de tarjetas y filas de tabla */
+      .docs-wrap .panel, .docs-wrap .kpi, .docs-wrap tr { break-inside: avoid; page-break-inside: avoid; }
+      .docs-wrap table { width: 100% !important; }
+      /* ocultar botones y controles de edición al imprimir el control documental */
+      .docs-wrap .hbtns, .docs-wrap .btn-add, .docs-wrap .del-btn { display: none !important; }
+      .docs-wrap .save-dot { display: none !important; }
+      /* asegurar que los colores de estado se impriman */
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      @page { margin: 12mm; }
+    }
+
     /* ─── FADE ANIMATION ─────────────────────────────────────── */
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(24px); }
@@ -2342,7 +2392,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 /* ════════════════════════════════════════════
    CONTROL DE EQUIPOS — estilos con scope propio
 ════════════════════════════════════════════ */
-.equipos-wrap{min-width:0;width:100%}
+.equipos-wrap{min-width:0;width:100%;color:#1a1a18}
 .equipos-wrap .app{max-width:1180px;margin:0 auto;padding:20px}
 
 /* Header */
@@ -2420,7 +2470,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .equipos-wrap table.eqt td.td-equipo{white-space:normal;vertical-align:top}
 .equipos-wrap table.eqt textarea.nota-input{width:170px;min-height:26px;border:1.5px solid #e2e2de;border-radius:4px;font-size:11px;font-family:inherit;background:#f7f7f5;color:#666;padding:4px 6px;resize:vertical;outline:none;display:block}
 .equipos-wrap table.eqt textarea.nota-input:focus{border-color:#2E75B6;background:#fff}
-.equipos-wrap table.eqt select.estado-select{border:1.5px solid #e2e2de;border-radius:5px;padding:4px 5px;font-size:11px;font-family:inherit;background:#fff;outline:none}
+.equipos-wrap table.eqt select.estado-select{border:1.5px solid #e2e2de;border-radius:5px;padding:4px 5px;font-size:11px;font-family:inherit;background:#fff;color:#1a1a18;outline:none}
+.equipos-wrap table.eqt select.estado-select option{background:#fff;color:#1a1a18}
+.equipos-wrap .col-fill-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:4px;font-size:11px;line-height:1;padding:1px 5px;margin-left:4px;cursor:pointer;transition:.15s;vertical-align:middle}
+.equipos-wrap .col-fill-btn:hover{background:#fff;color:#2E75B6}
 .equipos-wrap .del-btn{width:22px;height:22px;border-radius:50%;border:none;background:#f2ede9;color:#a66;cursor:pointer;font-size:12px;line-height:1}
 .equipos-wrap .del-btn:hover{background:#D85A30;color:#fff}
 
@@ -2440,7 +2493,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 /* Resumen */
 .equipos-wrap .resumen-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:14px}
 @media(max-width:800px){.equipos-wrap .resumen-grid{grid-template-columns:1fr}}
-.equipos-wrap .attn-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0ee;font-size:12px}
+.equipos-wrap .attn-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0ee;font-size:12px;color:#1a1a18}
+.equipos-wrap .attn-row b{color:#1a1a18}
 .equipos-wrap .attn-row:last-child{border-bottom:none}
 .equipos-wrap .attn-name{font-weight:600}
 .equipos-wrap .attn-sub{font-size:10.5px;color:#999}
@@ -2637,6 +2691,188 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .simulador-wrap .talla-subrow .tl-tm{width:34px}
 .simulador-wrap .diff-input{width:48px}
 }
+
+/* ════════════════════════════════════════════════
+   CONTROL DOCUMENTAL — estilos con scope .docs-wrap
+   ════════════════════════════════════════════════ */
+#screen-documentos.screen.active{display:block;padding:0;min-height:100vh}
+.docs-wrap{width:100%;min-width:0;align-self:stretch;background:var(--atn-fondo,#f5f5f3);min-height:100vh}
+
+
+.docs-wrap{
+  
+  --atn-azul:            #1F4E79;   
+  --atn-azul-medio:      #2E75B6;   
+  --atn-azul-claro:      #E6F1FB;   
+  --atn-azul-texto:      #042C53;   
+  --atn-azul-borde:      #BDD7EE;   
+
+  
+  --atn-verde:           #1D9E75;   
+  --atn-verde-fondo:     #E1F5EE;
+  --atn-verde-texto:     #085041;
+
+  --atn-ambar:           #BA7517;   
+  --atn-ambar-fondo:     #FAEEDA;
+  --atn-ambar-texto:     #412402;
+
+  --atn-coral:           #D85A30;   
+  --atn-coral-fondo:     #FAECE7;
+  --atn-coral-texto:     #4A1B0C;
+
+  --atn-rojo:            #C0392B;   
+  --atn-rojo-fondo:      #FBE6DC;
+  --atn-rojo-texto:      #8F2A16;
+
+  --atn-morado:          #534AB7;   
+  --atn-morado-fondo:    #EEEDFE;
+  --atn-morado-texto:    #26215C;
+
+  --atn-neutro:          #7B7B78;   
+  --atn-neutro-fondo:    #EFEFED;
+  --atn-neutro-texto:    #4A4A47;
+
+  --atn-ok-dot:          #4AE3A8;   
+
+  
+  --atn-fondo:           #f5f5f3;
+  --atn-superficie:      #ffffff;
+  --atn-superficie-alt:  #f9f9f7;
+  --atn-tinta:           #1a1a18;
+  --atn-tinta-media:     #888888;
+  --atn-tinta-suave:     #aaaaaa;
+  --atn-linea:           rgba(0,0,0,.06);
+  --atn-linea-fuerte:    #e8e6e0;
+
+  
+  --atn-editable:        #0000FF;
+  --atn-clave:           #000080;
+
+  
+  --atn-font: 'Segoe UI', Arial, sans-serif;
+  --atn-t-titulo:   17px;   
+  --atn-t-seccion:  12px;   
+  --atn-t-cuerpo:   13px;
+  --atn-t-dato:     12.5px;
+  --atn-t-micro:    10px;   
+
+  
+  --atn-r-cabecera: 12px;
+  --atn-r-panel:    10px;
+  --atn-r-campo:     7px;
+  --atn-r-pill:     16px;
+  --atn-sombra:     0 1px 4px rgba(0,0,0,.07);
+  --atn-sombra-alta:0 3px 10px rgba(0,0,0,.12);
+  --atn-espacio:    14px;  
+  --atn-transicion: .2s;
+}
+.docs-wrap *{box-sizing:border-box;margin:0;padding:0}
+.docs-wrap{font-family:var(--atn-font);background:var(--atn-fondo);color:var(--atn-tinta);min-height:100vh}
+.docs-wrap .app{max-width:1240px;margin:0 auto;padding:20px}
+.docs-wrap .header{background:var(--atn-azul);border-radius:12px;padding:18px 22px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.docs-wrap .header h1{font-size:17px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px}
+.docs-wrap .header p{font-size:11px;color:#a8c4e0;margin-top:3px}
+.docs-wrap .hbtns{display:flex;gap:8px;flex-wrap:wrap}
+.docs-wrap .hbtn{font-size:11px;padding:7px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.35);background:transparent;color:rgba(255,255,255,.85);cursor:pointer;transition:.2s;font-family:inherit}
+.docs-wrap .hbtn:hover{background:rgba(255,255,255,.18)}
+.docs-wrap .hbtn.primary{background:#fff;color:var(--atn-azul);font-weight:700;border-color:#fff}
+.docs-wrap .hbtn.primary:hover{background:#e8f0f8}
+.docs-wrap .save-dot{width:8px;height:8px;border-radius:50%;background:var(--atn-ok-dot);display:inline-block;opacity:0;transition:opacity .3s}
+.docs-wrap .save-dot.show{opacity:1}
+.docs-wrap .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.docs-wrap .kpi{background:#fff;border-radius:10px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer;transition:.2s;border-left:4px solid #ccc;text-align:left}
+.docs-wrap .kpi:hover{box-shadow:0 3px 10px rgba(0,0,0,.12);transform:translateY(-1px)}
+.docs-wrap .kpi.sel{outline:2px solid var(--atn-azul-medio);outline-offset:-2px}
+.docs-wrap .kpi-num{font-size:26px;font-weight:700;line-height:1}
+.docs-wrap .kpi-lab{font-size:10.5px;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-top:6px;font-weight:700}
+.docs-wrap .k-venc{border-left-color:var(--atn-rojo)}
+.docs-wrap .k-venc .kpi-num{color:var(--atn-rojo)}
+.docs-wrap .k-pv{border-left-color:var(--atn-coral)}
+.docs-wrap .k-pv .kpi-num{color:var(--atn-coral)}
+.docs-wrap .k-at{border-left-color:var(--atn-ambar)}
+.docs-wrap .k-at .kpi-num{color:var(--atn-ambar)}
+.docs-wrap .k-vig{border-left-color:var(--atn-verde)}
+.docs-wrap .k-vig .kpi-num{color:var(--atn-verde)}
+.docs-wrap .k-sf{border-left-color:var(--atn-neutro)}
+.docs-wrap .k-sf .kpi-num{color:var(--atn-neutro)}
+.docs-wrap .k-perm{border-left-color:var(--atn-morado)}
+.docs-wrap .k-perm .kpi-num{color:var(--atn-morado)}
+.docs-wrap .panel{background:#fff;border-radius:10px;padding:16px 20px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.docs-wrap .panel-title{font-size:12px;font-weight:700;color:var(--atn-azul);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.docs-wrap .panel-title span.sub{font-size:10px;color:#aaa;text-transform:none;letter-spacing:0;font-weight:500}
+.docs-wrap .btn-add{background:var(--atn-verde);color:#fff;border:none;border-radius:16px;padding:7px 16px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s}
+.docs-wrap .btn-add:hover{background:#178360}
+.docs-wrap .filters{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
+.docs-wrap .f{display:flex;flex-direction:column;gap:4px}
+.docs-wrap .f label{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.6px}
+.docs-wrap .f select, .docs-wrap .f input{border:1.5px solid rgba(0,0,0,.12);border-radius:7px;padding:7px 10px;font-size:12.5px;font-family:inherit;background:var(--atn-superficie-alt);outline:none;transition:.2s;min-width:150px}
+.docs-wrap .f select:focus, .docs-wrap .f input:focus{border-color:var(--atn-azul-medio);background:#fff}
+.docs-wrap .chip-row{display:flex;gap:6px;flex-wrap:wrap}
+.docs-wrap .chip{padding:6px 13px;border-radius:16px;border:1.5px solid rgba(0,0,0,.12);background:#fff;font-size:11.5px;cursor:pointer;transition:.2s;font-family:inherit;color:#555}
+.docs-wrap .chip.on{background:var(--atn-azul);border-color:var(--atn-azul);color:#fff;font-weight:600}
+.docs-wrap .tl-row{display:grid;grid-template-columns:230px 1fr 70px;gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.05)}
+.docs-wrap .tl-row:last-child{border-bottom:none}
+.docs-wrap .tl-name{font-size:11.5px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.docs-wrap .tl-name em{font-style:normal;color:#aaa;font-size:10px}
+.docs-wrap .tl-track{background:#eeece6;height:14px;border-radius:7px;overflow:hidden}
+.docs-wrap .tl-bar{height:100%;border-radius:7px;transition:width .5s ease}
+.docs-wrap .tl-days{font-size:11px;font-weight:700;text-align:right;white-space:nowrap}
+.docs-wrap .months{display:flex;gap:6px;align-items:flex-end;height:130px;overflow-x:auto;padding-top:6px}
+.docs-wrap .mcol{flex:1;min-width:38px;display:flex;flex-direction:column;align-items:center;gap:4px;justify-content:flex-end;height:100%}
+.docs-wrap .mbar{width:100%;background:linear-gradient(180deg,var(--atn-azul-medio),var(--atn-azul));border-radius:4px 4px 0 0;min-height:3px;transition:.4s}
+.docs-wrap .mbar.warn{background:linear-gradient(180deg,#E67E22,var(--atn-rojo))}
+.docs-wrap .mval{font-size:11px;font-weight:700;color:var(--atn-azul)}
+.docs-wrap .mlab{font-size:9.5px;color:#999;white-space:nowrap}
+.docs-wrap .tbl-wrap{overflow-x:auto}
+.docs-wrap table{width:100%;border-collapse:collapse;font-size:13px;min-width:900px}
+.docs-wrap th{background:transparent;color:#aaa;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:0 8px 9px;text-align:left;cursor:pointer;white-space:nowrap;user-select:none;border-bottom:1.5px solid var(--atn-linea-fuerte);transition:color .2s}
+.docs-wrap th:hover{color:var(--atn-azul-medio)}
+.docs-wrap th.nosort{cursor:default}
+.docs-wrap th.nosort:hover{color:#aaa}
+.docs-wrap td{padding:9px 8px;border-bottom:1px solid rgba(0,0,0,.06);vertical-align:middle;background:#fff;transition:background .15s}
+.docs-wrap tbody tr:last-child td{border-bottom:none}
+.docs-wrap tbody tr:hover td{background:var(--atn-superficie-alt)}
+.docs-wrap tbody tr.nueva td{background:#fdfaf0}
+.docs-wrap td.accent{border-left:3px solid transparent;padding-left:12px}
+.docs-wrap .pill{display:inline-block;font-size:10px;font-weight:600;padding:2px 9px;border-radius:10px;white-space:nowrap}
+.docs-wrap .p-venc{background:var(--atn-coral-fondo);color:var(--atn-rojo-texto)}
+.docs-wrap .p-pv{background:var(--atn-rojo-fondo);color:#8A3410}
+.docs-wrap .p-at{background:var(--atn-ambar-fondo);color:var(--atn-ambar-texto)}
+.docs-wrap .p-vig{background:var(--atn-verde-fondo);color:var(--atn-verde-texto)}
+.docs-wrap .p-sf{background:var(--atn-neutro-fondo);color:var(--atn-neutro-texto)}
+.docs-wrap .p-perm{background:var(--atn-morado-fondo);color:var(--atn-morado-texto)}
+.docs-wrap .cell-in{border:none;border-bottom:1.5px solid transparent;background:transparent;font-family:inherit;font-size:13px;color:var(--atn-tinta);padding:2px 0;outline:none;width:100%;min-width:90px;transition:.2s;line-height:1.4}
+.docs-wrap .cell-in:hover{border-bottom-color:#e0ded8}
+.docs-wrap .cell-in:focus{border-bottom-color:var(--atn-azul-medio)}
+.docs-wrap select.cell-in{color:var(--atn-tinta);cursor:pointer}
+.docs-wrap td input[type=date].cell-in{color:#555;font-size:12.5px}
+.docs-wrap .cell-in.vacio{border-bottom-color:#E8B4A4}
+.docs-wrap .cell-in.vacio::placeholder{color:var(--atn-rojo);opacity:.55}
+.docs-wrap .del-btn{background:none;border:none;color:#dcdad4;font-size:14px;cursor:pointer;padding:3px 7px;border-radius:6px;line-height:1;transition:.15s;opacity:0}
+.docs-wrap tbody tr:hover .del-btn{opacity:1}
+.docs-wrap .del-btn:hover{background:var(--atn-coral-fondo);color:var(--atn-rojo)}
+.docs-wrap .dias-cell{font-weight:700;text-align:center;font-size:12.5px}
+.docs-wrap .empty{text-align:center;color:#aaa;font-size:12px;padding:26px}
+.docs-wrap .footer{text-align:center;font-size:11px;color:#bbb;margin:18px 0 10px}
+.docs-wrap .legend{font-size:10.5px;color:#999;margin-top:10px;line-height:1.6}
+.docs-wrap .ovl{display:none;position:fixed;inset:0;background:rgba(20,20,18,.5);z-index:50;align-items:center;justify-content:center;padding:16px}
+.docs-wrap .ovl.on{display:flex}
+.docs-wrap .modal{background:#fff;border-radius:12px;padding:22px;max-width:460px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.docs-wrap .modal h3{font-size:14px;color:var(--atn-azul);margin-bottom:14px}
+.docs-wrap .mf{display:flex;flex-direction:column;gap:4px;margin-bottom:11px}
+.docs-wrap .mf label{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.6px}
+.docs-wrap .mf input, .docs-wrap .mf select{border:1.5px solid rgba(0,0,0,.12);border-radius:7px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;background:var(--atn-superficie-alt)}
+.docs-wrap .mf input:focus, .docs-wrap .mf select:focus{border-color:var(--atn-azul-medio);background:#fff}
+.docs-wrap .mrow{display:flex;gap:10px}
+.docs-wrap .mrow .mf{flex:1}
+.docs-wrap .mbtns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.docs-wrap .mbtn{padding:9px 18px;border-radius:8px;border:none;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.docs-wrap .mbtn.ghost{background:#f0efec;color:#666}
+.docs-wrap .mbtn.go{background:var(--atn-azul);color:#fff}
+@media(max-width:640px){.docs-wrap .tl-row{grid-template-columns:130px 1fr 56px}
+.docs-wrap .kpi-num{font-size:22px}
+.docs-wrap .mrow{flex-direction:column;gap:0}}
+@media print{.docs-wrap .hbtns, .docs-wrap .btn-add, .docs-wrap .del-btn, .docs-wrap .chip-row{display:none}}
 </style>
 </head>
 <body>
@@ -3171,6 +3407,19 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
         linkLabel: 'Próximamente',
       },
       {
+        id: 'documentos',
+        title: 'Control Documental',
+        desc: 'Vigencias de documentos y certificados por embarcación: vencimientos, alertas por estado y línea de tiempo. Base compartida en tiempo real.',
+        icon: '📄',
+        iconColor: 'teal',
+        color: 'color-teal',
+        status: 'active',
+        roles: ['operaciones','admin','contabilidad','master'],
+        vessels: ['María Fátima','María de Gracia'],
+        onclick: 'openDocumentos()',
+        linkLabel: 'Abrir control documental',
+      },
+      {
         id: 'equipos',
         title: 'Control de Equipos',
         desc: 'Horómetros de motores y equipos, uso de winches y estado de cables por buque, con respaldo a Excel.',
@@ -3210,7 +3459,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
         color: 'color-green',
         status: 'active',
         roles: ['admin','master'],
-        vessels: ['María Fátima'],
+        vessels: ['María Fátima','María de Gracia'],
         onclick: 'openSimulador()',
         linkLabel: 'Abrir simulador',
       },
@@ -3293,7 +3542,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
   // ── Navigation ──────────────────────────────────────────────────────────────
   function hideAllScreens() {
-    ['screen-login','screen-dashboard','screen-gestor','screen-checklist-ops','screen-checklist-adm','screen-equipos','screen-simulador'].forEach(function(id){
+    ['screen-login','screen-dashboard','screen-gestor','screen-checklist-ops','screen-checklist-adm','screen-equipos','screen-simulador','screen-documentos'].forEach(function(id){
       var el = document.getElementById(id);
       if (el) el.classList.remove('active');
     });
@@ -3347,6 +3596,18 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     setTimeout(function(){
       if (typeof SIMULADOR !== 'undefined') { try { SIMULADOR.init(); } catch(e){} }
     }, 100);
+  }
+  function openDocumentos() {
+    hideAllScreens();
+    document.getElementById('screen-documentos').classList.add('active');
+    window.scrollTo(0,0);
+    setTimeout(function(){
+      if (typeof DOCS !== 'undefined') { try { DOCS.init(); } catch(e){} }
+    }, 100);
+  }
+  function goBackFromDocumentos() {
+    var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
+    if (sess && AUTH.users[sess.id]) { enterDashboard(AUTH.users[sess.id].role); } else { logout(); }
   }
   function goBackFromSimulador() {
     var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
@@ -6839,6 +7100,10 @@ function startRealtimeSync(){
   _fbHandler = snap => {
     const data = snap.val();
     if(!data) return; // nada remoto aun -- lo local se sube en el proximo persist()
+    const json = JSON.stringify(data);
+    if(json === _lastRemoteJSON) return;   // es el eco de nuestro propio guardado
+    if(_isTyping) return;                    // no reconstruir la tabla mientras se escribe
+    _lastRemoteJSON = json;
     state = normalizeState(data);
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
     document.getElementById('eq-vesselSub').textContent = VESSEL_INFO[currentVessel];
@@ -6889,6 +7154,11 @@ let state = null;
 let currentVessel = 'fatima';
 let currentTab = 'resumen';
 
+// Control de escritura: evita que el sync remoto reconstruya la tabla
+// mientras el usuario está escribiendo (causaba perder el foco tras cada dígito).
+let _isTyping = false, _typingTO = null, _saveDebounce = null, _lastRemoteJSON = null;
+function _markTyping(){ _isTyping = true; clearTimeout(_typingTO); _typingTO = setTimeout(()=>{ _isTyping = false; }, 900); }
+
 function loadState(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -6901,8 +7171,14 @@ function persist(){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     flashSave();
   }catch(e){}
-  const db = _getDb();
-  if(db){ db.ref(FB_PATH).set(state).catch(()=>{}); }
+  const json = JSON.stringify(state);
+  if(json === _lastRemoteJSON) return;   // nada cambió respecto a lo remoto
+  clearTimeout(_saveDebounce);
+  _saveDebounce = setTimeout(()=>{
+    _lastRemoteJSON = json;
+    const db = _getDb();
+    if(db){ db.ref(FB_PATH).set(state).catch(()=>{}); }
+  }, 600);
 }
 function flashSave(){
   const d=document.getElementById('eq-saveDot');
@@ -7014,15 +7290,18 @@ function findEquipo(catId,eqId){
   return c ? c.equipos.find(e=>e.id===eqId) : null;
 }
 function updateEquipoField(catId,eqId,field,val){
+  _markTyping();
   const e = findEquipo(catId,eqId); if(!e) return;
   e[field] = val;
   persist();
   refreshEquipoRow(catId,eqId);
 }
 function updateEquipoHoras(catId,eqId,viajeId,val){
+  _markTyping();
   const e = findEquipo(catId,eqId); if(!e) return;
   if(val==='') delete e.horas[viajeId]; else e.horas[viajeId]=val;
   persist();
+  refreshEquipoRow(catId,eqId);
 }
 function setEquipoEstadoManual(catId,eqId,val){
   const e = findEquipo(catId,eqId); if(!e) return;
@@ -7097,6 +7376,7 @@ function deleteWinche(id){
 function findWinche(id){ return V().winches.find(w=>w.id===id); }
 function updateWincheNombre(id,val){ const w=findWinche(id); if(w){w.nombre=val; persist();} }
 function updateWincheVal(id,tipo,viajeId,val){
+  _markTyping();
   const w=findWinche(id); if(!w) return;
   const obj = tipo==='horas'?w.horas:w.lances;
   if(val==='') delete obj[viajeId]; else obj[viajeId]=val;
@@ -7104,6 +7384,26 @@ function updateWincheVal(id,tipo,viajeId,val){
   refreshWincheRow(id);
 }
 function setWincheEstadoManual(id,val){ const w=findWinche(id); if(w){w.estadoManual=val; persist(); refreshWincheRow(id);} }
+
+// Aplica un mismo número de lances a TODA la columna de un viaje.
+// tipo: 'winches' o 'cables'. Cada celda queda editable después por si
+// hubo algún cambio durante el viaje.
+function fillLancesColumna(tipo, viajeId){
+  const v = V();
+  const lista = tipo==='winches' ? v.winches : v.cables;
+  if(!lista || !lista.length){ alert('No hay '+(tipo==='winches'?'winches':'cables')+' registrados todavía.'); return; }
+  const viaje = v.viajes.find(vj=>vj.id===viajeId);
+  const etiqueta = viaje ? viaje.id : viajeId;
+  const actual = prompt('Número de lances para el viaje '+etiqueta+'\n\nSe aplicará a los '+lista.length+' '+(tipo==='winches'?'winches':'cables')+' de esta columna.\nLuego puedes ajustar cualquiera manualmente.', '');
+  if(actual===null) return;            // canceló
+  const val = actual.trim();
+  lista.forEach(item=>{
+    if(val==='') delete item.lances[viajeId];
+    else item.lances[viajeId] = val;
+  });
+  persist();
+  render();
+}
 function refreshWincheRow(id){
   const w=findWinche(id); if(!w) return;
   const est = calcEstadoWinche(w);
@@ -7123,7 +7423,7 @@ function renderWinchesTab(){
     ${v.viajes.map(vj=>`<th colspan="2">${viajeHeaderHtml(vj)}</th>`).join('')}
     <th rowspan="2">Total horas</th><th rowspan="2">Total lances</th><th rowspan="2">Estado</th><th rowspan="2"></th>
   </tr>
-  <tr>${v.viajes.map(()=>`<th class="sub">Horas</th><th class="sub">Lances</th>`).join('')}</tr>
+  <tr>${v.viajes.map(vj=>`<th class="sub">Horas</th><th class="sub">Lances <button class="col-fill-btn" title="Aplicar un mismo número de lances a todos los winches de este viaje" onclick="EQUIPOS.fillLancesColumna('winches','${vj.id}')">⤓</button></th>`).join('')}</tr>
   </thead><tbody>`;
   v.winches.forEach(w=>{
     const est = calcEstadoWinche(w);
@@ -7154,8 +7454,9 @@ function deleteCable(id){
   V().cables = V().cables.filter(c=>c.id!==id); persist(); render();
 }
 function findCable(id){ return V().cables.find(c=>c.id===id); }
-function updateCableField(id,field,val){ const c=findCable(id); if(!c) return; c[field]=val; persist(); refreshCableRow(id); }
+function updateCableField(id,field,val){ _markTyping(); const c=findCable(id); if(!c) return; c[field]=val; persist(); refreshCableRow(id); }
 function updateCableLances(id,viajeId,val){
+  _markTyping();
   const c=findCable(id); if(!c) return;
   if(val==='') delete c.lances[viajeId]; else c.lances[viajeId]=val;
   persist(); refreshCableRow(id);
@@ -7179,7 +7480,7 @@ function renderCablesTab(){
     <th style="min-width:220px">Especificación</th>
     <th>Último cambio</th>
     <th>Días uso</th>
-    ${v.viajes.map(vj=>`<th>${viajeHeaderHtml(vj)}</th>`).join('')}
+    ${v.viajes.map(vj=>`<th>${viajeHeaderHtml(vj)}<button class="col-fill-btn" title="Aplicar un mismo número de lances a todos los cables de este viaje" onclick="EQUIPOS.fillLancesColumna('cables','${vj.id}')">⤓</button></th>`).join('')}
     <th>Total lances</th>
     <th>Vida útil ref.</th>
     <th>Estado</th>
@@ -7435,7 +7736,8 @@ function init(){
     updateEquipoHoras,
     updateViajeFecha,
     updateWincheNombre,
-    updateWincheVal
+    updateWincheVal,
+    fillLancesColumna
   };
 })();
 </script>
@@ -8192,6 +8494,131 @@ function init(){
 <div style="text-align:center;font-size:11px;color:#ccc;margin-top:24px">ATUNTRO S.A. · María Fátima · Simulador v4.1</div>
 </div></div>
 </div>
+
+<!-- ══ PANTALLA: CONTROL DOCUMENTAL ══ -->
+<div id="screen-documentos" class="screen">
+<div class="docs-wrap">
+
+<div class="app">
+
+<div class="header">
+  <div>
+    <h1>Control Documental ATUNTRO <span class="save-dot" id="docs-saveDot"></span></h1>
+    <p id="subHeader">Vigencias de documentos por embarcación — uso interno</p>
+  </div>
+  <div class="hbtns">
+    <button class="hbtn" onclick="goBackFromDocumentos()" style="background:#1F4E79;color:#fff;border-color:#1F4E79">← Portal</button>
+    <button class="hbtn primary" onclick="DOCS.abrirModal()">+ Nuevo documento</button>
+    <button class="hbtn" onclick="DOCS.exportCSV()">Exportar CSV</button>
+    <button class="hbtn" onclick="DOCS.respaldar()">Guardar respaldo</button>
+    <button class="hbtn" onclick="document.getElementById('fileIn').click()">Cargar respaldo</button>
+    <button class="hbtn" onclick="window.print()">Imprimir / PDF</button>
+    <button class="hbtn" onclick="DOCS.restaurarBase()">Restaurar base original</button>
+  </div>
+</div>
+<input type="file" id="fileIn" accept=".json" style="display:none" onchange="DOCS.cargarRespaldo(this)">
+
+<div class="kpis" id="kpis"></div>
+
+<div class="panel">
+  <div class="panel-title">Filtros</div>
+  <div class="filters">
+    <div class="f">
+      <label>Embarcación</label>
+      <select id="fBarco" onchange="DOCS.render()"></select>
+    </div>
+    <div class="f">
+      <label>Buscar documento</label>
+      <input type="text" id="fTexto" placeholder="nombre o número..." oninput="DOCS.render()">
+    </div>
+    <div class="f">
+      <label>Horizonte de alerta</label>
+      <select id="fDias" onchange="DOCS.render()">
+        <option value="30">Próximos 30 días</option>
+        <option value="60">Próximos 60 días</option>
+        <option value="90" selected>Próximos 90 días</option>
+        <option value="180">Próximos 180 días</option>
+        <option value="9999">Todo el año</option>
+      </select>
+    </div>
+    <div class="f">
+      <label>Estado</label>
+      <div class="chip-row" id="chipRow"></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-title">Próximos vencimientos <span class="sub" id="tlSub"></span></div>
+  <div id="timeline"></div>
+  <div class="legend">La barra muestra el tiempo restante dentro del horizonte seleccionado. Documentos permanentes y sin fecha no aparecen aquí.</div>
+</div>
+
+<div class="panel">
+  <div class="panel-title">Vencimientos por mes <span class="sub">próximos 12 meses</span></div>
+  <div class="months" id="months"></div>
+</div>
+
+<div class="panel">
+  <div class="panel-title">
+    <span>Detalle de documentos <span class="sub" id="tblSub"></span></span>
+    <button class="btn-add" onclick="DOCS.abrirModal()">+ Agregar documento</button>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr id="thRow"></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="legend">Todos los campos de la tabla son editables directamente: escriba y el cambio se guarda solo. El icono ✕ elimina la fila. Los datos viven en este navegador — use <b>Guardar respaldo</b> para conservarlos o pasarlos a otro equipo.</div>
+</div>
+
+<div class="footer">ATUNTRO S.A. &mdash; Control documental &mdash; v2.0 &mdash; Base: cuadro_de_documentos.xlsx</div>
+</div>
+
+<!-- MODAL NUEVO DOCUMENTO -->
+<div class="ovl" id="ovl" onclick="if(event.target===this)DOCS.cerrarModal()">
+  <div class="modal">
+    <h3 id="modalTitle">Nuevo documento</h3>
+    <div class="mf">
+      <label>Nombre del documento *</label>
+      <input type="text" id="mNom" placeholder="Ej. Certificado de Extintores">
+    </div>
+    <div class="mrow">
+      <div class="mf">
+        <label>Embarcación *</label>
+        <select id="mBarco"></select>
+      </div>
+      <div class="mf">
+        <label>N° / Código</label>
+        <input type="text" id="mNum" placeholder="Ej. DIRNEA-XXXX-2026">
+      </div>
+    </div>
+    <div class="mrow">
+      <div class="mf">
+        <label>Fecha de emisión</label>
+        <input type="date" id="mEmi">
+      </div>
+      <div class="mf">
+        <label>Fecha de vencimiento</label>
+        <input type="date" id="mVen">
+      </div>
+    </div>
+    <div class="mf">
+      <label>Valor del trámite (USD)</label>
+      <input type="text" id="mVal" placeholder="Opcional">
+    </div>
+    <div class="mbtns">
+      <button class="mbtn ghost" onclick="DOCS.cerrarModal()">Cancelar</button>
+      <button class="mbtn go" onclick="DOCS.guardarNuevo()">Guardar documento</button>
+    </div>
+  </div>
+</div>
+
+
+</div>
+</div>
+
 
 <script>
 /* ════════════════════════════════════════════
@@ -9510,5 +9937,324 @@ function switchVessel(v){
   };
 })();
 </script>
+
+<script>
+/* ════════════════════════════════════════════
+   CONTROL DOCUMENTAL — módulo con namespace DOCS
+   (sincronización Firebase compartida)
+════════════════════════════════════════════ */
+var DOCS = (function(){
+
+const BASE = [{"num": "NO.0140463", "nom": "Matricula de Armador", "barco": "Atun Tropical Atuntro SA", "emi": "2025-07-11", "ven": "2026-03-31", "val": null}, {"num": "FALTA", "nom": "Certificado de Analisis", "barco": "Atun Tropical Atuntro SA", "emi": "2023-01-01", "ven": "2024-01-01", "val": null}, {"num": "FALTA", "nom": "Certificado de Analisis", "barco": "Atun Tropical Atuntro SA", "emi": "2023-01-01", "ven": "2024-01-01", "val": null}, {"num": "FALTA", "nom": "Certificado de Analisis", "barco": "Atun Tropical Atuntro SA", "emi": "2023-01-01", "ven": "2024-01-01", "val": null}, {"num": "MPCEIP-SCI-DCDS-HACCP-2022-0266", "nom": "PLAN HACCP", "barco": "Maria de Gracia", "emi": "2025-05-01", "ven": "2026-05-01", "val": null}, {"num": "Dirman-Ptra-75339-2023", "nom": "Permiso de trafico nacional", "barco": "Maria de Gracia", "emi": "2026-03-13", "ven": "2027-01-16", "val": null}, {"num": "NO. 50-2022", "nom": "Certificado programacion EPIRB", "barco": "Maria de Gracia", "emi": null, "ven": null, "val": null}, {"num": "DIRNEA-CILC-15159-2023", "nom": "Certificado internacional de lineas de carga", "barco": "Maria de Gracia", "emi": "2023-03-21", "ven": "2028-03-31", "val": null}, {"num": "CER NO. 00-2022-707", "nom": "Certificado Extintores Portatiles", "barco": "Maria de Gracia", "emi": null, "ven": null, "val": null}, {"num": "NO. GUY-22-1067", "nom": "Certificado Balsas salvavidas", "barco": "Maria de Gracia", "emi": null, "ven": null, "val": null}, {"num": "CER NO. 00-2022-708", "nom": "SISTEMA DE BANCOS DE CO2", "barco": "Maria de Gracia", "emi": null, "ven": null, "val": null}, {"num": "DPI-2026-AT-044", "nom": "permiso pesca", "barco": "Maria de Gracia", "emi": "2026-01-16", "ven": "2027-01-16", "val": null}, {"num": "CAPMAN-MANA-20067-2025", "nom": "Matricula de Nave", "barco": "Maria de Gracia", "emi": "2025-12-26", "ven": "2026-12-31", "val": null}, {"num": "Dirnea-Dota-058-2026", "nom": "Documento de Dotacion minima", "barco": "Maria de Gracia", "emi": "2026-03-03", "ven": "2031-03-03", "val": null}, {"num": "DIRNEA-CSPC-66387-2026", "nom": "Certificado de seguridad y prevencion de la contaminacion", "barco": "Maria de Gracia", "emi": "2026-03-10", "ven": "2027-03-31", "val": null}, {"num": "Dirnea-Csr-4967-2023", "nom": "Certificado de Seguridad Radioelectrica de Buque", "barco": "Maria de Gracia", "emi": "2023-05-15", "ven": "2028-05-15", "val": null}, {"num": "CERT NO. 2023-010018", "nom": "BATERIAS SART", "barco": "Maria de Gracia", "emi": "2023-05-04", "ven": "2028-02-01", "val": null}, {"num": "DIRNEA-CIAR-18476-2022", "nom": "Certificado internacional de arqueo", "barco": "Maria de Gracia", "emi": "2022-05-10", "ven": "2122-05-10", "val": null}, {"num": "MTOP-PTNT-0290-2019", "nom": "Patente de Navegacion", "barco": "Maria de Gracia", "emi": "2019-02-13", "ven": "2150-02-13", "val": null}, {"num": "registro de la propiedad", "nom": "Registro de la propiedad", "barco": "Maria de Gracia", "emi": "2026-01-12", "ven": "2027-01-12", "val": null}, {"num": "Dirman-Ptra-75338-2023", "nom": "Permiso de trafico nacional", "barco": "Maria Fatima", "emi": "2026-03-13", "ven": "2026-12-23", "val": null}, {"num": "NO. 003899B", "nom": "Certificado de Plagas", "barco": "Maria Fatima", "emi": "2022-10-06", "ven": "2023-01-06", "val": null}, {"num": "MPCEIP-SCI-DCDS-HACCP-2023-0028", "nom": "PLAN HACCP", "barco": "Maria Fatima", "emi": "2025-12-22", "ven": "2026-12-22", "val": null}, {"num": "DPI-2025-AT-0482", "nom": "permiso pesca", "barco": "Maria Fatima", "emi": "2025-12-23", "ven": "2026-12-23", "val": null}, {"num": "CAPUIL-MANA-20738-2025", "nom": "Matricula de Nave", "barco": "Maria Fatima", "emi": "2025-12-17", "ven": "2026-12-31", "val": null}, {"num": "Dirnea-Dota-27861-2023", "nom": "Documento de Dotacion minima", "barco": "Maria Fatima", "emi": "2023-03-31", "ven": "2028-03-31", "val": null}, {"num": "DIRNEA-CILC-19439-2025", "nom": "Certificado internacional de lineas de carga", "barco": "Maria Fatima", "emi": "2025-02-16", "ven": "2030-03-31", "val": null}, {"num": "Dirnea-Csr-4969-2023", "nom": "Certificado de Seguridad Radioelectrica de Buque", "barco": "Maria Fatima", "emi": "2023-05-15", "ven": "2028-05-15", "val": null}, {"num": "DIRNEA-ITNC-23894-2024", "nom": "Certificado internacional de arqueo", "barco": "Maria Fatima", "emi": "2024-09-05", "ven": "2124-02-13", "val": null}, {"num": "DIRNEA-PTNT-0044-20211", "nom": "Patente de Navegacion", "barco": "Maria Fatima", "emi": "2011-09-05", "ven": "2111-03-31", "val": null}, {"num": "LEST-2018-027", "nom": "Libreto de Estabilidad Aprobado por DIGMER", "barco": "Maria Fatima", "emi": "2018-03-28", "ven": "2099-12-31", "val": null}, {"num": "DIGMER-APDS-0053-2007", "nom": "Aprobacion de plano de seguridad", "barco": "Maria Fatima", "emi": "2007-10-26", "ven": "2099-12-31", "val": null}, {"num": "DIRNEA-LERN-4969-2023", "nom": "Licencia de estacion de Radio de la Nave", "barco": "Maria Fatima", "emi": "2023-05-15", "ven": "2028-03-31", "val": null}, {"num": "DIRNEA-CSPC-66388-2026", "nom": "Seguridad y Prevencion de la Contaminacion", "barco": "Maria Fatima", "emi": "2026-03-10", "ven": "2027-03-31", "val": null}, {"num": "CAPUIL-PROP-63014-2025", "nom": "Certificado de Registro de la propiedad", "barco": "Maria Fatima", "emi": "2025-12-15", "ven": "2026-12-15", "val": null}, {"num": "", "nom": "Certificado programacion EPIRB", "barco": "Maria Fatima", "emi": null, "ven": null, "val": null}, {"num": "", "nom": "BATERIAS SART", "barco": "Maria Fatima", "emi": null, "ven": null, "val": null}, {"num": "", "nom": "SISTEMA DE BANCOS DE CO2", "barco": "Maria Fatima", "emi": null, "ven": null, "val": null}, {"num": "", "nom": "Certificado Extintores Portatiles", "barco": "Maria Fatima", "emi": null, "ven": null, "val": null}, {"num": "", "nom": "Certificado Balsas salvavidas", "barco": "Maria Fatima", "emi": null, "ven": null, "val": null}, {"num": "MTOP-ACDZ-3922-2017", "nom": "Aprobacion cuadro de zafarrancho", "barco": "Maria de Gracia", "emi": "2017-04-21", "ven": "2100-03-31", "val": null}, {"num": "MTOP-APDS-4407-2017", "nom": "Aprobacion Plano de Seguridad", "barco": "Maria de Gracia", "emi": "2017-04-21", "ven": "2100-03-31", "val": null}, {"num": "LEST-056-2017-3", "nom": "Libreto de Estabilidad Aprobado por DIGMER", "barco": "Maria de Gracia", "emi": "2019-09-18", "ven": "2029-09-15", "val": null}, {"num": "DIRNEA-LERN-4967-2023", "nom": "Licencia de estacion de radio de la nave", "barco": "Maria de Gracia", "emi": "2026-03-15", "ven": "2028-03-31", "val": null}, {"num": "CAPMAN-PROP-63505-2026", "nom": "Certificado de Registro de la Propiedad", "barco": "Maria de Gracia", "emi": "2026-01-12", "ven": "2027-01-12", "val": null}];
+const STORE = 'atuntro_docs_v2';
+const BARCOS_FIJOS = ['Maria Fatima','Maria de Gracia','Atun Tropical Atuntro SA'];
+
+let rows = [];
+let sortKey='dias', sortDir=1;
+let estadoFiltro = new Set();
+let nuevosIds = new Set();
+
+function uid(){ return 'd'+Date.now()+Math.floor(Math.random()*1000); }
+
+// ── Firebase ──
+const FB_PATH = 'atuntro_documentos/data';
+let _db=null, _fbHandler=null, _saveDebounce=null, _lastRemoteJSON=null, _isTyping=false, _typingTO=null;
+function _getDb(){
+  try{
+    if(typeof firebase==='undefined') return null;
+    if(!firebase.apps.length) firebase.initializeApp({
+      apiKey:"AIzaSyDT0hq4WYxcAxxKvGNmTlH9Ha2lp6fW3y0",
+      authDomain:"atuntro-portal.firebaseapp.com",
+      databaseURL:"https://atuntro-portal-default-rtdb.firebaseio.com",
+      projectId:"atuntro-portal",
+      storageBucket:"atuntro-portal.firebasestorage.app",
+      messagingSenderId:"390090673795",
+      appId:"1:390090673795:web:e01a5d03e5543c8dc415b6"
+    });
+    return firebase.database();
+  }catch(e){ return null; }
+}
+function _markTyping(){ _isTyping=true; clearTimeout(_typingTO); _typingTO=setTimeout(()=>{_isTyping=false;},700); }
+function _seed(){
+  return BASE.map(d=>({id:uid(), nom:d.nom, barco:d.barco, num:d.num||'', emi:d.emi||'', ven:d.ven||'', val:d.val||''}));
+}
+function cargar(){
+  // fallback local mientras Firebase responde
+  try{
+    const raw=localStorage.getItem(STORE);
+    if(raw){ rows=JSON.parse(raw); }
+    else { rows=_seed(); }
+  }catch(e){ rows=_seed(); }
+
+  _db=_getDb();
+  if(!_db) return;
+  const ref=_db.ref(FB_PATH);
+  if(_fbHandler) ref.off('value',_fbHandler);
+  _fbHandler=snap=>{
+    const data=snap.val();
+    if(!data || !Array.isArray(data.rows)){
+      // primera vez: sube la base local a Firebase
+      if(rows && rows.length){ ref.set({rows, updatedAt:Date.now()}).catch(()=>{}); }
+      return;
+    }
+    const json=JSON.stringify(data.rows);
+    if(json===_lastRemoteJSON) return;
+    if(_isTyping) return; // no pisar lo que el usuario edita ahora
+    _lastRemoteJSON=json;
+    rows=data.rows;
+    try{ localStorage.setItem(STORE, JSON.stringify(rows)); }catch(e){}
+    render(); flash();
+  };
+  ref.on('value',_fbHandler);
+}
+function guardar(){
+  try{ localStorage.setItem(STORE, JSON.stringify(rows)); }catch(e){}
+  flash();
+  const json=JSON.stringify(rows);
+  if(json===_lastRemoteJSON) return;
+  clearTimeout(_saveDebounce);
+  _saveDebounce=setTimeout(()=>{
+    _lastRemoteJSON=json;
+    const db=_getDb();
+    if(db){ db.ref(FB_PATH).set({rows, updatedAt:Date.now()}).catch(()=>{}); }
+  }, 600);
+}
+
+const EST = {
+  venc:{lab:'Vencido',    cls:'p-venc', k:'k-venc', color:'#C0392B'},
+  pv:  {lab:'Por vencer', cls:'p-pv',   k:'k-pv',   color:'#D85A30'},
+  at:  {lab:'Atención',   cls:'p-at',   k:'k-at',   color:'#BA7517'},
+  vig: {lab:'Vigente',    cls:'p-vig',  k:'k-vig',  color:'#1D9E75'},
+  perm:{lab:'Permanente', cls:'p-perm', k:'k-perm', color:'#534AB7'},
+  sf:  {lab:'Sin fecha',  cls:'p-sf',   k:'k-sf',   color:'#7B7B78'}
+};
+
+function hoy(){ const t=new Date(); return new Date(t.getFullYear(),t.getMonth(),t.getDate()); }
+function parse(s){ if(!s) return null; const p=String(s).split('-'); if(p.length!==3) return null; return new Date(+p[0],+p[1]-1,+p[2]); }
+function dias(s){ const d=parse(s); if(!d||isNaN(d)) return null; return Math.round((d-hoy())/86400000); }
+function estado(dv,fecha){
+  if(dv===null) return 'sf';
+  if(parse(fecha).getFullYear()>=2090) return 'perm';
+  if(dv<0) return 'venc';
+  if(dv<=30) return 'pv';
+  if(dv<=90) return 'at';
+  return 'vig';
+}
+function enriquecer(){
+  return rows.map(r=>{ const dv=dias(r.ven); return {...r, dias:dv, st:estado(dv,r.ven)}; });
+}
+
+function listaBarcos(){
+  return [...new Set(BARCOS_FIJOS.concat(rows.map(r=>r.barco).filter(Boolean)))];
+}
+
+function filtrarBarco(rs){
+  const b=document.getElementById('fBarco').value;
+  return b==='__all__'?rs:rs.filter(r=>r.barco===b);
+}
+function filtrarTodo(rs){
+  const q=document.getElementById('fTexto').value.trim().toLowerCase();
+  let out=filtrarBarco(rs);
+  if(q) out=out.filter(r=>((r.nom||'')+' '+(r.num||'')).toLowerCase().includes(q));
+  if(estadoFiltro.size) out=out.filter(r=>estadoFiltro.has(r.st));
+  return out;
+}
+
+function renderKPIs(rs){
+  const base=filtrarBarco(rs), cnt={};
+  Object.keys(EST).forEach(k=>cnt[k]=0);
+  base.forEach(r=>cnt[r.st]++);
+  const order=['venc','pv','at','vig','perm','sf'];
+  document.getElementById('kpis').innerHTML=order.map(k=>
+    `<div class="kpi ${EST[k].k}${estadoFiltro.has(k)?' sel':''}" onclick="DOCS.toggleEstado('${k}')">
+       <div class="kpi-num">${cnt[k]}</div><div class="kpi-lab">${EST[k].lab}</div></div>`).join('');
+  document.getElementById('chipRow').innerHTML=order.map(k=>
+    `<button class="chip${estadoFiltro.has(k)?' on':''}" onclick="DOCS.toggleEstado('${k}')">${EST[k].lab}</button>`).join('')+
+    `<button class="chip" onclick="DOCS.limpiarEstado()">Todos</button>`;
+  document.getElementById('subHeader').textContent =
+    base.length+' documentos · '+cnt.venc+' vencidos · '+cnt.pv+' por vencer en 30 días';
+}
+function toggleEstado(k){ estadoFiltro.has(k)?estadoFiltro.delete(k):estadoFiltro.add(k); render(); }
+function limpiarEstado(){ estadoFiltro.clear(); render(); }
+
+function renderTimeline(rs){
+  const lim=+document.getElementById('fDias').value;
+  const list=filtrarTodo(rs).filter(r=>r.dias!==null&&r.st!=='perm'&&r.dias<=lim).sort((a,b)=>a.dias-b.dias).slice(0,25);
+  document.getElementById('tlSub').textContent=list.length+' documento(s)';
+  if(!list.length){ document.getElementById('timeline').innerHTML='<div class="empty">Sin vencimientos en el horizonte seleccionado.</div>'; return; }
+  const max=Math.max(lim===9999?365:lim,1);
+  document.getElementById('timeline').innerHTML=list.map(r=>{
+    const pct=r.dias<0?100:Math.max(3,Math.min(100,r.dias/max*100));
+    return `<div class="tl-row">
+      <div class="tl-name">${esc(r.nom)}<br><em>${esc(r.barco)}</em></div>
+      <div class="tl-track"><div class="tl-bar" style="width:${pct}%;background:${EST[r.st].color}"></div></div>
+      <div class="tl-days" style="color:${EST[r.st].color}">${r.dias<0?('−'+Math.abs(r.dias)+'d'):(r.dias+'d')}</div>
+    </div>`;}).join('');
+}
+
+function renderMonths(rs){
+  const base=filtrarTodo(rs).filter(r=>r.dias!==null&&r.st!=='perm');
+  const h=hoy(), buckets=[];
+  for(let i=0;i<12;i++){ const d=new Date(h.getFullYear(),h.getMonth()+i,1); buckets.push({y:d.getFullYear(),m:d.getMonth(),n:0}); }
+  base.forEach(r=>{ const d=parse(r.ven); if(!d) return;
+    const b=buckets.find(x=>x.y===d.getFullYear()&&x.m===d.getMonth()); if(b) b.n++; });
+  const max=Math.max(1,...buckets.map(b=>b.n));
+  const MN=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  document.getElementById('months').innerHTML=buckets.map((b,i)=>
+    `<div class="mcol"><div class="mval">${b.n||''}</div>
+     <div class="mbar${b.n>=3?' warn':''}" style="height:${b.n/max*100}%" title="${b.n} vencimiento(s)"></div>
+     <div class="mlab">${MN[b.m]}${b.m===0||i===0?"'"+String(b.y).slice(2):''}</div></div>`).join('');
+}
+
+const COLS=[
+  {k:'nom',t:'Documento'},{k:'barco',t:'Embarcación'},{k:'num',t:'N° / Código'},
+  {k:'emi',t:'Emisión'},{k:'ven',t:'Vencimiento'},{k:'dias',t:'Días'},
+  {k:'st',t:'Estado'},{k:'val',t:'Valor'},{k:'__',t:'',nosort:true}
+];
+
+function renderTabla(rs){
+  const list=filtrarTodo(rs).slice().sort((a,b)=>{
+    let A=a[sortKey],B=b[sortKey];
+    if(sortKey==='dias'){ A=(A===null?999999:A); B=(B===null?999999:B); }
+    A=(A===null||A===undefined)?'':A; B=(B===null||B===undefined)?'':B;
+    return (A>B?1:A<B?-1:0)*sortDir;
+  });
+  document.getElementById('thRow').innerHTML=COLS.map(c=>
+    `<th class="${c.nosort?'nosort':''}" ${c.nosort?'':`onclick="DOCS.setSort('${c.k}')"`}>${c.t}${sortKey===c.k?(sortDir>0?' ▲':' ▼'):''}</th>`).join('');
+  document.getElementById('tblSub').textContent=list.length+' fila(s)';
+  if(!list.length){ document.getElementById('tbody').innerHTML='<tr><td colspan="9" class="empty">Sin resultados con los filtros actuales.</td></tr>'; return; }
+  const opts=listaBarcos();
+  document.getElementById('tbody').innerHTML=list.map(r=>`<tr class="${nuevosIds.has(r.id)?'nueva':''}">
+    <td class="accent" style="border-left-color:${EST[r.st].color}"><input class="cell-in${r.nom?'':' vacio'}" value="${att(r.nom)}" placeholder="Nombre del documento" onchange="DOCS.setCampo('${r.id}','nom',this.value)"></td>
+    <td><select class="cell-in" onchange="DOCS.setCampo('${r.id}','barco',this.value)">
+        ${opts.map(b=>`<option value="${att(b)}"${b===r.barco?' selected':''}>${esc(b)}</option>`).join('')}
+      </select></td>
+    <td><input class="cell-in${r.num&&r.num!=='FALTA'?'':' vacio'}" value="${att(r.num)}" placeholder="FALTA N°" onchange="DOCS.setCampo('${r.id}','num',this.value)"></td>
+    <td><input type="date" class="cell-in" value="${att(r.emi)}" onchange="DOCS.setCampo('${r.id}','emi',this.value)"></td>
+    <td><input type="date" class="cell-in${r.ven?'':' vacio'}" value="${att(r.ven)}" onchange="DOCS.setCampo('${r.id}','ven',this.value)"></td>
+    <td class="dias-cell" style="color:${EST[r.st].color}">${r.dias===null?'—':r.dias}</td>
+    <td><span class="pill ${EST[r.st].cls}">${EST[r.st].lab}</span></td>
+    <td><input class="cell-in" value="${att(r.val)}" placeholder="—" style="min-width:70px" onchange="DOCS.setCampo('${r.id}','val',this.value)"></td>
+    <td><button class="del-btn" title="Eliminar documento" onclick="DOCS.eliminar('${r.id}')">✕</button></td>
+  </tr>`).join('');
+}
+
+function setSort(k){ if(sortKey===k) sortDir*=-1; else {sortKey=k;sortDir=1;} render(); }
+
+function setCampo(id,campo,val){ _markTyping();
+  const r=rows.find(x=>x.id===id); if(!r) return;
+  r[campo]=val;
+  guardar();
+  render();
+}
+
+function eliminar(id){
+  const r=rows.find(x=>x.id===id); if(!r) return;
+  if(!confirm('¿Eliminar el documento "'+(r.nom||'sin nombre')+'" de '+r.barco+'?')) return;
+  if(!confirm('Esta acción no se puede deshacer. ¿Confirmar eliminación?')) return;
+  rows=rows.filter(x=>x.id!==id);
+  nuevosIds.delete(id);
+  guardar(); render();
+}
+
+/* Modal */
+function abrirModal(){
+  document.getElementById('mBarco').innerHTML=listaBarcos().map(b=>`<option value="${att(b)}">${esc(b)}</option>`).join('');
+  const sel=document.getElementById('fBarco').value;
+  if(sel!=='__all__') document.getElementById('mBarco').value=sel;
+  ['mNom','mNum','mEmi','mVen','mVal'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('ovl').classList.add('on');
+  setTimeout(()=>document.getElementById('mNom').focus(),50);
+}
+function cerrarModal(){ document.getElementById('ovl').classList.remove('on'); }
+
+function guardarNuevo(){
+  const nom=document.getElementById('mNom').value.trim();
+  if(!nom){ alert('Escriba el nombre del documento.'); document.getElementById('mNom').focus(); return; }
+  const id=uid();
+  rows.push({
+    id, nom,
+    barco: document.getElementById('mBarco').value,
+    num:   document.getElementById('mNum').value.trim(),
+    emi:   document.getElementById('mEmi').value,
+    ven:   document.getElementById('mVen').value,
+    val:   document.getElementById('mVal').value.trim()
+  });
+  nuevosIds.add(id);
+  guardar(); cerrarModal(); render();
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') cerrarModal();
+  if(e.key==='Enter' && document.getElementById('ovl').classList.contains('on')) guardarNuevo();
+});
+
+/* Datos */
+function restaurarBase(){
+  if(!confirm('¿Restaurar la lista original del Excel?\n\nSe perderán los documentos agregados y las ediciones hechas aquí.')) return;
+  if(!confirm('Esta acción no se puede deshacer. ¿Confirmar?')) return;
+  nuevosIds.clear();
+  rows=_seed();
+  guardar(); render();
+}
+
+function respaldar(){
+  const blob=new Blob([JSON.stringify(rows,null,1)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='respaldo_documentos_atuntro_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+
+function cargarRespaldo(input){
+  const f=input.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const data=JSON.parse(rd.result);
+      if(!Array.isArray(data)) throw 0;
+      if(!confirm('Se reemplazará la lista actual por '+data.length+' documentos del respaldo. ¿Continuar?')) return;
+      rows=data.map(d=>({id:d.id||uid(),nom:d.nom||'',barco:d.barco||BARCOS_FIJOS[0],num:d.num||'',emi:d.emi||'',ven:d.ven||'',val:d.val||''}));
+      guardar(); render();
+    }catch(e){ alert('El archivo no tiene el formato de respaldo esperado.'); }
+    input.value='';
+  };
+  rd.readAsText(f);
+}
+
+function exportCSV(){
+  const list=filtrarTodo(enriquecer());
+  const head=['Documento','Embarcacion','Numero','Emision','Vencimiento','Dias restantes','Estado','Valor'];
+  const lines=[head.join(';')].concat(list.map(r=>[
+    r.nom,r.barco,r.num,r.emi,r.ven,r.dias===null?'':r.dias,EST[r.st].lab,r.val
+  ].map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(';')));
+  const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='documentos_atuntro_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+function flash(){ const d=document.getElementById('docs-saveDot'); d.classList.add('show'); setTimeout(()=>d.classList.remove('show'),1500); }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function att(s){ return esc(s).replace(/"/g,'&quot;'); }
+
+function render(){
+  const rs=enriquecer();
+  const sel=document.getElementById('fBarco').value;
+  document.getElementById('fBarco').innerHTML='<option value="__all__">Todas</option>'+
+    listaBarcos().map(b=>`<option value="${att(b)}">${esc(b)}</option>`).join('');
+  if(sel) document.getElementById('fBarco').value=sel;
+  renderKPIs(rs); renderTimeline(rs); renderMonths(rs); renderTabla(rs);
+}
+
+
+
+function init(){ cargar(); render(); }
+
+return { abrirModal, cerrarModal, guardarNuevo, exportCSV, respaldar, cargarRespaldo, restaurarBase, render, toggleEstado, limpiarEstado, setSort, setCampo, eliminar, init };
+})();
+
+</script>
+
 </body>
 </html>
