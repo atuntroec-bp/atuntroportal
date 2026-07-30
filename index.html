@@ -3065,7 +3065,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     </div>
     <div class="gt-kpi gt-kpi-inc">
       <div class="gt-kpi-n" id="gt-kpi-inc">0</div>
-      <div class="gt-kpi-lbl">Incompletas</div>
+      <div class="gt-kpi-lbl">En Progreso</div>
       <div class="gt-kpi-sub">en progreso</div>
     </div>
     <div class="gt-kpi gt-kpi-pend">
@@ -3099,7 +3099,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     <input class="gt-search" id="gt-search" type="text" placeholder="🔍 Buscar tarea, responsable…" oninput="GT.applyFilters()">
     <select class="gt-sel" id="gt-f-est"  onchange="GT.applyFilters()">
       <option value="">Todos los estados</option>
-      <option>COMPLETO</option><option>INCOMPLETO</option><option>PENDIENTE</option>
+      <option value="COMPLETO">COMPLETO</option><option value="INCOMPLETO">EN PROGRESO</option><option value="PENDIENTE">PENDIENTE</option>
     </select>
     <select class="gt-sel" id="gt-f-dept" onchange="GT.applyFilters()">
       <option value="">Todos los dept.</option>
@@ -3151,7 +3151,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       <div class="gt-modal-row">
         <label>Estado</label>
         <select id="gm-estado">
-          <option>PENDIENTE</option><option>INCOMPLETO</option><option>COMPLETO</option>
+          <option value="PENDIENTE">PENDIENTE</option><option value="INCOMPLETO">EN PROGRESO</option><option value="COMPLETO">COMPLETO</option>
         </select>
       </div>
       <div class="gt-modal-row">
@@ -3248,26 +3248,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
   </div>
 
-  <!-- ── Widget Tareas Pendientes en Gestor ── -->
-  <div style="background:#f0f0ee; padding:0 20px 28px;">
-    <div style="max-width:980px;margin:0 auto;">
-      <div class="pending-tasks-section" style="border-top-color:rgba(0,0,0,.1)">
-        <div class="pending-tasks-header" onclick="togglePendingTasksGestor()">
-          <div class="pending-tasks-title" style="color:#555">
-            📋 Tareas Pendientes / Incompletas
-            <span class="pending-count-badge" id="pending-count-badge-gt">0</span>
-          </div>
-          <button class="pending-toggle-btn" id="pending-toggle-icon-gt" style="color:#999">▲</button>
-        </div>
-        <div class="pending-tasks-body expanded" id="pending-tasks-body-gt">
-          <div id="pending-tasks-list-gt">
-            <div class="pending-empty"><div class="pending-empty-icon">⏳</div>Cargando tareas…</div>
-          </div>
-          <span class="pending-refresh-link" onclick="loadPendingTasks()">↻ Actualizar</span>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Widget de Tareas Pendientes: solo en la pantalla principal (dashboard) -->
 </div>
 
 <!-- ══════════ ADMIN USERS PANEL ══════════ -->
@@ -3823,7 +3804,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
   }
 
   // ══ WIDGET TAREAS PENDIENTES ═══════════════════════════════════════════════
-  var _pendingCollapsed = false, _pendingCollapsedGt = false;
+  var _pendingCollapsed = false;
 
   // Departamentos visibles según el rol logueado (misma lógica que el Gestor).
   var PENDING_ROLE_DEPTS = {
@@ -3870,7 +3851,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       var mine = tasks.filter(function(t){ return ok.indexOf(t.dept) !== -1; });
       var pending = mine.filter(function(t){ return t.estado !== 'COMPLETO'; });
       renderPendingWidget('pending-tasks-list', 'pending-count-badge', pending);
-      renderPendingWidget('pending-tasks-list-gt', 'pending-count-badge-gt', pending);
       updateAlertBell(mine);
     });
   }
@@ -3887,7 +3867,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       var oa = order[a.estado]!==undefined?order[a.estado]:2, ob = order[b.estado]!==undefined?order[b.estado]:2;
       return oa!==ob ? oa-ob : (a.fecha||'').localeCompare(b.fecha||'');
     });
-    var estadoLabel = {INCOMPLETO:'En progreso', PENDIENTE:'Pendiente', COMPLETO:'Completo'};
+    var estadoLabel = {INCOMPLETO:'En Progreso', PENDIENTE:'Pendiente', COMPLETO:'Completo'};
     list.innerHTML =
       '<div class="pending-col-headers">' +
         '<span>Tarea</span><span>Responsable</span><span>Área</span><span>Estado</span>' +
@@ -3924,7 +3904,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
           var oa = order[a.estado]!==undefined?order[a.estado]:2, ob = order[b.estado]!==undefined?order[b.estado]:2;
           return oa!==ob ? oa-ob : (a.fecha||'').localeCompare(b.fecha||'');
         });
-        var lbl = {INCOMPLETO:'En progreso', PENDIENTE:'Pendiente'};
+        var lbl = {INCOMPLETO:'En Progreso', PENDIENTE:'Pendiente'};
         panel.innerHTML =
           '<div class="bell-panel-title">🔔 ' + n + ' tarea' + (n>1?'s':'') + ' por atender</div>' +
           sorted.slice(0,8).map(function(t){
@@ -3956,12 +3936,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     var b=document.getElementById('pending-tasks-body'), ic=document.getElementById('pending-toggle-icon');
     if(b) b.className='pending-tasks-body '+(_pendingCollapsed?'collapsed':'expanded');
     if(ic) ic.textContent=_pendingCollapsed?'▼':'▲';
-  }
-  function togglePendingTasksGestor() {
-    _pendingCollapsedGt = !_pendingCollapsedGt;
-    var b=document.getElementById('pending-tasks-body-gt'), ic=document.getElementById('pending-toggle-icon-gt');
-    if(b) b.className='pending-tasks-body '+(_pendingCollapsedGt?'collapsed':'expanded');
-    if(ic) ic.textContent=_pendingCollapsedGt?'▼':'▲';
   }
 
   // Refresco en vivo de la campana y el widget cuando cambian las tareas en Firebase,
@@ -4178,7 +4152,7 @@ const GT = (() => {
     const s = stats();
     const slices = [
       { label:'Completo',   val:s.c, key:'COMPLETO'   },
-      { label:'Incompleto', val:s.i, key:'INCOMPLETO' },
+      { label:'En Progreso', val:s.i, key:'INCOMPLETO' },
       { label:'Pendiente',  val:s.p, key:'PENDIENTE'  },
     ];
     const tot = s.n || 1;
@@ -4234,7 +4208,7 @@ const GT = (() => {
       </div>`;
     }).join('') : '<div style="font-size:12px;color:#ccc;padding:8px 0">Sin datos</div>') +
     `<div style="display:flex;gap:14px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,.06)">
-      ${['Completo','Incompleto','Pendiente'].map((l,i) => {
+      ${['Completo','En Progreso','Pendiente'].map((l,i) => {
         const c=['#1D9E75','#BA7517','#D85A30'][i];
         return `<div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#888"><div style="width:8px;height:8px;border-radius:2px;background:${c};flex-shrink:0"></div>${l}</div>`;
       }).join('')}
@@ -4245,8 +4219,9 @@ const GT = (() => {
   function deptBadge(d) {
     return `<span class="gt-badge ${DEPT_CLS[d]||'gt-dept-admin'}">${esc(d)}</span>`;
   }
+  const ESTADO_LABEL = { PENDIENTE:'PENDIENTE', INCOMPLETO:'EN PROGRESO', COMPLETO:'COMPLETO' };
   function statusBadge(e) {
-    return `<span class="gt-badge gt-st-${e}">${esc(e)}</span>`;
+    return `<span class="gt-badge gt-st-${e}">${esc(ESTADO_LABEL[e] || e)}</span>`;
   }
 
   /* ── Filter selects ─────────────────────────────────── */
