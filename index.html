@@ -3418,7 +3418,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       {
         id: 'boyas',
         title: 'Control de Boyas',
-        desc: 'Inventario de boyas satelitales por buque: altas y bajas, boyas a bordo, activas en el agua, recuperaciones y origen.',
+        desc: 'Inventario de boyas satelitales por buque: altas y bajas, boyas a bordo, estado en el agua, historial de recuperaciones y origen.',
         icon: '\u{1F6DF}',
         iconColor: 'teal',
         color: 'color-teal',
@@ -10275,7 +10275,12 @@ return { abrirModal, cerrarModal, guardarNuevo, exportCSV, respaldar, cargarResp
 .boy-btn.ok{background:#548235}
 .boy-btn.ok:hover{background:#375623}
 .boy-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
-.boy-card{background:#fff;border:1px solid #D6E4F0;border-left:5px solid #2E75B6;border-radius:8px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.boy-card{background:#fff;border:1px solid #D6E4F0;border-left:5px solid #2E75B6;border-radius:8px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.08);cursor:pointer;transition:transform .12s,box-shadow .12s,background .12s;user-select:none}
+.boy-card:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(31,78,121,.18)}
+.boy-card.on{background:#EAF1F8;box-shadow:0 0 0 2px #2E75B6 inset,0 3px 8px rgba(31,78,121,.2)}
+.boy-card.on .lbl{color:#1F4E79}
+.boy-card .fx{font-size:10px;color:#2E75B6;font-weight:bold;margin-top:2px;visibility:hidden}
+.boy-card.on .fx{visibility:visible}
 .boy-card .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#5A7A99;font-weight:bold}
 .boy-card .val{font-size:26px;font-weight:bold;color:#1F4E79;line-height:1.1;margin-top:4px}
 .boy-card.fat{border-left-color:#1F4E79}
@@ -10284,6 +10289,8 @@ return { abrirModal, cerrarModal, guardarNuevo, exportCSV, respaldar, cargarResp
 .boy-card.rec{border-left-color:#ED7D31}
 .boy-card.act{border-left-color:#548235}
 .boy-card.baja{border-left-color:#C00000}
+.boy-card.fue{border-left-color:#BF8F00}
+.boy-card.irr{border-left-color:#7030A0}
 .boy-filtros{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
 .boy-filtros input,.boy-filtros select{font-family:Arial;font-size:13px;padding:7px 9px;border:1px solid #B9CFE4;border-radius:6px;color:#1F4E79;background:#fff}
 .boy-filtros input[type=text]{min-width:190px}
@@ -10318,6 +10325,22 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
 .boy-pill.alta{background:#E2EFDA;color:#375623}
 .boy-pill.baja{background:#FBE3E3;color:#8B0000}
 .boy-ro{color:#1F4E79;padding:4px 5px;display:block}
+.boy-hist-btn{width:100%;background:#EAF1F8;border:1px solid #B9CFE4;border-radius:5px;color:#1F4E79;font-size:11px;font-weight:bold;padding:5px 6px;cursor:pointer;font-family:Arial}
+.boy-hist-btn:hover{background:#D6E4F0}
+.boy-modal-bg{position:fixed;inset:0;background:rgba(15,35,60,.55);z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px}
+.boy-modal{background:#fff;border-radius:10px;width:100%;max-width:520px;max-height:85vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.boy-modal-head{background:#1F4E79;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;border-radius:10px 10px 0 0;position:sticky;top:0}
+.boy-modal-head h4{margin:0;font-size:14px;flex:1}
+.boy-modal-head button{background:transparent;border:0;color:#fff;font-size:20px;cursor:pointer;line-height:1}
+.boy-modal-body{padding:16px}
+.boy-hist-list{border:1px solid #D6E4F0;border-radius:6px;margin-bottom:14px}
+.boy-hist-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid #EEF4FA;font-size:13px}
+.boy-hist-item:last-child{border-bottom:0}
+.boy-hist-item .n{background:#2E75B6;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;flex:0 0 22px}
+.boy-hist-item .lg{font-weight:bold;flex:1}
+.boy-hist-item .fc{color:#5A7A99;font-size:12px}
+.boy-hist-item button{background:transparent;border:0;color:#C00000;cursor:pointer;font-size:14px}
+.boy-hist-vacio{padding:14px;text-align:center;color:#7F98B2;font-size:12px}
 .boy-empty{padding:26px;text-align:center;color:#7F98B2;font-size:13px}
 .boy-msg{font-size:12px;color:#548235;font-weight:bold}
 @media(max-width:640px){.boy-head h2{font-size:17px}.boy-card .val{font-size:22px}.boy-filtros input[type=text]{min-width:140px;flex:1}}
@@ -10412,13 +10435,34 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
       <span class="boy-hint" style="margin:0">Usan la fecha de abajo; si está vacía, la de hoy.</span>
     </div>
     <div class="boy-acc">
-      <label class="boy-chk"><input type="checkbox" id="boyMSumar"> Sumar +1 al contador de recuperaciones</label>
+      <label class="boy-chk"><input type="checkbox" id="boyMSumar"> Registrar recuperación (usa la fecha y el lugar de arriba)</label>
       <span style="flex:1"></span>
       <button class="boy-btn ok" id="boyMAplicar">Aplicar a las seleccionadas</button>
       <button class="boy-btn sec" id="boyMLimpiar">Quitar selección</button>
       <button class="boy-btn del" id="boyMEliminar">Eliminar seleccionadas</button>
     </div>
     <div class="boy-hint">Los campos que dejes en "(sin cambio)" no se modifican. Puedes filtrar primero y usar la casilla del encabezado para seleccionar todo lo filtrado.</div>
+  </div>
+
+  <!-- ===== modal historial de recuperaciones ===== -->
+  <div class="boy-modal-bg" id="boyHistBg" style="display:none">
+    <div class="boy-modal">
+      <div class="boy-modal-head">
+        <h4 id="boyHistTitulo">Historial de recuperaciones</h4>
+        <button id="boyHistCerrar">×</button>
+      </div>
+      <div class="boy-modal-body">
+        <div class="boy-hist-list" id="boyHistLista"></div>
+        <div class="boy-grid" id="boyHistForm">
+          <div class="boy-f"><label>Fecha de recuperación</label><input type="date" id="boyHistFecha"></div>
+          <div class="boy-f"><label>Dónde fue recuperada</label><select id="boyHistLugar"></select></div>
+        </div>
+        <div class="boy-acc" id="boyHistAcc">
+          <button class="boy-btn ok" id="boyHistAgregar">+ Agregar recuperación</button>
+        </div>
+        <div class="boy-hint">Cada recuperación queda registrada con su fecha y lugar. El contador de la tabla se calcula solo con este historial.</div>
+      </div>
+    </div>
   </div>
 
   <div class="boy-tabla-box">
@@ -10433,8 +10477,8 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
         <th style="width:120px">Fecha Baja</th>
         <th style="width:150px">Estado 2</th>
         <th style="width:120px">Origen</th>
-        <th style="width:70px">Recup.</th>
-        <th style="width:120px">Dónde</th>
+        <th style="width:60px">Recup.</th>
+        <th style="width:150px">Último lugar / historial</th>
         <th style="width:40px"></th>
       </tr></thead>
       <tbody id="boyBody"></tbody>
@@ -10450,7 +10494,7 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
   /* ---------- catálogos ---------- */
   var PROPIETARIOS = ["", "MARIA FATIMA", "MARIA DE GRACIA", "BODEGA EN TIERRA"];
   var ESTADOS      = ["Dada de alta", "Dada de baja"];
-  var ESTADOS2     = ["", "A BORDO PARA VIAJE", "ACTIVA", "POR RECUPERAR"];
+  var ESTADOS2     = ["", "A BORDO PARA VIAJE", "ACTIVA", "POR RECUPERAR", "FUERA DE RANGO", "IRRECUPERABLE"];
   var ORIGENES     = ["", "COMPRADA", "RECUPERADA"];
   var DONDE        = ["", "MANTA", "GALAPAGOS", "OTRO"];
   var ROLES_EDIT   = ["operaciones", "admin", "master"];
@@ -10459,6 +10503,29 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
   var SEED = [{"numero": "259", "isn": "T8E066271604", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "286", "isn": "T8E075285963", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "299", "isn": "T8E080292541", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "318", "isn": "T8E084297810", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "320", "isn": "T8E088301623", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "330", "isn": "T8E102316604", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "340", "isn": "T8E101312587", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "347", "isn": "T8E101309591", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "351", "isn": "T8E103323401", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-03-01", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "354", "isn": "T8E101323388", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "356", "isn": "T8E101324903", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "365", "isn": "T8E106331528", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "369", "isn": "T8E106333150", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "370", "isn": "T8E106332906", "propietario": "", "estado": "Dada de alta", "fechaAlta": "", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "371", "isn": "T8E106333145", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "378", "isn": "T8E107336563", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "381", "isn": "T8E108351097", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "382", "isn": "T8E108351117", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-03-01", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "387", "isn": "T8E112358661", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "388", "isn": "T8E112358595", "propietario": "", "estado": "Dada de alta", "fechaAlta": "", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "389", "isn": "T8E112358587", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "390", "isn": "T8E112358589", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "398", "isn": "T8E112359866", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "401", "isn": "T8E112359904", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-03-01", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "405", "isn": "T8E114363431", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "406", "isn": "T8E114364040", "propietario": "", "estado": "Dada de alta", "fechaAlta": "", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "408", "isn": "T8E114364035", "propietario": "", "estado": "Dada de alta", "fechaAlta": "", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "410", "isn": "T8E115365114", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "412", "isn": "T8E115365020", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "413", "isn": "T8E115365100", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-03-01", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "415", "isn": "T8E114363920", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "416", "isn": "T8E114363926", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "419", "isn": "T8E113374955", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-03-01", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "420", "isn": "T8E114374934", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "421", "isn": "T8E114374942", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "422", "isn": "T8E113374819", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "423", "isn": "T8E113374902", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "424", "isn": "T8E113374949", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "425", "isn": "T8E113374962", "propietario": "", "estado": "Dada de alta", "fechaAlta": "", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "426", "isn": "T8E113374943", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "427", "isn": "T8E113374952", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "428", "isn": "T8E113374970", "propietario": "", "estado": "Dada de alta", "fechaAlta": "", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "430", "isn": "T8E113374978", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "431", "isn": "T8E094380776", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "434", "isn": "T8E094380906", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "436", "isn": "T8E094380769", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "437", "isn": "T8E094380795", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "438", "isn": "T8E094379874", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "439", "isn": "T8E094380768", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-04-16", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "440", "isn": "T8E094380836", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "441", "isn": "T8E094379855", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "442", "isn": "T8E094379885", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "443", "isn": "T8E094379864", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "444", "isn": "T8E094381981", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "445", "isn": "T8E094381987", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "446", "isn": "T8E094382005", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "447", "isn": "T8E094382011", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "448", "isn": "T8E094382013", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "450", "isn": "T8E094382159", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "451", "isn": "T8E094382198", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-04-16", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "452", "isn": "T8E094382038", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "453", "isn": "T8E094379875", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "454", "isn": "T8E094382196", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "455", "isn": "T8E094382182", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "456", "isn": "T8E094382119", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-04-16", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "457", "isn": "T8E094380440", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "458", "isn": "T8E094382163", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "459", "isn": "T8E094380441", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "461", "isn": "T8E094380080", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "462", "isn": "T8E092389863", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "463", "isn": "T8E092389761", "propietario": "", "estado": "Dada de alta", "fechaAlta": "", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "464", "isn": "T8E092389866", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "465", "isn": "T8E092389873", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "466", "isn": "T8E092389852", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "467", "isn": "T8E092389864", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "468", "isn": "T8E092389867", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "470", "isn": "T8E092389854", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "471", "isn": "T8E091389608", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "472", "isn": "T8E092389850", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "473", "isn": "T8E092389879", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "474", "isn": "T8E092389886", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-04-16", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "475", "isn": "T8E092389892", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "476", "isn": "T8E092389857", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "477", "isn": "T8E092389875", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "478", "isn": "T8E091389859", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-03-01", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "479", "isn": "T8E092389870", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "480", "isn": "T8E092389861", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "481", "isn": "T8E092389907", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "482", "isn": "T8E133403390", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "483", "isn": "T8E133403394", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "484", "isn": "T8E133403416", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "485", "isn": "T8E133403426", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "486", "isn": "T8E133403572", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "487", "isn": "T8E097399159", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "488", "isn": "T8E097399414", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "489", "isn": "T8E097399419", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "490", "isn": "T8E097399386", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "491", "isn": "T8E091387716", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "492", "isn": "T8E092387682", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "493", "isn": "T8E092387707", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "494", "isn": "T8E094379833", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "495", "isn": "T8E094380981", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "496", "isn": "T8E094381013", "propietario": "", "estado": "Dada de alta", "fechaAlta": "", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "497", "isn": "T8E091387713", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "498", "isn": "T8E092387670", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "499", "isn": "T8E092387686", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "500", "isn": "T8E092387697", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "501", "isn": "T8E092386046", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-02-09", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "502", "isn": "T8E092386062", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "503", "isn": "T8E092386063", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-02-09", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "504", "isn": "T8E096394321", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "505", "isn": "T8E096394420", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "506", "isn": "T8E096394439", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "507", "isn": "T8E096394445", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-02-09", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "508", "isn": "T8E096394447", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "509", "isn": "T8E096394451", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "510", "isn": "T8E096394452", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-02-09", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "511", "isn": "T8E096394461", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-02-09", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "512", "isn": "T8E096394467", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-02-09", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "513", "isn": "T8E093392426", "propietario": "", "estado": "Dada de alta", "fechaAlta": "", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "514", "isn": "T8E119420450", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "515", "isn": "T8E119421140", "propietario": "", "estado": "Dada de alta", "fechaAlta": "", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "516", "isn": "T8E119421153", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "517", "isn": "T8E119421156", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "518", "isn": "T8E119421157", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "519", "isn": "T8E119421279", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "520", "isn": "T8E119421280", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "623", "isn": "T8E073284268", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "636", "isn": "T8E075285743", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "645", "isn": "T8E080292580", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "694", "isn": "T8E086300127", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "709", "isn": "T8E101311164", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "727", "isn": "T8E101312607", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "737", "isn": "T8E101312661", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "765", "isn": "T8E106331798", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-08-04", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "804", "isn": "T8E107336244", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "849", "isn": "T8E107336200", "propietario": "", "estado": "Dada de baja", "fechaAlta": "", "fechaBaja": "2026-08-04", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "886", "isn": "T8E108350658", "propietario": "", "estado": "Dada de alta", "fechaAlta": "", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "919", "isn": "T8E108350893", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}, {"numero": "924", "isn": "T8E108350920", "propietario": "", "estado": "Dada de alta", "fechaAlta": "2026-01-28", "fechaBaja": "", "estado2": "", "veces": 0, "donde": "", "origen": ""}];
 
   var datos = {}, ref = null, sel = {}, isTyping = false, typingTimer = null, saveTimer = {};
+  var histKey = null;   // boya abierta en el modal de historial
+
+  /* ---------- historial de recuperaciones ---------- */
+  function hist(b){
+    var r = b && b.recuperaciones;
+    if(!r) return [];
+    if(Array.isArray(r)) return r.filter(Boolean);
+    return Object.keys(r).sort().map(function(k){ return r[k]; }).filter(Boolean);
+  }
+  function nRec(b){ var x = hist(b); return x.length ? x.length : (parseInt(b && b.veces,10)||0); }
+  function ultimoLugar(b){ var x = hist(b); return x.length ? (x[x.length-1].lugar||'') : ((b&&b.donde)||''); }
+  function guardarHist(key, lista){
+    var b = datos[key]; if(!b) return;
+    b.recuperaciones = lista;
+    b.veces = lista.length;
+    b.donde = lista.length ? (lista[lista.length-1].lugar||'') : '';
+    if(ref) ref.child(key).update({recuperaciones:lista, veces:b.veces, donde:b.donde});
+  }
+  function agregarRec(key, fecha, lugar){
+    var l = hist(datos[key]).slice();
+    l.push({fecha: fecha || hoy(), lugar: lugar || ''});
+    guardarHist(key, l);
+  }
 
   function rolActual(){
     try{
@@ -10521,13 +10588,15 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
 
   /* ---------- resumen ---------- */
   function calcular(){
-    var r = {fatima:0,gracia:0,bodega:0,porRec:0,activa:0,alta:0,baja:0,total:0};
+    var r = {fatima:0,gracia:0,bodega:0,porRec:0,activa:0,fuera:0,irrec:0,alta:0,baja:0,total:0};
     Object.keys(datos).forEach(function(k){
       var b = datos[k]||{}; r.total++;
       if(b.estado==='Dada de alta') r.alta++;
       if(b.estado==='Dada de baja') r.baja++;
       if(b.estado2==='POR RECUPERAR') r.porRec++;
       if(b.estado2==='ACTIVA') r.activa++;
+      if(b.estado2==='FUERA DE RANGO') r.fuera++;
+      if(b.estado2==='IRRECUPERABLE') r.irrec++;
       if(b.propietario==='BODEGA EN TIERRA') r.bodega++;
       if(b.estado2==='A BORDO PARA VIAJE'){
         if(b.propietario==='MARIA FATIMA') r.fatima++;
@@ -10536,13 +10605,50 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
     });
     return r;
   }
+  var CARDS = [
+    ['fat','fatima','A bordo — María Fátima',   {propietario:'MARIA FATIMA', estado2:'A BORDO PARA VIAJE'}],
+    ['gra','gracia','A bordo — María de Gracia',{propietario:'MARIA DE GRACIA', estado2:'A BORDO PARA VIAJE'}],
+    ['bod','bodega','En bodega (tierra)',       {propietario:'BODEGA EN TIERRA'}],
+    ['act','activa','Activas en el agua',       {estado2:'ACTIVA'}],
+    ['rec','porRec','Por recuperar',            {estado2:'POR RECUPERAR'}],
+    ['fue','fuera', 'Fuera de rango',           {estado2:'FUERA DE RANGO'}],
+    ['irr','irrec', 'Irrecuperables',           {estado2:'IRRECUPERABLE'}],
+    ['',   'alta',  'Dadas de alta',            {estado:'Dada de alta'}],
+    ['baja','baja', 'Dadas de baja',            {estado:'Dada de baja'}]
+  ];
+  function filtroActivo(f){
+    var v = {
+      propietario: document.getElementById('boyFPropietario').value,
+      estado:      document.getElementById('boyFEstado').value,
+      estado2:     document.getElementById('boyFEstado2').value
+    };
+    var campos = ['propietario','estado','estado2'];
+    return campos.every(function(c){ return (v[c]||'') === (f[c]||''); }) &&
+           campos.some(function(c){ return f[c]; });
+  }
+  function aplicarFiltroCard(i){
+    var f = CARDS[i][3];
+    var activo = filtroActivo(f);
+    document.getElementById('boyBuscar').value = '';
+    document.getElementById('boyFOrigen').value = '';
+    ['boyFPropietario','boyFEstado','boyFEstado2'].forEach(function(id){ document.getElementById(id).value = ''; });
+    if(!activo){
+      if(f.propietario) document.getElementById('boyFPropietario').value = f.propietario;
+      if(f.estado)      document.getElementById('boyFEstado').value      = f.estado;
+      if(f.estado2)     document.getElementById('boyFEstado2').value     = f.estado2;
+    }
+    isTyping = false;
+    render();
+    var t = document.querySelector('.boy-tabla-box');
+    if(t && t.scrollIntoView) t.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
   function renderCards(){
     var r = calcular();
-    var cards = [['fat','A bordo — María Fátima',r.fatima],['gra','A bordo — María de Gracia',r.gracia],
-                 ['bod','En bodega (tierra)',r.bodega],['act','Activas en el agua',r.activa],
-                 ['rec','Por recuperar',r.porRec],['','Dadas de alta',r.alta],['baja','Dadas de baja',r.baja]];
-    document.getElementById('boyCards').innerHTML = cards.map(function(c){
-      return '<div class="boy-card '+c[0]+'"><div class="lbl">'+c[1]+'</div><div class="val">'+c[2]+'</div></div>';
+    document.getElementById('boyCards').innerHTML = CARDS.map(function(c,i){
+      var on = filtroActivo(c[3]);
+      return '<div class="boy-card '+c[0]+(on?' on':'')+'" data-card="'+i+'" title="Clic para filtrar el listado">' +
+             '<div class="lbl">'+c[2]+'</div><div class="val">'+r[c[1]]+'</div>' +
+             '<div class="fx">✕ quitar filtro</div></div>';
     }).join('');
   }
 
@@ -10606,8 +10712,8 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
         '<td>'+(edit?'<input type="date" data-c="fechaBaja" value="'+(b.fechaBaja||'')+'">':ro(b.fechaBaja))+'</td>' +
         '<td>'+(edit?'<select data-c="estado2">'+opts(ESTADOS2,b.estado2)+'</select>':ro(b.estado2))+'</td>' +
         '<td>'+(edit?'<select data-c="origen">'+opts(ORIGENES,b.origen)+'</select>':ro(b.origen))+'</td>' +
-        '<td>'+(edit?'<input type="number" min="0" data-c="veces" value="'+(b.veces||0)+'">':ro(b.veces||0))+'</td>' +
-        '<td>'+(edit?'<select data-c="donde">'+opts(DONDE,b.donde)+'</select>':ro(b.donde))+'</td>' +
+        '<td style="text-align:center"><span class="boy-ro" style="font-weight:bold">'+nRec(b)+'</span></td>' +
+        '<td><button class="boy-hist-btn" data-hist="'+k+'">'+(nRec(b)?(ultimoLugar(b)||'sin lugar'):'— registrar')+'</button></td>' +
         '<td style="text-align:center">'+(edit?'<button class="boy-btn del" data-del="'+k+'" style="padding:3px 7px;font-size:11px">✕</button>':'')+'</td>' +
       '</tr>';
     }).join('');
@@ -10620,12 +10726,12 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
   function aplicarMasivo(){
     var keys = Object.keys(sel).filter(function(k){ return sel[k] && datos[k]; });
     if(!keys.length) return;
+    var lugar = document.getElementById('boyMDonde').value;
     var camposFijos = [
       ['propietario', document.getElementById('boyMProp').value],
       ['estado',      document.getElementById('boyMEstado').value],
       ['estado2',     document.getElementById('boyMEstado2').value],
-      ['origen',      document.getElementById('boyMOrigen').value],
-      ['donde',       document.getElementById('boyMDonde').value]
+      ['origen',      document.getElementById('boyMOrigen').value]
     ].filter(function(p){ return p[1] !== SIN; });
     var fecha = document.getElementById('boyMFecha').value;
     var campoFecha = document.getElementById('boyMFechaCampo').value;
@@ -10638,8 +10744,8 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
     keys.forEach(function(k){
       camposFijos.forEach(function(p){ upd[k+'/'+p[0]] = p[1]; datos[k][p[0]] = p[1]; });
       if(fecha){ upd[k+'/'+campoFecha] = fecha; datos[k][campoFecha] = fecha; }
-      if(sumar){ var v = (parseInt(datos[k].veces,10)||0)+1; upd[k+'/veces'] = v; datos[k].veces = v; }
     });
+    if(sumar) keys.forEach(function(k){ agregarRec(k, fecha || hoy(), lugar === SIN ? '' : lugar); });
     ref.update(upd).then(function(){ msg(keys.length+' boyas actualizadas'); });
     resetMasivo(); render();
   }
@@ -10740,12 +10846,14 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
       donde: document.getElementById('boyAltaDonde').value,
       veces: 0
     };
+    var esRecuperada = base.origen === 'RECUPERADA' && base.donde;
     if(!confirm('Se ingresarán '+nuevas.length+' boya(s)'+(dup?' ('+dup+' repetidas se omiten)':'')+'. ¿Continuar?')) return;
     var upd = {};
     nuevas.forEach(function(b, i){
       var k = 'n'+Date.now()+'_'+i;
       var obj = {numero:b.numero, isn:b.isn};
       Object.keys(base).forEach(function(c){ obj[c] = base[c]; });
+      if(esRecuperada){ obj.recuperaciones = [{fecha:base.fechaAlta, lugar:base.donde}]; obj.veces = 1; }
       upd[k] = obj; datos[k] = obj;
     });
     ref.update(upd).then(function(){ msg(nuevas.length+' boyas ingresadas'); });
@@ -10753,6 +10861,32 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
     document.getElementById('boyPanelAlta').style.display = 'none';
     document.getElementById('boyAltaPrev').textContent = '';
     render();
+  }
+
+  /* ---------- modal de historial ---------- */
+  function abrirHist(k){
+    histKey = k;
+    var b = datos[k]||{};
+    document.getElementById('boyHistTitulo').textContent = 'Recuperaciones — boya '+(b.numero||'')+' · '+(b.isn||'');
+    document.getElementById('boyHistFecha').value = hoy();
+    var puede = puedeEditar();
+    document.getElementById('boyHistForm').style.display = puede ? 'grid' : 'none';
+    document.getElementById('boyHistAcc').style.display  = puede ? 'flex' : 'none';
+    renderHist();
+    document.getElementById('boyHistBg').style.display = 'flex';
+  }
+  function cerrarHist(){ histKey = null; document.getElementById('boyHistBg').style.display = 'none'; }
+  function renderHist(){
+    if(!histKey) return;
+    var l = hist(datos[histKey]), puede = puedeEditar();
+    var el = document.getElementById('boyHistLista');
+    if(!l.length){ el.innerHTML = '<div class="boy-hist-vacio">Sin recuperaciones registradas.</div>'; return; }
+    el.innerHTML = l.map(function(r,i){
+      return '<div class="boy-hist-item"><span class="n">'+(i+1)+'</span>' +
+             '<span class="lg">'+(r.lugar||'sin lugar')+'</span>' +
+             '<span class="fc">'+(r.fecha||'')+'</span>' +
+             (puede?'<button data-rm="'+i+'" title="Eliminar">✕</button>':'') + '</div>';
+    }).join('');
   }
 
   /* ---------- eventos ---------- */
@@ -10793,6 +10927,8 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
       if(['propietario','estado','estado2'].indexOf(el.dataset.c) !== -1) renderCards();
     });
     body.addEventListener('click', function(e){
+      var hk = e.target.getAttribute && e.target.getAttribute('data-hist');
+      if(hk){ abrirHist(hk); return; }
       var k = e.target.getAttribute && e.target.getAttribute('data-del'); if(!k) return;
       var b = datos[k]||{};
       if(confirm('¿Eliminar la boya '+(b.numero||'')+' ('+(b.isn||'')+')?')){ delete sel[k]; ref.child(k).remove(); }
@@ -10830,6 +10966,29 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
     document.getElementById('boyMDarAlta').addEventListener('click', function(){ altaBajaSeleccion('Dada de alta'); });
     document.getElementById('boyMDarBaja').addEventListener('click', function(){ altaBajaSeleccion('Dada de baja'); });
 
+    document.getElementById('boyHistLugar').innerHTML = opts(DONDE,'');
+    document.getElementById('boyHistCerrar').addEventListener('click', cerrarHist);
+    document.getElementById('boyHistBg').addEventListener('click', function(e){ if(e.target.id==='boyHistBg') cerrarHist(); });
+    document.getElementById('boyHistAgregar').addEventListener('click', function(){
+      if(!histKey) return;
+      agregarRec(histKey, document.getElementById('boyHistFecha').value, document.getElementById('boyHistLugar').value);
+      renderHist(); render();
+      msg('Recuperación registrada');
+    });
+    document.getElementById('boyHistLista').addEventListener('click', function(e){
+      var i = e.target.getAttribute && e.target.getAttribute('data-rm');
+      if(i === null || i === undefined || !histKey) return;
+      var l = hist(datos[histKey]).slice();
+      l.splice(parseInt(i,10),1);
+      guardarHist(histKey, l);
+      renderHist(); render();
+    });
+
+    document.getElementById('boyCards').addEventListener('click', function(e){
+      var c = e.target.closest ? e.target.closest('[data-card]') : null;
+      if(c) aplicarFiltroCard(parseInt(c.getAttribute('data-card'),10));
+    });
+
     document.getElementById('boyMAplicar').addEventListener('click', aplicarMasivo);
     document.getElementById('boyMLimpiar').addEventListener('click', function(){ sel = {}; resetMasivo(); render(); });
     document.getElementById('boyMEliminar').addEventListener('click', function(){
@@ -10861,14 +11020,17 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
     });
     document.getElementById('boyBtnExport').addEventListener('click', function(){
       if(typeof XLSX === 'undefined'){ alert('Exportador no disponible en esta pantalla.'); return; }
-      var rows = [['Numero','ISN','Propietario','Estado','Fecha Alta','Fecha Baja','Estado 2','Origen','# Recuperada','Donde fue Recuperada']];
+      var rows = [['Numero','ISN','Propietario','Estado','Fecha Alta','Fecha Baja','Estado 2','Origen','# Recuperada','Ultimo lugar','Historial de recuperaciones']];
       filtrar().forEach(function(k){
         var b = datos[k];
-        rows.push([b.numero,b.isn,b.propietario,b.estado,b.fechaAlta,b.fechaBaja,b.estado2,b.origen,b.veces||0,b.donde]);
+        var hl = hist(b).map(function(r){ return (r.fecha||'')+' '+(r.lugar||''); }).join(' | ');
+        rows.push([b.numero,b.isn,b.propietario,b.estado,b.fechaAlta,b.fechaBaja,b.estado2,b.origen,nRec(b),ultimoLugar(b),hl]);
       });
       var r = calcular();
       rows.push([], ['RESUMEN A BORDO'], ['María Fátima',r.fatima], ['María de Gracia',r.gracia],
-                ['Bodega en tierra',r.bodega], ['Activas en el agua',r.activa], ['Por recuperar',r.porRec]);
+                ['Bodega en tierra',r.bodega], ['Activas en el agua',r.activa], ['Por recuperar',r.porRec],
+                ['Fuera de rango',r.fuera], ['Irrecuperables',r.irrec],
+                ['Dadas de alta',r.alta], ['Dadas de baja',r.baja]);
       var wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Boyas');
       XLSX.writeFile(wb, 'Control_de_Boyas_'+hoy()+'.xlsx');
