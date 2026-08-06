@@ -10588,13 +10588,17 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
 
   /* ---------- resumen ---------- */
   function calcular(){
-    var r = {fatima:0,gracia:0,bodega:0,porRec:0,activa:0,fuera:0,irrec:0,alta:0,baja:0,total:0};
+    var r = {fatima:0,gracia:0,bodega:0,porRec:0,activa:0,activaF:0,activaG:0,fuera:0,irrec:0,alta:0,baja:0,total:0};
     Object.keys(datos).forEach(function(k){
       var b = datos[k]||{}; r.total++;
       if(b.estado==='Dada de alta') r.alta++;
       if(b.estado==='Dada de baja') r.baja++;
       if(b.estado2==='POR RECUPERAR') r.porRec++;
-      if(b.estado2==='ACTIVA') r.activa++;
+      if(b.estado2==='ACTIVA'){
+        r.activa++;
+        if(b.propietario==='MARIA FATIMA') r.activaF++;
+        if(b.propietario==='MARIA DE GRACIA') r.activaG++;
+      }
       if(b.estado2==='FUERA DE RANGO') r.fuera++;
       if(b.estado2==='IRRECUPERABLE') r.irrec++;
       if(b.propietario==='BODEGA EN TIERRA') r.bodega++;
@@ -10606,10 +10610,11 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
     return r;
   }
   var CARDS = [
-    ['fat','fatima','A bordo — María Fátima',   {propietario:'MARIA FATIMA', estado2:'A BORDO PARA VIAJE'}],
-    ['gra','gracia','A bordo — María de Gracia',{propietario:'MARIA DE GRACIA', estado2:'A BORDO PARA VIAJE'}],
+    ['fat','fatima','Viaje María Fátima',       {propietario:'MARIA FATIMA', estado2:'A BORDO PARA VIAJE'}],
+    ['gra','gracia','Viaje María de Gracia',    {propietario:'MARIA DE GRACIA', estado2:'A BORDO PARA VIAJE'}],
     ['bod','bodega','En bodega (tierra)',       {propietario:'BODEGA EN TIERRA'}],
-    ['act','activa','Activas en el agua',       {estado2:'ACTIVA'}],
+    ['act','activaF','Activas — María Fátima',   {propietario:'MARIA FATIMA', estado2:'ACTIVA'}],
+    ['act','activaG','Activas — María de Gracia',{propietario:'MARIA DE GRACIA', estado2:'ACTIVA'}],
     ['rec','porRec','Por recuperar',            {estado2:'POR RECUPERAR'}],
     ['fue','fuera', 'Fuera de rango',           {estado2:'FUERA DE RANGO'}],
     ['irr','irrec', 'Irrecuperables',           {estado2:'IRRECUPERABLE'}],
@@ -11027,8 +11032,10 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
         rows.push([b.numero,b.isn,b.propietario,b.estado,b.fechaAlta,b.fechaBaja,b.estado2,b.origen,nRec(b),ultimoLugar(b),hl]);
       });
       var r = calcular();
-      rows.push([], ['RESUMEN A BORDO'], ['María Fátima',r.fatima], ['María de Gracia',r.gracia],
-                ['Bodega en tierra',r.bodega], ['Activas en el agua',r.activa], ['Por recuperar',r.porRec],
+      rows.push([], ['RESUMEN'], ['Viaje María Fátima',r.fatima], ['Viaje María de Gracia',r.gracia],
+                ['Bodega en tierra',r.bodega],
+                ['Activas - María Fátima',r.activaF], ['Activas - María de Gracia',r.activaG],
+                ['Activas (total)',r.activa], ['Por recuperar',r.porRec],
                 ['Fuera de rango',r.fuera], ['Irrecuperables',r.irrec],
                 ['Dadas de alta',r.alta], ['Dadas de baja',r.baja]);
       var wb = XLSX.utils.book_new();
