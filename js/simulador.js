@@ -27,6 +27,30 @@ function defaultProvs(){ return [
 ]; }
 let provs=defaultProvs();
 
+function defaultRProvs(){ return defaultProvs(); }
+let rprovs = defaultRProvs();
+
+function renderRProvs(){
+  const c=document.getElementById('r_prov_container');
+  if(!c) return;
+  c.innerHTML=rprovs.map((p,i)=>`
+    <div class="prov-row">
+      <input class="prov-name" type="text" value="${eh(p.name)}" placeholder="Categoría"
+        oninput="SIMULADOR.rprovs[${i}].name=this.value;SIMULADOR.sv()">
+      <input type="number" id="rpmanual${i}" class="prov-manual" style="flex:1" value="${p.value}" min="0" step="100" placeholder="0"
+        oninput="SIMULADOR.rprovs[${i}].value=+this.value||0;SIMULADOR.updRProvPill();SIMULADOR.sv();SIMULADOR.cr()">
+      <button onclick="SIMULADOR.rprovs.splice(${i},1);SIMULADOR.renderRProvs();SIMULADOR.sv();SIMULADOR.cr()" style="font-size:15px;color:#ccc;background:none;border:none;cursor:pointer;padding:0 0 0 2px" title="Eliminar">×</button>
+    </div>`).join('');
+  updRProvPill();
+}
+function addRProv(){ rprovs.push({name:'Nueva categoría',max:50000,value:0}); renderRProvs(); sv(); cr(); }
+function updRProvPill(){
+  const t=rprovs.reduce((s,p)=>s+p.value,0);
+  const p=document.getElementById('r_prov_pill');
+  if(p) p.textContent=fmt(t);
+}
+function getTotalRProv(){ return rprovs.reduce((s,p)=>s+p.value,0); }
+
 function renderProvs(){
   const c=document.getElementById('prov_container');
   if(!c) return;
@@ -61,60 +85,92 @@ function addProv(){
 function getTotalProv(){return provs.reduce((s,p)=>s+p.value,0);}
 
 // ── TALLAS ──
-function syncTalla(sp){
-  const ids=sp==='yf'
-    ?['tl_yf_g','tl_yf_m','tl_yf_b','tl_yf_ch','tl_yf_xs']
-    :['tl_skj_g','tl_skj_b','tl_skj_ch','tl_skj_xs'];
-  const vids=sp==='yf'
-    ?['tv_yf_g','tv_yf_m','tv_yf_b','tv_yf_ch','tv_yf_xs']
-    :['tv_skj_g','tv_skj_b','tv_skj_ch','tv_skj_xs'];
-  const vals=ids.map(id=>parseInt(document.getElementById(id).value)||0);
-  const sum=vals.reduce((a,b)=>a+b,0);
-  vids.forEach((vid,i)=>{const el=document.getElementById(vid);if(el)el.textContent=vals[i]+'%';});
-  const sEl=document.getElementById(sp+'_talla_sum');
-  if(sEl){sEl.textContent=sum+'%';sEl.style.color=sum===100?'#1a1a18':'#D85A30';}
+const TALLA_KEYS={yf:['g','m','b','ch','xs'],skj:['g','b','ch','xs']};
+const TALLA_ANCLA={yf:'b',skj:'b'};
+
+function tallaTM(sp,k,sc){sc=sc||'';return Math.max(0,parseFloat((document.getElementById(sc+'tmt_'+sp+'_'+k)||{}).value)||0);}
+function tallaObjetivo(sp,sc){
+  const id = sc==='r' ? 'rr_'+sp+'_tm' : 'tm_'+sp;
+  return Math.max(0,parseFloat((document.getElementById(id)||{}).value)||0);
 }
 
-function yfDiff(){
-  const g=+document.getElementById('tl_yf_g').value/100;
-  const m=+document.getElementById('tl_yf_m').value/100;
-  const b=+document.getElementById('tl_yf_b').value/100;
-  const ch=+document.getElementById('tl_yf_ch').value/100;
-  const xs=+document.getElementById('tl_yf_xs').value/100;
-  const dg=+document.getElementById('d_yf_g').value||0;
-  const dm=+document.getElementById('d_yf_m').value||0;
-  const db=+document.getElementById('d_yf_b').value||0;
-  const dch=+document.getElementById('d_yf_ch').value||0;
-  const dxs=+document.getElementById('d_yf_xs').value||0;
-  const s=g+m+b+ch+xs;
-  return s>0?(g*dg+m*dm+b*db+ch*dch+xs*dxs)/s:0;
+function pintarCuadre(sp,sc){
+  sc=sc||'';
+  const keys=TALLA_KEYS[sp];
+  const sum=keys.reduce((a,k)=>a+tallaTM(sp,k,sc),0);
+  const objetivo=tallaObjetivo(sp,sc);
+  const dif=+(sum-objetivo).toFixed(2);
+  const desc=Math.abs(dif)>=0.05;
+  const sEl=document.getElementById(sc+sp+'_talla_sum');
+  if(sEl){sEl.textContent=sum.toFixed(1)+' / '+objetivo.toFixed(1)+' TM';sEl.style.color=desc?'#D85A30':'#1a1a18';}
+  const hint=document.getElementById(sc+sp+'_talla_hint');
+  if(hint){
+    if(!desc){hint.textContent='';}
+    else if(dif>0){hint.textContent='\u26a0 Hay '+dif.toFixed(1)+' TM de m\u00e1s respecto a la descarga '+sp.toUpperCase()+'.';hint.style.color='#D85A30';}
+    else{hint.textContent='\u26a0 Faltan '+Math.abs(dif).toFixed(1)+' TM por asignar a tallas.';hint.style.color='#BA7517';}
+  }
+  keys.forEach(k=>{const el=document.getElementById(sc+'tmt_'+sp+'_'+k);if(el)el.classList.toggle('tm-over',desc);});
 }
 
-function skjDiff(){
-  const g=+document.getElementById('tl_skj_g').value/100;
-  const b=+document.getElementById('tl_skj_b').value/100;
-  const ch=+document.getElementById('tl_skj_ch').value/100;
-  const xs=+document.getElementById('tl_skj_xs').value/100;
-  const dg=+document.getElementById('d_skj_g').value||0;
-  const db=+document.getElementById('d_skj_b').value||0;
-  const dch=+document.getElementById('d_skj_ch').value||0;
-  const dxs=+document.getElementById('d_skj_xs').value||0;
-  const s=g+b+ch+xs;
-  return s>0?(g*dg+b*db+ch*dch+xs*dxs)/s:0;
+// Fuente de verdad = TM por talla. El % queda como campo derivado oculto.
+function syncTallaScope(sp,sc){
+  sc=sc||'';
+  const keys=TALLA_KEYS[sp];
+  const tms=keys.map(k=>tallaTM(sp,k,sc));
+  const sum=tms.reduce((a,b)=>a+b,0);
+  keys.forEach((k,i)=>{
+    const pct=sum>0?(tms[i]/sum*100):0;
+    const hid=document.getElementById(sc+'tl_'+sp+'_'+k); if(hid) hid.value=pct.toFixed(2);
+    const v=document.getElementById(sc+'tv_'+sp+'_'+k); if(v) v.textContent=(sum>0?pct.toFixed(1):'0')+'%';
+  });
+  pintarCuadre(sp,sc);
 }
+function syncTalla(sp){ syncTallaScope(sp,''); }
+function syncTallaReal(sp){ syncTallaScope(sp,'r'); }
+
+function ajustarTallasScope(sp,sc){
+  sc=sc||'';
+  const keys=TALLA_KEYS[sp];
+  const objetivo=tallaObjetivo(sp,sc);
+  const tms=keys.map(k=>tallaTM(sp,k,sc));
+  const sum=tms.reduce((a,b)=>a+b,0);
+  let out = sum>0 ? tms.map(v=>v/sum*objetivo) : keys.map(k=>k===TALLA_ANCLA[sp]?objetivo:0);
+  out=out.map(v=>Math.round(v*10)/10);
+  const idxA=keys.indexOf(TALLA_ANCLA[sp]);
+  const resto=Math.round((objetivo-out.reduce((a,b)=>a+b,0))*10)/10;
+  out[idxA]=Math.max(0,Math.round((out[idxA]+resto)*10)/10);
+  keys.forEach((k,i)=>{const el=document.getElementById(sc+'tmt_'+sp+'_'+k);if(el)el.value=out[i];});
+  syncTallaScope(sp,sc); sv(); if(sc==='r'){cr();}else{cp();}
+}
+function ajustarTallas(sp){ ajustarTallasScope(sp,''); }
+function ajustarTallasReal(sp){ ajustarTallasScope(sp,'r'); }
+
+function tallaDiff(sp,sc){
+  sc=sc||'';
+  let num=0,den=0;
+  TALLA_KEYS[sp].forEach(k=>{
+    const tm=tallaTM(sp,k,sc);
+    const d=+((document.getElementById(sc+'d_'+sp+'_'+k)||{}).value)||0;
+    num+=tm*d; den+=tm;
+  });
+  return den>0?num/den:0;
+}
+function yfDiff(){ return tallaDiff('yf',''); }
+function skjDiff(){ return tallaDiff('skj',''); }
 
 // ── BARRA DE CARGA ──
 const SEG_COLORS={yf:'#2E75B6',skj:'#1D9E75',rec:'#BA7517',ps:'#534AB7',bt:'#D85A30',do:'#0F6E56',extra:'#888780'};
 const SEG_LABELS={yf:'YF',skj:'SKJ',rec:'Rechazo',ps:'Pata seca',bt:'Botella',do:'Dorado',extra:'Otro'};
 
-function updCargaBar(especies,cap){
+function updCargaBar(especies,cap,pfx){
+  pfx=pfx||'';
   const total=especies.reduce((s,e)=>s+e.tm,0);
-  const track=document.getElementById('carga_track');
-  const legend=document.getElementById('carga_legend');
-  const warn=document.getElementById('carga_warning');
-  const usado=document.getElementById('carga_usada');
-  const capEl=document.getElementById('carga_cap');
-  const pill=document.getElementById('tm_total_pill');
+  const track=document.getElementById(pfx+'carga_track');
+  const legend=document.getElementById(pfx+'carga_legend');
+  const warn=document.getElementById(pfx+'carga_warning');
+  const usado=document.getElementById(pfx+'carga_usada');
+  const capEl=document.getElementById(pfx+'carga_cap');
+  const pill=document.getElementById(pfx+'tm_total_pill');
 
   if(usado) usado.textContent=total.toFixed(1);
   if(capEl) capEl.textContent=cap;
@@ -273,25 +329,9 @@ function cp(){
   setText('caja_credito_disp', fmt(credito));
   setText('caja_propia_sub', credito>0?'('+fmt(cajaTot)+' − crédito '+fmt(credito)+')':'Sin crédito registrado');
 
-  // TM por talla YF
-  const yfSliders=[['tl_yf_g','ttm_yf_g'],['tl_yf_m','ttm_yf_m'],['tl_yf_b','ttm_yf_b'],['tl_yf_ch','ttm_yf_ch'],['tl_yf_xs','ttm_yf_xs']];
-  const yfTallaSum=yfSliders.reduce((s,[id])=>s+(+document.getElementById(id).value||0),0);
-  yfSliders.forEach(([id,tid])=>{
-    const pct=+document.getElementById(id).value||0;
-    const tmT=tm_yf*(yfTallaSum>0?pct/yfTallaSum:0);
-    const el=document.getElementById(tid);
-    if(el) el.textContent=tm_yf>0?tmT.toFixed(1)+'t':'—';
-  });
-
-  // TM por talla SKJ
-  const skjSliders=[['tl_skj_g','ttm_skj_g'],['tl_skj_b','ttm_skj_b'],['tl_skj_ch','ttm_skj_ch'],['tl_skj_xs','ttm_skj_xs']];
-  const skjTallaSum=skjSliders.reduce((s,[id])=>s+(+document.getElementById(id).value||0),0);
-  skjSliders.forEach(([id,tid])=>{
-    const pct=+document.getElementById(id).value||0;
-    const tmT=tm_skj*(skjTallaSum>0?pct/skjTallaSum:0);
-    const el=document.getElementById(tid);
-    if(el) el.textContent=tm_skj>0?tmT.toFixed(1)+'t':'—';
-  });
+  // Cuadre de TM por talla vs captura declarada
+  pintarCuadre('yf','');
+  pintarCuadre('skj','');
 
   // Flujo de caja
   const cfz=-(prov+ant);
@@ -346,41 +386,77 @@ function buildSensChart(costoFijo,ingTM,tmEst,cap){
 let SREAL=null;
 
 function cr(){
-  const dias=+document.getElementById('r_dias').value||0;
-  const tm  =+document.getElementById('r_tm').value||0;
-  const comb=+document.getElementById('r_comb').value||0;
-  const prov=+document.getElementById('r_prov').value||0;
-  const rol =+document.getElementById('r_rol').value||0;
-  const sal =+document.getElementById('r_sal').value||0;
+  const dias =+document.getElementById('r_dias').value||0;
+  const cap  =+document.getElementById('r_cap').value||180;
+  const ancla=+document.getElementById('r_ancla').value||0;
+  const rol  =+document.getElementById('r_rol').value||0;
+  const sal  =+document.getElementById('r_sal').value||0;
+  const ant  =+document.getElementById('r_anticipo').value||0;
+  const credito=+document.getElementById('r_credito_prov').value||0;
 
-  const specs=[
-    ['rr_yf','YF'],['rr_skj','SKJ'],['rr_rec','Rechazo'],
-    ['rr_ps','Pata seca'],['rr_bt','Botella'],['rr_do','Dorado'],['rr_extra','Otro'],
+  const tm_yf =+document.getElementById('rr_yf_tm').value||0;
+  const tm_skj=+document.getElementById('rr_skj_tm').value||0;
+  const tm_rec=+document.getElementById('rr_rec_tm').value||0;
+  const tm_ps =+document.getElementById('rr_ps_tm').value||0;
+  const tm_bt =+document.getElementById('rr_bt_tm').value||0;
+  const tm_do =+document.getElementById('rr_do_tm').value||0;
+  const tm_ex =+document.getElementById('rr_extra_tm').value||0;
+  const px_rec=+document.getElementById('rr_rec_px').value||0;
+  const px_ps =+document.getElementById('rr_ps_px').value||0;
+  const px_bt =+document.getElementById('rr_bt_px').value||0;
+  const px_do =+document.getElementById('rr_do_px').value||0;
+  const px_ex =+document.getElementById('rr_extra_px').value||0;
+  const tm=tm_yf+tm_skj+tm_rec+tm_ps+tm_bt+tm_do+tm_ex;
+
+  // Precios efectivos reales desde ancla + diferencial por talla
+  const px_yf =ancla+tallaDiff('yf','r');
+  const px_skj=ancla+tallaDiff('skj','r');
+  setText('rpx_yf_disp', ancla>0?'$'+Math.round(px_yf):'—');
+  setText('rpx_skj_disp',ancla>0?'$'+Math.round(px_skj):'—');
+  setText('rpx_yf_ef',  ancla>0?'$'+Math.round(px_yf)+'/TM':'—');
+  setText('rpx_skj_ef', ancla>0?'$'+Math.round(px_skj)+'/TM':'—');
+  pintarCuadre('yf','r');
+  pintarCuadre('skj','r');
+
+  const ing_yf=tm_yf*px_yf, ing_skj=tm_skj*px_skj, ing_rec=tm_rec*px_rec;
+  const ing_ps=tm_ps*px_ps, ing_bt=tm_bt*px_bt, ing_do=tm_do*px_do, ing_ex=tm_ex*px_ex;
+  const ing_total=ing_yf+ing_skj+ing_rec+ing_ps+ing_bt+ing_do+ing_ex;
+
+  const nomEx=document.getElementById('rr_nom_extra')?.value||'Otro';
+  const filas=[
+    ['rr_yf_tot','rpct_yf',ing_yf,tm_yf,'YF'],
+    ['rr_skj_tot','rpct_skj',ing_skj,tm_skj,'SKJ'],
+    ['rr_rec_tot','rpct_rec',ing_rec,tm_rec,'Rechazo'],
+    ['rr_ps_tot','rpct_ps',ing_ps,tm_ps,'Pata seca'],
+    ['rr_bt_tot','rpct_bt',ing_bt,tm_bt,'Botella'],
+    ['rr_do_tot','rpct_do',ing_do,tm_do,'Dorado'],
+    ['rr_extra_tot','rpct_extra',ing_ex,tm_ex,nomEx],
   ];
-  let ing_total=0;
   const detalle=[];
-  specs.forEach(([pref,label])=>{
-    const t=+document.getElementById(pref+'_tm')?.value||0;
-    const p=+document.getElementById(pref+'_px')?.value||0;
-    const nom=pref==='rr_extra'?(document.getElementById('rr_nom_extra')?.value||label):label;
-    const sub=t*p;
-    ing_total+=sub;
-    const el=document.getElementById(pref+'_tot');
-    if(el) el.textContent=sub>0?fmt(sub):'—';
-    if(sub>0) detalle.push([nom,sub,t>0?sub/t:0]);
+  filas.forEach(([tid,pid,ing,t,lbl])=>{
+    const el=document.getElementById(tid); if(el) el.textContent=ing>0?fmt(ing):'—';
+    const pe=document.getElementById(pid); if(pe) pe.textContent=(t>0&&tm>0)?(t/tm*100).toFixed(0)+'%':'—';
+    if(ing>0) detalle.push([lbl,ing,t>0?ing/t:0]);
   });
   setText('rr_ing_disp',ing_total>0?fmt(ing_total):'—');
 
-  // SAL: castigo al ingreso, no costo
+  updCargaBar([
+    {tm:tm_yf,color:SEG_COLORS.yf,label:'YF'},
+    {tm:tm_skj,color:SEG_COLORS.skj,label:'SKJ'},
+    {tm:tm_rec,color:SEG_COLORS.rec,label:'Rechazo'},
+    {tm:tm_ps,color:SEG_COLORS.ps,label:'Pata seca'},
+    {tm:tm_bt,color:SEG_COLORS.bt,label:'Botella'},
+    {tm:tm_do,color:SEG_COLORS.do,label:'Dorado'},
+    {tm:tm_ex,color:SEG_COLORS.extra,label:nomEx},
+  ],cap,'r_');
+
+  const prov=getTotalRProv();
   const ing_neta=ing_total-sal;
-  const costo=comb+prov+rol;   // sin sal
+  const costo=prov+rol;
   const margen=ing_neta-costo;
   const mpct=ing_neta>0?margen/ing_neta*100:0;
-  const ctm=tm>0?costo/tm:0;
-  const itm=tm>0?ing_neta/tm:0;
-  const cdia=dias>0?costo/dias:0;
+  const ctm=tm>0?costo/tm:0, itm=tm>0?ing_neta/tm:0, cdia=dias>0?costo/dias:0;
 
-  // resultado KPIs
   setText('r_ing',fmt(ing_neta));
   setText('r_costo',fmt(costo));
   const mEl=document.getElementById('r_margen');
@@ -390,46 +466,72 @@ function cr(){
   const bar=document.getElementById('r_bar');
   if(bar){bar.style.width=Math.min(100,Math.max(0,mpct)).toFixed(0)+'%';bar.style.background=margen>=0?'#1D9E75':'#D85A30';}
 
-  // Tabla desglose
+  // Caja real
+  const cajaTot=prov+ant;
+  const cajaPropia=Math.max(0,cajaTot-credito);
+  setText('r_cf_zarpe',cajaTot>0?fmt(-cajaTot):'—');
+  setText('r_cf_llegada',ing_neta>0?fmt(ing_neta):'—');
+  setText('r_caja_total_disp',fmt(cajaPropia));
+  setText('r_caja_credito_disp',fmt(credito));
+  setText('r_caja_propia_sub',credito>0?'('+fmt(cajaTot)+' − crédito '+fmt(credito)+')':'Sin crédito registrado');
+
   const tbody=document.getElementById('r_tbody');
   if(tbody&&(ing_total>0||costo>0)){
     const rows=[
       ...detalle.map(([l,v,ptm])=>[l,v,ptm,true,false]),
       sal>0?['− Castigo salinidad',-sal,0,false,false]:null,
       ['= INGRESO NETO',ing_neta,itm,true,true],
-      ['Combustible',-comb,tm>0?-comb/tm:0,false,false],
-      ['Avituallamiento',-prov,tm>0?-prov/tm:0,false,false],
+      ...rprovs.filter(p=>p.value>0).map(p=>[p.name,-p.value,tm>0?-p.value/tm:0,false,false]),
       ['Rol tripulación',-rol,tm>0?-rol/tm:0,false,false],
       ['= TOTAL COSTOS',-costo,-ctm,false,true],
       ['MARGEN NETO',margen,tm>0?margen/tm:0,margen>=0,true],
     ].filter(Boolean);
     tbody.innerHTML=rows.map(([lbl,monto,ptm,pos,tot])=>`
       <tr class="${tot?'total-row':''}">
-        <td>${lbl}</td>
+        <td>${eh(String(lbl))}</td>
         <td class="r" style="color:${pos?'#1D9E75':'#D85A30'};font-weight:${tot?700:400}">${monto!==0?fmt(monto):'—'}</td>
         <td class="r" style="color:#888">${ptm!==0?'$'+Math.round(ptm):'—'}</td>
         <td class="r" style="color:#aaa">${(tot&&ing_neta>0)?Math.abs(monto/ing_neta*100).toFixed(0)+'%':''}</td>
       </tr>`).join('');
   }
 
-  // KPIs eficiencia
-  const cEl=document.getElementById('r_cdia');
-  if(cEl) cEl.textContent=dias>0?'$'+Math.round(cdia):'—';
-  const iEl=document.getElementById('r_itm');
-  if(iEl) iEl.textContent=tm>0?'$'+Math.round(itm):'—';
-  const ctEl=document.getElementById('r_ctm');
-  if(ctEl) ctEl.textContent=tm>0?'$'+Math.round(ctm):'—';
+  setText('r_cdia',dias>0?'$'+Math.round(cdia):'—');
+  setText('r_itm',tm>0?'$'+Math.round(itm):'—');
+  setText('r_ctm',tm>0?'$'+Math.round(ctm):'—');
 
   const rb=document.getElementById('r_badge');
-  const rs=document.getElementById('r_badge_sub');
-  if(rb&&tm>0){
-    if(mpct>=20){rb.innerHTML='<span class="badge green">Excelente</span>';if(rs)rs.textContent='Margen ≥20%';}
-    else if(mpct>=10){rb.innerHTML='<span class="badge amber">Bueno</span>';if(rs)rs.textContent='Margen 10–20%';}
-    else if(margen>=0){rb.innerHTML='<span class="badge amber">Marginal</span>';if(rs)rs.textContent='Margen <10%';}
-    else{rb.innerHTML='<span class="badge red">Pérdida</span>';if(rs)rs.textContent='Ingreso < Costo';}
+  if(rb){
+    rb.textContent = (ing_total<=0&&costo<=0) ? '—' : (margen>=0?'GANANCIA':'PÉRDIDA');
+    rb.style.color = margen>=0?'#1D9E75':'#D85A30';
   }
+  setText('r_badge_sub', tm>0?tm.toFixed(1)+' TM · '+dias+' días':'');
+}
 
-  SREAL={tm,dias,ing:ing_neta,ingBruto:ing_total,sal,costo,margen,mpct,ctm,itm};
+// Copia la proyección al cierre real como punto de partida.
+function precargarDesdeProyeccion(){
+  if(!confirm('Se reemplazarán los datos del cierre real con los de la proyección. ¿Continuar?')) return;
+  const cp_=(a,b)=>{const s=document.getElementById(a),d=document.getElementById(b);if(s&&d)d.value=s.value;};
+  cp_('p_entrada','r_entrada'); cp_('p_dias','r_dias'); cp_('p_cap','r_cap');
+  cp_('p_ancla','r_ancla'); cp_('p_sal','r_sal'); cp_('p_anticipo','r_anticipo');
+  cp_('p_credito_prov','r_credito_prov');
+  ['yf','skj','rec','ps','bt','do','extra'].forEach(k=>cp_('tm_'+k,'rr_'+k+'_tm'));
+  ['rec','ps','bt','do','extra'].forEach(k=>cp_('px_'+k,'rr_'+k+'_px'));
+  cp_('nom_extra','rr_nom_extra');
+  Object.keys(TALLA_KEYS).forEach(sp=>TALLA_KEYS[sp].forEach(k=>{
+    cp_('tmt_'+sp+'_'+k,'rtmt_'+sp+'_'+k);
+    cp_('d_'+sp+'_'+k,'rd_'+sp+'_'+k);
+  }));
+  // Rol proyectado ($/TM) x TM totales
+  const rolTM=+document.getElementById('p_rol_tm').value||0;
+  const tmTot=['yf','skj','rec','ps','bt','do','extra'].reduce((s,k)=>s+(+document.getElementById('tm_'+k).value||0),0);
+  const rEl=document.getElementById('r_rol'); if(rEl) rEl.value=Math.round(rolTM*tmTot);
+  rprovs = provs.map(p=>({name:p.name,max:p.max,value:p.value}));
+  renderRProvs();
+  if(+document.getElementById('tm_extra').value>0){
+    const row=document.getElementById('rr_extra_row'); if(row) row.style.display='table-row';
+  }
+  syncTallaReal('yf'); syncTallaReal('skj');
+  sv(); cr();
 }
 
 // ── COMPARACIÓN ──
@@ -1084,11 +1186,17 @@ const INPUT_IDS=[
   'p_entrada','p_dias','p_cap','p_ancla','p_rol_tm','p_sal','p_anticipo','p_credito_prov',
   'tm_yf','tm_skj','tm_rec','px_rec','tm_ps','px_ps','tm_bt','px_bt','tm_do','px_do',
   'tm_extra','px_extra','nom_extra',
+  'tmt_yf_g','tmt_yf_m','tmt_yf_b','tmt_yf_ch','tmt_yf_xs',
   'tl_yf_g','tl_yf_m','tl_yf_b','tl_yf_ch','tl_yf_xs',
   'd_yf_g','d_yf_m','d_yf_b','d_yf_ch','d_yf_xs',
+  'tmt_skj_g','tmt_skj_b','tmt_skj_ch','tmt_skj_xs',
   'tl_skj_g','tl_skj_b','tl_skj_ch','tl_skj_xs',
   'd_skj_g','d_skj_b','d_skj_ch','d_skj_xs',
-  'r_entrada','r_dias','r_tm','r_comb','r_prov','r_rol','r_sal',
+  'r_entrada','r_dias','r_cap','r_ancla','r_rol','r_sal','r_anticipo','r_credito_prov',
+  'rtmt_yf_g','rtmt_yf_m','rtmt_yf_b','rtmt_yf_ch','rtmt_yf_xs',
+  'rd_yf_g','rd_yf_m','rd_yf_b','rd_yf_ch','rd_yf_xs',
+  'rtmt_skj_g','rtmt_skj_b','rtmt_skj_ch','rtmt_skj_xs',
+  'rd_skj_g','rd_skj_b','rd_skj_ch','rd_skj_xs',
   'rr_yf_tm','rr_yf_px','rr_skj_tm','rr_skj_px',
   'rr_rec_tm','rr_rec_px','rr_ps_tm','rr_ps_px','rr_bt_tm','rr_bt_px',
   'rr_do_tm','rr_do_px','rr_extra_tm','rr_extra_px','rr_nom_extra',
@@ -1131,7 +1239,7 @@ function sv(){
   markTyping();
   const vals={};
   INPUT_IDS.forEach(id=>{const el=document.getElementById(id);if(el) vals[id]=el.value;});
-  const payload = {vals, provs, invItems, repoItems, updatedAt: Date.now()};
+  const payload = {vals, provs, rprovs, invItems, repoItems, updatedAt: Date.now()};
   const json = JSON.stringify(payload);
   try{ localStorage.setItem(SK, json); }catch(e){}
   if(json === lastRemoteJSON) return; // nada cambio, evita loop con el listener remoto
@@ -1146,12 +1254,13 @@ function sv(){
 
 function applyRemoteData(data){
   if(!data) return;
-  const {vals, provs:ps, invItems:iv, repoItems:ri} = data;
+  const {vals, provs:ps, rprovs:rps, invItems:iv, repoItems:ri} = data;
   if(vals) Object.entries(vals).forEach(([id,v])=>{
     const el=document.getElementById(id);
     if(el && document.activeElement!==el) el.value=v;
   });
   if(ps && ps.length) provs = ps;
+  if(rps && rps.length) rprovs = rps;
   if(iv && iv.length) invItems = iv;
   if(ri && ri.length) repoItems = ri;
 }
@@ -1192,6 +1301,9 @@ function load(){
     SIMULADOR.renderRepo();
     SIMULADOR.syncTalla('yf');
     SIMULADOR.syncTalla('skj');
+    SIMULADOR.syncTallaReal('yf');
+    SIMULADOR.syncTallaReal('skj');
+    SIMULADOR.renderRProvs();
     SIMULADOR.cp();
     SIMULADOR.cr();
     if(document.getElementById('screen-comp')?.classList.contains('active')) calcComp();
@@ -1238,6 +1350,9 @@ function init(){
   SIMULADOR.renderRepo();
   SIMULADOR.syncTalla('yf');
   SIMULADOR.syncTalla('skj');
+  SIMULADOR.syncTallaReal('yf');
+  SIMULADOR.syncTallaReal('skj');
+  SIMULADOR.renderRProvs();
   SIMULADOR.cp();
   SIMULADOR.cr();
 }
@@ -1268,16 +1383,18 @@ function switchVessel(v){
   // Resetear arrays a sus defaults antes de cargar los del nuevo barco,
   // para no arrastrar datos del barco anterior si el nuevo aún no tiene nada.
   provs = defaultProvs();
+  rprovs = defaultRProvs();
   invItems = defaultInvItems();
   repoItems = defaultRepoItems();
   // limpiar inputs a los valores iniciales del HTML; la capacidad al del barco
   INPUT_IDS.forEach(id=>{
     const el=document.getElementById(id);
     if(!el) return;
-    if(id==='p_cap'){ el.value = VESSEL_META[v].cap; }
+    if(id==='p_cap'||id==='r_cap'){ el.value = VESSEL_META[v].cap; }
     else if(_inputDefaults && _inputDefaults[id]!==undefined){ el.value=_inputDefaults[id]; }
   });
   const capEl=document.getElementById('carga_cap'); if(capEl) capEl.textContent=VESSEL_META[v].cap;
+  const rCapEl=document.getElementById('r_carga_cap'); if(rCapEl) rCapEl.textContent=VESSEL_META[v].cap;
 
   load();  // carga datos del nuevo barco (local + Firebase)
   SIMULADOR.renderProvs();
@@ -1285,6 +1402,9 @@ function switchVessel(v){
   SIMULADOR.renderRepo();
   SIMULADOR.syncTalla('yf');
   SIMULADOR.syncTalla('skj');
+  SIMULADOR.syncTallaReal('yf');
+  SIMULADOR.syncTallaReal('skj');
+  SIMULADOR.renderRProvs();
   SIMULADOR.cp();
   SIMULADOR.cr();
 }
@@ -1306,6 +1426,15 @@ function switchVessel(v){
     showScreen,
     sv,
     syncTalla,
+    syncTallaReal,
+    ajustarTallas,
+    ajustarTallasReal,
+    precargarDesdeProyeccion,
+    renderRProvs,
+    addRProv,
+    updRProvPill,
+    get rprovs(){ return rprovs; },
+    set rprovs(v){ rprovs = v; },
     updProvPill,
     updateInvCalc,
     get provs(){ return provs; },
