@@ -5567,6 +5567,14 @@ function render(){
   const master=isMaster();
   const deadline=deadlineFor(area.id);
   let h=`<div class="area-panel ${BL[area.color]}"><div class="area-sub">${escH(area.sub)}</div>`;
+  if(currentVessel==='gracia'&&master){
+    h+=`<div style="margin:10px 0 14px">
+      <button onclick="copyRespFromFatima()" style="background:linear-gradient(135deg,#1a6fa8,#155b8f);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,.25)">
+        ⬇ Copiar responsables de María Fátima
+      </button>
+      <span style="font-size:11px;color:#888;margin-left:10px">Solo copia ítems sin responsable asignado</span>
+    </div>`;
+  }
   h+=`<div class="deadline-badge" id="deadlineBadge_${area.id}" style="display:${deadline?'inline-block':'none'}">${deadline?'📅 Fecha límite: '+deadline:''}</div>`;
   area.sections.forEach((sec,secIdx)=>{
     const items=getSectionItems(area,secIdx);
@@ -5634,6 +5642,51 @@ function resetVessel(){
   });
   vs._trip={};
   persistNow();render();
+}
+
+/* ══════════════════════════════════════════
+   COPIAR RESPONSABLES MF → MG
+   ══════════════════════════════════════════ */
+function copyRespFromFatima(){
+  if(!isMaster())return;
+  if(!confirm('¿Copiar las asignaciones de responsables de María Fátima a María de Gracia?\n\nSolo se copian los ítems que aún no tienen responsable en María de Gracia. Los que ya tienen asignación no se tocan.'))return;
+  const fAreas=(state.fatima&&state.fatima.areas)||{};
+  if(!state.gracia.areas)state.gracia.areas={};
+  let copied=0;
+  AREAS.forEach(function(area){
+    const fArea=fAreas[area.id];
+    if(!fArea||!fArea.steps)return;
+    if(!state.gracia.areas[area.id])
+      state.gracia.areas[area.id]={steps:{},extraSteps:[],notes:'',sectionOrder:{},customSteps:{},deletedSteps:{}};
+    const gArea=state.gracia.areas[area.id];
+    if(!gArea.steps)gArea.steps={};
+    Object.keys(fArea.steps).forEach(function(sid){
+      const fStep=fArea.steps[sid];
+      if(fStep&&fStep.resp){
+        if(!gArea.steps[sid])gArea.steps[sid]={};
+        if(!gArea.steps[sid].resp){
+          gArea.steps[sid].resp=fStep.resp;
+          copied++;
+        }
+      }
+    });
+  });
+  if(!copied){
+    alert('No hay responsables nuevos para copiar.\nTodos los ítems de María de Gracia ya tienen asignación.');
+    return;
+  }
+  /* Persistir gracia en localStorage y Firebase */
+  try{localStorage.setItem(lsKey('gracia'),JSON.stringify(state.gracia));}catch(e){}
+  if(fbReady&&!applyingRemote){
+    setSync('saving','Guardando…');
+    Promise.all([
+      db.ref(FB_PATH+'/gracia').set(state.gracia),
+      db.ref(FB_PATH+'/personas').set(people),
+      db.ref(FB_PATH+'/thresholds').set(thresholds),
+    ]).then(function(){setSync('ok','Sincronizado');}).catch(function(){setSync('local','Solo local');});
+  }
+  render();
+  alert('✅ Se copiaron '+copied+' asignaciones de responsables desde María Fátima.');
 }
 
 /* ══════════════════════════════════════════
@@ -5816,7 +5869,8 @@ thresholds=loadThr();
   window.addSectionStep   = addSectionStep;
   window.updateResp       = updateResp;
   window.updateObs        = updateObs;
-  window.saveThr          = saveThr;
+  window.saveThr               = saveThr;
+  window.copyRespFromFatima    = copyRespFromFatima;
   /* ── Static HTML (dates bar, PIN overlay) ── */
   window.markTyping       = markTyping;
   window.onPinInput       = onPinInput;
