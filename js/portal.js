@@ -30,43 +30,17 @@
         linkLabel: 'Abrir checklist',
       },
       {
-        id: 'pedidos',
-        title: 'Sistema de Pedidos',
-        desc: 'Gestión de pedidos a proveedores: órdenes de compra, historial de cotizaciones y control de entregas.',
-        icon: '📦',
-        iconColor: 'orange',
-        color: 'color-orange',
-        status: 'dev',
-        roles: ['admin','master'],
+        id: 'proyectos',
+        title: 'Proyectos e Inversiones',
+        desc: 'Registro de proyectos y trabajos por embarcación: ítems por área (mecánica, hidráulica, frío, etc.), proveedor, valor y estado. Sumatorias por área e inversión total.',
+        icon: '🔧',
+        iconColor: 'green',
+        color: 'color-green',
+        status: 'active',
+        roles: ['operaciones','admin','contabilidad','master'],
         vessels: ['María Fátima','María de Gracia'],
-        url: null,
-        linkLabel: 'Próximamente',
-      },
-      {
-        id: 'salida',
-        title: 'Cuadro de Salida',
-        desc: 'Control de zarpe por buque: documentación requerida, checklist de salida y registro de fechas.',
-        icon: '🚢',
-        iconColor: 'teal',
-        color: 'color-teal',
-        status: 'dev',
-        roles: ['admin','operaciones','master'],
-        vessels: ['María Fátima','María de Gracia'],
-        url: null,
-        linkLabel: 'Próximamente',
-      },
-      {
-        id: 'operaciones',
-        title: 'Panel de Operaciones',
-        desc: 'Vista general del estado operativo de los buques: ciclos activos, estado de viaje, fechas clave y alertas.',
-        icon: '📋',
-        iconColor: 'purple',
-        color: 'color-purple',
-        status: 'dev',
-        roles: ['admin','operaciones','master'],
-        vessels: ['María Fátima','María de Gracia'],
-        url: null,
-        linkLabel: 'Próximamente',
+        onclick: 'openProyectos()',
+        linkLabel: 'Abrir proyectos',
       },
       {
         id: 'documentos',
@@ -217,7 +191,7 @@
 
   // ── Navigation ──────────────────────────────────────────────────────────────
   function hideAllScreens() {
-    ['screen-login','screen-dashboard','screen-gestor','screen-checklist-ops','screen-checklist-adm','screen-equipos','screen-simulador','screen-documentos','screen-boyas'].forEach(function(id){
+    ['screen-login','screen-dashboard','screen-gestor','screen-checklist-ops','screen-checklist-adm','screen-equipos','screen-simulador','screen-documentos','screen-boyas','screen-proyectos'].forEach(function(id){
       var el = document.getElementById(id);
       if (el) el.classList.remove('active');
     });
@@ -289,6 +263,22 @@
     }, 100);
   }
   function goBackFromBoyas() {
+    var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
+    if (sess && AUTH.users[sess.id]) { enterDashboard(AUTH.users[sess.id].role); } else { logout(); }
+  }
+  function openProyectos() {
+    var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
+    if (!sess) { logout(); return; }
+    var u = AUTH.users[sess.id];
+    if (!u) { logout(); return; }
+    hideAllScreens();
+    document.getElementById('screen-proyectos').classList.add('active');
+    window.scrollTo(0,0);
+    setTimeout(function(){
+      if (typeof PROY !== 'undefined') { try { PROY.init({ name: u.name, key: sess.id, role: u.role }); } catch(e){} }
+    }, 100);
+  }
+  function goBackFromProyectos() {
     var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
     if (sess && AUTH.users[sess.id]) { enterDashboard(AUTH.users[sess.id].role); } else { logout(); }
   }
