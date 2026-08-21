@@ -53,16 +53,23 @@ function ensureDefaultAreas(v) {
 
 /* ── sync ── */
 function markTyping(){ isTyping=true;clearTimeout(typingTimer);typingTimer=setTimeout(function(){isTyping=false;},900); }
-function persistDebounced(){ clearTimeout(persistTimer);persistTimer=setTimeout(persistNow,600); }
-function persistNow() {
+/* silent=true → NO redibuja la tabla (se conserva el foco mientras se escribe).
+   Solo se refrescan los totales. El redibujado completo queda para cambios
+   estructurales: agregar/eliminar área o ítem. */
+function persistDebounced(silent){
+  clearTimeout(persistTimer);
+  persistTimer=setTimeout(function(){ persistNow(silent); },600);
+}
+function persistNow(silent) {
+  var refresh = silent ? refreshTotals : render;
   try { localStorage.setItem(lsKey(currentVessel),JSON.stringify(state[currentVessel])); } catch(e){}
   if (fbReady&&!applyingRemote) {
     setSync('saving','Guardando…');
     db.ref(FB_PATH+'/'+currentVessel).set(state[currentVessel])
-      .then(function(){ setSync('ok','Sincronizado'); render(); })
-      .catch(function(){ setSync('local','Solo local'); render(); });
+      .then(function(){ setSync('ok','Sincronizado'); refresh(); })
+      .catch(function(){ setSync('local','Solo local'); refresh(); });
   } else {
-    setSync('local','Solo local'); render();
+    setSync('local','Solo local'); refresh();
   }
 }
 function setSync(cls,label){
@@ -79,12 +86,58 @@ function initFirebase(){
         if(r&&JSON.stringify(r)!==JSON.stringify(state[v])){
           applyingRemote=true; state[v]=r;
           try{localStorage.setItem(lsKey(v),JSON.stringify(r));}catch(e){}
-          if(v===currentVessel) render();
+          if(v===currentVessel){
+            /* si el usuario tiene el cursor dentro de un campo, no se
+               redibuja la tabla: solo se refrescan los totales */
+            if(hasFocusInside()) refreshTotals(); else render();
+          }
           applyingRemote=false;
         }
       });
     });
   } catch(e){ setSync('local','Solo local'); }
+}
+
+/* ¿el cursor está dentro de un campo editable del módulo? */
+function hasFocusInside(){
+  var a=document.activeElement;
+  if(!a) return false;
+  var tag=a.tagName;
+  if(tag!=='INPUT'&&tag!=='TEXTAREA'&&tag!=='SELECT') return false;
+  var box=document.getElementById('proy-content');
+  return !!(box&&box.contains(a));
+}
+
+/* Refresco liviano: actualiza SOLO los números y badges.
+   No toca los inputs, por lo que no se pierde el foco ni el cursor. */
+function refreshTotals(){
+  var areas=vesselState().areas||[];
+  var gt=grandTotal();
+  var execTotal=areas.reduce(function(s,a){
+    return s+(a.items||[]).filter(function(it){return it.estado==='ejecutado';})
+      .reduce(function(ss,it){return ss+(parseFloat(it.valor)||0);},0);
+  },0);
+
+  var gv=document.getElementById('proy-gt-val');   if(gv) gv.textContent=fmtUSD(gt);
+  var gs=document.getElementById('proy-gt-sub');
+  if(gs) gs.textContent=fmtUSD(execTotal)+' ejecutado · '+fmtUSD(gt-execTotal)+' pendiente';
+
+  areas.forEach(function(area){
+    var items=area.items||[];
+    var total=areaTotal(area);
+    var at=document.getElementById('proy-atot-'+area.id);  if(at) at.textContent=fmtUSD(total);
+    var st=document.getElementById('proy-stot-'+area.id);  if(st) st.textContent=fmtUSD(total);
+
+    var mb=document.getElementById('proy-ameta-'+area.id);
+    if(mb){
+      var cp=items.filter(function(it){return it.estado!=='ejecutado';}).length;
+      var ce=items.filter(function(it){return it.estado==='ejecutado';}).length;
+      var m='';
+      if(cp>0) m+='<span class="proy-badge pend">'+cp+' pendiente'+(cp>1?'s':'')+'</span>';
+      if(ce>0) m+='<span class="proy-badge exec">'+ce+' ejecutado'+(ce>1?'s':'')+'</span>';
+      mb.innerHTML=m;
+    }
+  });
 }
 
 /* ── state helpers ── */
@@ -107,8 +160,8 @@ function render(){
   h+='<div class="proy-gt-left"><span class="proy-gt-lbl">Total inversión estimada</span>';
   var execTotal=(areas.reduce(function(s,a){return s+(a.items||[]).filter(function(it){return it.estado==='ejecutado';}).reduce(function(ss,it){return ss+(parseFloat(it.valor)||0);},0);},0));
   var pendTotal=gt-execTotal;
-  h+='<span class="proy-gt-sub">'+fmtUSD(execTotal)+' ejecutado · '+fmtUSD(pendTotal)+' pendiente</span></div>';
-  h+='<div class="proy-gt-val">'+fmtUSD(gt)+'</div></div>';
+  h+='<span class="proy-gt-sub" id="proy-gt-sub">'+fmtUSD(execTotal)+' ejecutado · '+fmtUSD(pendTotal)+' pendiente</span></div>';
+  h+='<div class="proy-gt-val" id="proy-gt-val">'+fmtUSD(gt)+'</div></div>';
 
   /* ── areas ── */
   if(areas.length===0){
@@ -127,11 +180,11 @@ function render(){
     /* area header */
     h+='<div class="proy-area-head">';
     h+='<div class="proy-area-name">'+escH(area.name)+'</div>';
-    h+='<div class="proy-area-meta">';
+    h+='<div class="proy-area-meta" id="proy-ameta-'+escA(area.id)+'">';
     if(countPend>0) h+='<span class="proy-badge pend">'+countPend+' pendiente'+(countPend>1?'s':'')+'</span>';
     if(countExec>0) h+='<span class="proy-badge exec">'+countExec+' ejecutado'+(countExec>1?'s':'')+'</span>';
     h+='</div>';
-    h+='<div class="proy-area-total">'+fmtUSD(total)+'</div>';
+    h+='<div class="proy-area-total" id="proy-atot-'+escA(area.id)+'">'+fmtUSD(total)+'</div>';
     if(master){
       h+='<div class="proy-area-acts">';
       h+='<button class="proy-icon-btn" title="Renombrar" onclick="PROY.renameArea(\''+escA(area.id)+'\')">✏️</button>';
@@ -191,7 +244,7 @@ function render(){
 
       h+='</tbody><tfoot><tr>';
       h+='<td colspan="2" class="proy-sub-lbl">Subtotal — '+escH(area.name)+'</td>';
-      h+='<td class="proy-sub-val">'+fmtUSD(total)+'</td>';
+      h+='<td class="proy-sub-val" id="proy-stot-'+escA(area.id)+'">'+fmtUSD(total)+'</td>';
       h+='<td colspan="'+(master?4:3)+'"></td>';
       h+='</tr></tfoot>';
       h+='</table></div>';
@@ -262,7 +315,11 @@ function updateField(aid,iid,field,val){
   var area=findArea(aid); if(!area)return;
   var item=(area.items||[]).find(function(it){return it.id===iid;}); if(!item)return;
   item[field]=(field==='valor')?(parseFloat(val)||0):val;
-  persistDebounced();
+  /* Prioridad y Estado cambian colores y el estilo de la fila → redibujado
+     completo (son listas desplegables, no hay texto en curso).
+     El resto son campos de escritura → guardado silencioso. */
+  var esLista=(field==='prioridad'||field==='estado');
+  persistDebounced(!esLista);
 }
 function switchVessel(v,btn){
   currentVessel=v;
