@@ -5013,5 +5013,167 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
 
 </div>
 
+<div id="screen-plano" class="screen">
+<!-- ================= MÓDULO PLANO DE RED (PR) v1 ================= -->
+<style>
+#screen-plano.screen.active{display:block;padding:0;min-height:100vh;background:#eef2f8;overflow-y:auto}
+.pr-wrap{font-family:Arial,Helvetica,sans-serif;color:#0b1f38;padding:0 0 60px}
+/* ── header ── */
+.pr-header{background:linear-gradient(135deg,#07213a,#12416e);color:#fff;padding:14px 18px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.pr-header-left{display:flex;flex-direction:column;gap:3px}
+.pr-header h2{margin:0;font-size:19px;font-weight:700;letter-spacing:.3px}
+.pr-vessel-sub{font-size:11px;opacity:.8}
+.pr-header-mid{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;opacity:.85}
+.pr-header-mid b{font-weight:700}
+.pr-header-right{display:flex;align-items:center;gap:10px}
+.pr-sync{display:flex;align-items:center;gap:5px;font-size:11px;opacity:.85}
+.pr-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:7px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.pr-btn:hover{background:rgba(255,255,255,.25)}
+#pr-lastMod{font-size:11px;opacity:.75;margin-top:2px}
+/* ── legend / stats ── */
+.pr-legend-bar,.pr-stats-bar{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:8px 18px;font-size:11.5px;background:#fff;border-bottom:1px solid #b8cce0}
+.pr-stats-bar{background:#e2eaf4}
+.pr-legend-label-head,.pr-stats-label{font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#4e6a88}
+.pr-legend-item{display:flex;align-items:center;gap:5px;color:#0b1f38}
+.pr-legend-dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+.pr-legend-hint{margin-left:auto;color:#4e6a88;font-size:11px}
+.pr-stat-chip{display:flex;align-items:center;gap:5px;color:#0b1f38}
+.pr-stat-badge{min-width:20px;padding:1px 6px;border-radius:9px;color:#fff;font-size:11px;font-weight:700;text-align:center}
+/* ── table ── */
+.pr-table-wrapper{overflow-x:auto;padding:14px 12px 0}
+#pr-netPlan{border-collapse:collapse;font-family:'Courier New',monospace;font-size:11px;margin:0 auto;background:#07213a}
+.pr-th-section{background:#07213a;color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-align:center;padding:7px 8px;border:1px solid #12416e;white-space:nowrap}
+.pr-th-stats{background:#0d3258;color:#7aa8c8;font-size:9px;text-align:center;padding:4px 8px;border:1px solid #12416e;white-space:nowrap}
+.pr-th-stats .pr-est{color:#70b8ee}
+.pr-th-stats .pr-arm{color:#88d4a0;margin-left:6px}
+.pr-td-label,.pr-th-label{background:#07213a;color:#7aa8c8;font-size:11.5px;font-weight:600;text-align:center;padding:0 10px;min-width:46px;width:46px;border:1px solid #12416e;position:sticky;left:0;z-index:2;font-variant-numeric:tabular-nums}
+.pr-th-label{font-size:9px;letter-spacing:.08em;text-transform:uppercase;vertical-align:middle}
+.pr-row-even .pr-td-label{background:#0d3258}
+.pr-cell{padding:5px 9px;text-align:center;border:1px solid rgba(255,255,255,.18);cursor:pointer;color:#fff;min-width:120px;font-variant-numeric:tabular-nums;vertical-align:middle;line-height:1.35;transition:filter .12s,box-shadow .12s;position:relative}
+.pr-cell:hover{filter:brightness(1.16);box-shadow:inset 0 0 0 2px rgba(255,255,255,.45);z-index:1}
+.pr-cell:focus-visible{outline:2px solid #fff;outline-offset:-2px}
+.pr-cell.pr-sec-first{border-left:2px solid rgba(255,255,255,.4)!important}
+.pr-s-nuevo{background:#16a34a}
+.pr-s-bueno{background:#1c6dc4}
+.pr-s-regular{background:#b87300}
+.pr-s-malo{background:#c41e1e}
+.pr-s-urgente{background:#c84800}
+.pr-s-sin{background:#8fa3b8;color:#0b1f38}
+.pr-row-relinga td:not(.pr-cell),.pr-row-tirantes td:not(.pr-cell){background:#0d3258;color:#6a9ab8;font-size:9.5px;text-align:center;padding:5px 8px;border:1px solid #07213a}
+.pr-row-relinga .pr-td-label,.pr-row-tirantes .pr-td-label{background:#07213a!important;color:#6a9ab8;font-size:8px;letter-spacing:.05em}
+.pr-row-relinga .pr-cell,.pr-row-tirantes .pr-cell{font-size:10px;padding:5px 8px}
+/* ── date chip ── */
+.pr-cell-date{display:block;font-family:'Courier New',monospace;font-size:8px;font-weight:500;letter-spacing:.02em;background:rgba(0,0,0,.22);color:#fff;border-radius:3px;padding:1px 5px;white-space:nowrap;line-height:1.5;pointer-events:none;margin-top:3px}
+.pr-s-sin .pr-cell-date{background:rgba(0,0,0,.15);color:#0b1f38}
+.pr-cell-vert .pr-cell-date{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);margin-top:0}
+/* ── vertical cells ── */
+.pr-cell-vert{height:280px;min-width:52px;max-width:72px;padding:12px 6px;overflow:hidden;position:relative;white-space:nowrap;word-break:keep-all;vertical-align:middle;text-align:center;line-height:1.6;font-size:10.5px}
+.pr-cell-vert-text{position:absolute;top:50%;left:50%;transform-origin:center center;transform:translate(-50%,-50%) rotate(-90deg);width:max-content;max-width:250px;white-space:nowrap;text-align:center;font-size:10px;font-family:inherit;font-weight:500;letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.pr-th-divider-hdr{width:18px;min-width:18px;max-width:18px;background:#07213a!important;border:1px solid #12416e!important;padding:0}
+.pr-cell-vert.pr-cell-div{min-width:18px!important;max-width:22px!important;padding:6px 2px;font-size:0}
+/* ── modal ── */
+.pr-overlay{position:fixed;inset:0;background:rgba(4,14,28,.72);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.pr-overlay.pr-hidden{display:none}
+.pr-modal{background:#fff;border-radius:14px;padding:24px;width:380px;max-width:100%;box-shadow:0 8px 32px rgba(0,0,0,.22);border:1px solid #b8cce0}
+.pr-modal-title{font-family:'Courier New',monospace;font-size:13px;font-weight:600;color:#0b1f38;margin-bottom:2px}
+.pr-modal-sub{font-family:'Courier New',monospace;font-size:11px;color:#4e6a88;margin-bottom:14px}
+.pr-modal-meas-row{display:flex;align-items:stretch;gap:8px;margin-bottom:16px}
+.pr-modal-meas{flex:1;background:#e2eaf4;border:1px solid #b8cce0;border-radius:8px;padding:11px 14px;font-family:'Courier New',monospace;font-size:13px;font-weight:600;color:#0b1f38;text-align:center;min-height:42px;display:flex;align-items:center;justify-content:center;word-break:break-word}
+.pr-btn-edit-txt{flex-shrink:0;width:42px;background:#e2eaf4;color:#4e6a88;border:1px solid #b8cce0;border-radius:8px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.pr-btn-edit-txt:hover{background:#b8cce0;color:#0b1f38}
+.pr-btn-edit-txt.saving{background:#16a34a;color:#fff;border-color:#16a34a;font-size:14px;font-weight:700}
+.pr-text-edit-input{width:100%;background:transparent;border:none;outline:none;font-family:'Courier New',monospace;font-size:13px;font-weight:600;color:#0b1f38;text-align:center}
+.pr-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.pr-s-btn{padding:10px 12px;border-radius:8px;border:2.5px solid transparent;cursor:pointer;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:600;color:#fff;display:flex;align-items:center;justify-content:space-between;transition:filter .12s,transform .1s}
+.pr-s-btn:hover{filter:brightness(1.12)}
+.pr-s-btn:active{transform:scale(.96)}
+.pr-s-btn.active{border-color:rgba(255,255,255,.7)}
+.pr-s-btn .pr-chk{opacity:0;font-size:13px}
+.pr-s-btn.active .pr-chk{opacity:1}
+.pr-modal-date-row{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:10px 12px;background:#e2eaf4;border-radius:8px;border:1px solid #b8cce0}
+.pr-modal-date-label{font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:600;color:#4e6a88;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+.pr-modal-date-fields{display:flex;align-items:center;gap:6px;flex:1}
+.pr-modal-date-input{flex:1;font-family:'Courier New',monospace;font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid #b8cce0;background:#fff;color:#0b1f38;cursor:pointer}
+.pr-btn-date-clear{background:none;border:1px solid #b8cce0;color:#4e6a88;border-radius:5px;padding:4px 7px;cursor:pointer;font-size:11px;flex-shrink:0}
+.pr-btn-date-clear:hover{background:#c41e1e;color:#fff;border-color:#c41e1e}
+.pr-modal-foot{display:flex;justify-content:flex-end}
+.pr-btn-cancel{font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:600;padding:7px 16px;border-radius:6px;border:1px solid #b8cce0;background:#e2eaf4;color:#4e6a88;cursor:pointer}
+.pr-btn-cancel:hover{background:#b8cce0}
+@media(max-width:640px){
+  .pr-header{flex-direction:column;align-items:flex-start}
+  .pr-header-mid{width:100%;align-items:flex-start}
+}
+@media print{
+  .pr-header,.pr-legend-hint,.pr-btn{display:none!important}
+}
+</style>
+
+<div class="pr-wrap">
+  <div class="pr-header">
+    <div class="pr-header-left">
+      <h2>🕸️ Plano de Red</h2>
+      <span class="pr-vessel-sub">B/P María Fátima</span>
+      <div id="pr-lastMod"></div>
+    </div>
+    <div class="pr-header-mid">
+      <span>Estiradas <b>583 brazas</b> · Armadas <b>474 brazas</b></span>
+      <span>15 paños · 84 bz. de profundidad</span>
+    </div>
+    <div class="pr-header-right">
+      <div class="pr-sync">
+        <span class="sync-dot ok" id="pr-syncDot"></span>
+        <span id="pr-syncLbl">Sincronizado</span>
+      </div>
+      <button class="pr-btn" id="pr-resetBtn" onclick="PR.resetAll()">↺ Resetear</button>
+      <button class="pr-btn" onclick="PR.imprimir()">⎙ Imprimir</button>
+      <button class="pr-btn" onclick="goBackFromPlano()">← Volver</button>
+    </div>
+  </div>
+
+  <div class="pr-legend-bar">
+    <span class="pr-legend-label-head">Estado</span>
+    <span class="pr-legend-item"><span class="pr-legend-dot" style="background:#16a34a"></span>Nuevo</span>
+    <span class="pr-legend-item"><span class="pr-legend-dot" style="background:#1c6dc4"></span>Bueno</span>
+    <span class="pr-legend-item"><span class="pr-legend-dot" style="background:#b87300"></span>Regular</span>
+    <span class="pr-legend-item"><span class="pr-legend-dot" style="background:#c41e1e"></span>Malo / Dañado</span>
+    <span class="pr-legend-item"><span class="pr-legend-dot" style="background:#c84800"></span>Cambio Urgente</span>
+    <span class="pr-legend-item"><span class="pr-legend-dot" style="background:#8fa3b8"></span>Sin Asignar</span>
+    <span class="pr-legend-hint">↖ Clic en cualquier tramo para cambiar estado y registrar la fecha</span>
+  </div>
+
+  <div class="pr-stats-bar" id="pr-statsBar"></div>
+
+  <div class="pr-table-wrapper">
+    <table id="pr-netPlan" role="grid" aria-label="Plano de red B/P María Fátima"></table>
+  </div>
+</div>
+
+<div class="pr-overlay pr-hidden" id="pr-overlay" role="dialog" aria-modal="true" aria-labelledby="pr-mTitle">
+  <div class="pr-modal">
+    <div class="pr-modal-title" id="pr-mTitle">Estado del tramo</div>
+    <div class="pr-modal-sub" id="pr-mSub"></div>
+    <div class="pr-modal-meas-row">
+      <div class="pr-modal-meas" id="pr-mMeas"></div>
+      <button class="pr-btn-edit-txt" id="pr-btnEditTxt" title="Editar texto de la celda" onclick="PR.enableTextEdit()">✎</button>
+    </div>
+    <div class="pr-modal-grid" id="pr-mGrid"></div>
+    <div class="pr-modal-date-row">
+      <label class="pr-modal-date-label" for="pr-mDateInput">Último cambio</label>
+      <div class="pr-modal-date-fields">
+        <input type="date" id="pr-mDateInput" class="pr-modal-date-input">
+        <button id="pr-mDateClear" class="pr-btn-date-clear" title="Quitar fecha" onclick="PR.clearCellDate()">✕</button>
+      </div>
+    </div>
+    <div class="pr-modal-foot">
+      <button class="pr-btn-cancel" onclick="PR.closeModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/plano-red.js"></script>
+<!-- =============== FIN MÓDULO PLANO DE RED =============== -->
+</div>
+
+
 </body>
 </html>

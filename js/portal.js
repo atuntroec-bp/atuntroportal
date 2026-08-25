@@ -81,6 +81,19 @@
         onclick: 'openBoyas()',
         linkLabel: 'Abrir control de boyas',
       },
+      {
+        id: 'plano-red',
+        title: 'Plano de Red',
+        desc: 'Plano interactivo de la red de cerco: estado de cada paño por sección, medidas editables y fecha de último cambio por tramo. Base compartida en tiempo real.',
+        icon: '\u{1F578}\uFE0F',
+        iconColor: 'purple',
+        color: 'color-purple',
+        status: 'active',
+        roles: ['operaciones','admin','master'],
+        vessels: ['María Fátima'],
+        onclick: 'openPlano()',
+        linkLabel: 'Abrir plano de red',
+      },
     ],
     gestor_modules: [
       {
@@ -191,7 +204,7 @@
 
   // ── Navigation ──────────────────────────────────────────────────────────────
   function hideAllScreens() {
-    ['screen-login','screen-dashboard','screen-gestor','screen-checklist-ops','screen-checklist-adm','screen-equipos','screen-simulador','screen-documentos','screen-boyas','screen-proyectos'].forEach(function(id){
+    ['screen-login','screen-dashboard','screen-gestor','screen-checklist-ops','screen-checklist-adm','screen-equipos','screen-simulador','screen-documentos','screen-boyas','screen-proyectos','screen-plano'].forEach(function(id){
       var el = document.getElementById(id);
       if (el) el.classList.remove('active');
     });
@@ -263,6 +276,22 @@
     }, 100);
   }
   function goBackFromBoyas() {
+    var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
+    if (sess && AUTH.users[sess.id]) { enterDashboard(AUTH.users[sess.id].role); } else { logout(); }
+  }
+  function openPlano() {
+    var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
+    if (!sess) { logout(); return; }
+    var u = AUTH.users[sess.id];
+    if (!u) { logout(); return; }
+    hideAllScreens();
+    document.getElementById('screen-plano').classList.add('active');
+    window.scrollTo(0,0);
+    setTimeout(function(){
+      if (typeof PR !== 'undefined') { try { PR.init({ name: u.name, key: sess.id, role: u.role }); } catch(e){} }
+    }, 100);
+  }
+  function goBackFromPlano() {
     var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
     if (sess && AUTH.users[sess.id]) { enterDashboard(AUTH.users[sess.id].role); } else { logout(); }
   }
