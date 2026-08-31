@@ -19,9 +19,9 @@ function sumVals(obj){
 }
 function calcEstadoEquipo(eq){
   if(eq.estadoManual && eq.estadoManual!=='auto') return ESTADOS[eq.estadoManual];
-  const h26 = parseFloat(eq.h26);
+  const h26 = sumVals(eq.horas);          // auto-sum desde columnas de viajes
   const umb = parseFloat(eq.umbral);
-  if(isNaN(h26) || h26===0) return ESTADOS.SIN_DATOS;
+  if(h26===0) return ESTADOS.SIN_DATOS;
   if(isNaN(umb) || umb<=0) return ESTADOS.N_A;
   const pct = h26/umb*100;
   if(pct<80) return ESTADOS.OK;
@@ -50,6 +50,21 @@ function diasUso(dateStr){
   const d = new Date(dateStr+'T00:00:00');
   if(isNaN(d.getTime())) return null;
   return Math.floor((Date.now()-d.getTime())/86400000);
+}
+// Convierte "dd/mm/yy" → "YYYY-MM-DD" para el input type=date
+function _shortToIso(v){
+  if(!v) return '';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;   // ya está en ISO
+  const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+  if(!m) return '';
+  return '20'+m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+}
+// Convierte "YYYY-MM-DD" → "dd/mm/yy" para guardar en estado
+function _isoToShort(v){
+  if(!v) return '';
+  const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return '';
+  return m[3]+'/'+m[2]+'/'+m[1].slice(2);
 }
 
 /* ============ SEED DATA ============ */
@@ -367,7 +382,7 @@ function addViaje(){
   const id = idEl.value.trim();
   if(!id){ idEl.focus(); return; }
   if(V().viajes.some(v=>v.id===id)){ alert('Ya existe un viaje con ese ID.'); return; }
-  V().viajes.push({id, inicio:iEl.value, fin:fEl.value});
+  V().viajes.push({id, inicio:_isoToShort(iEl.value), fin:_isoToShort(fEl.value)});
   persist();
   render();
 }
@@ -383,7 +398,7 @@ function deleteViaje(id){
 }
 function updateViajeFecha(id,field,val){
   const vj = V().viajes.find(v=>v.id===id); if(!vj) return;
-  vj[field] = val;
+  vj[field] = _isoToShort(val) || val;   // convierte YYYY-MM-DD → dd/mm/yy
   persist();
   const dates = (vj.inicio||vj.fin) ? (vj.inicio||'?')+' → '+(vj.fin||'?') : 'sin fecha';
   document.querySelectorAll('.th-date-sm[data-viaje="'+id+'"]').forEach(el=>{ el.textContent = dates; });
@@ -396,8 +411,8 @@ function renderViajesBar(){
   const v = V();
   const rows = v.viajes.map(vj=>`<tr>
       <td><b>${escHtml(vj.id)}</b></td>
-      <td><input type="text" value="${escHtml(vj.inicio||'')}" placeholder="dd/mm/aa" oninput="EQUIPOS.updateViajeFecha('${vj.id}','inicio',this.value)"></td>
-      <td><input type="text" value="${escHtml(vj.fin||'')}" placeholder="dd/mm/aa" oninput="EQUIPOS.updateViajeFecha('${vj.id}','fin',this.value)"></td>
+      <td><input type="date" value="${_shortToIso(vj.inicio||'')}" onchange="EQUIPOS.updateViajeFecha('${vj.id}','inicio',this.value)"></td>
+      <td><input type="date" value="${_shortToIso(vj.fin||'')}" onchange="EQUIPOS.updateViajeFecha('${vj.id}','fin',this.value)"></td>
       <td><button class="del-btn" onclick="EQUIPOS.deleteViaje('${vj.id}')">✕</button></td>
     </tr>`).join('');
   return `<div class="panel">
@@ -405,9 +420,9 @@ function renderViajesBar(){
     <table class="vjt"><thead><tr><th>Viaje</th><th>Fecha de zarpe</th><th>Fecha de salida</th><th></th></tr></thead>
     <tbody>${rows || '<tr><td colspan="4" style="color:#aaa">Aún no hay viajes registrados.</td></tr>'}</tbody></table>
     <div class="add-viaje-form">
-      <input type="text" id="newViajeId" placeholder="ID ej. V79">
-      <input type="text" id="newViajeInicio" placeholder="Zarpe dd/mm/aa">
-      <input type="text" id="newViajeFin" placeholder="Salida dd/mm/aa">
+      <input type="text" id="eq-newViajeId" placeholder="ID ej. V79">
+      <input type="date" id="eq-newViajeInicio">
+      <input type="date" id="eq-newViajeFin">
       <button class="mini-btn" onclick="EQUIPOS.addViaje()">+ Agregar viaje</button>
     </div>
   </div>`;
@@ -464,9 +479,14 @@ function setEquipoEstadoManual(catId,eqId,val){
 }
 function refreshEquipoRow(catId,eqId){
   const e = findEquipo(catId,eqId); if(!e) return;
+  const h26 = sumVals(e.horas);
   const est = calcEstadoEquipo(e);
   const badge = document.getElementById('badge_'+eqId);
   if(badge){ badge.textContent = est.label; badge.className = 'badge '+est.cls; }
+  const h26El = document.getElementById('h26_'+eqId);
+  if(h26El) h26El.value = h26;
+  const totEl = document.getElementById('totacum_'+eqId);
+  if(totEl) totEl.value = (parseFloat(e.hist)||0) + h26;
 }
 
 function renderMotoresTab(){
@@ -482,10 +502,10 @@ function renderMotoresTab(){
       <div class="table-scroll"><table class="eqt"><thead><tr>
         <th style="min-width:200px">Equipo</th>
         <th>Histórico</th>
-        <th>Horóm. 2026</th>
         <th>Umbral mant.</th>
         ${v.viajes.map(vj=>`<th>${viajeHeaderHtml(vj)}</th>`).join('')}
-        <th>Total viajes</th>
+        <th>Horóm. 2026</th>
+        <th>Total acumulado</th>
         <th>Estado</th>
         <th>Nota</th>
         <th></th>
@@ -498,10 +518,10 @@ function renderMotoresTab(){
             <input type="text" class="name-input" value="${escHtml(e.nombre)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','nombre',this.value)">
           </td>
           <td><input type="text" class="num-input" value="${escHtml(e.hist)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','hist',this.value)"></td>
-          <td><input type="text" class="num-input" value="${escHtml(e.h26)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','h26',this.value)"></td>
           <td><input type="text" class="num-input" value="${escHtml(e.umbral)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','umbral',this.value)"></td>
           ${v.viajes.map(vj=>`<td><input type="text" class="num-input" value="${escHtml(e.horas[vj.id]!==undefined?e.horas[vj.id]:'')}" oninput="EQUIPOS.updateEquipoHoras('${cat.id}','${e.id}','${vj.id}',this.value)"></td>`).join('')}
-          <td><input type="text" class="readonly-total" value="${total}" readonly></td>
+          <td><input type="text" class="readonly-total" id="h26_${e.id}" value="${total}" readonly></td>
+          <td><input type="text" class="readonly-total" id="totacum_${e.id}" value="${(parseFloat(e.hist)||0)+total}" readonly></td>
           <td>
             <select class="estado-select" onchange="EQUIPOS.setEquipoEstadoManual('${cat.id}','${e.id}',this.value)">
               ${ESTADO_OPTIONS.map(o=>`<option value="${o}" ${((e.estadoManual||'auto')===o)?'selected':''}>${o==='auto'?'Automático':ESTADOS[o].label}</option>`).join('')}
