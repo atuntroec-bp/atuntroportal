@@ -230,7 +230,7 @@ let isTyping = false, typingTimer = null, persistTimer = null;
 let activeCell = null, editingText = false, origText = '';
 
 /* ── helpers ── */
-function canReset() { return !!activeUser && (activeUser.role === 'master' || activeUser.role === 'admin'); }
+function canReset() { return !!activeUser && (activeUser.role === 'master' || activeUser.role === 'admin' || activeUser.role === 'master_operaciones'); }
 function cellId(secId, pIdx, colOff) { return secId + '_p' + (pIdx + 1) + '_c' + colOff; }
 function statusClass(s) { return STATUS_CLASSES[s] || 'pr-s-sin'; }
 function getEstado(id) {

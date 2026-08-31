@@ -11,7 +11,7 @@
         iconColor: 'blue',
         color: 'color-blue',
         status: 'active',
-        roles: ['operaciones','master'],
+        roles: ['operaciones','master_operaciones','master'],
         vessels: ['María Fátima','María de Gracia'],
         onclick: 'openChecklistOps()',
         linkLabel: 'Abrir checklist',
@@ -37,7 +37,7 @@
         iconColor: 'green',
         color: 'color-green',
         status: 'active',
-        roles: ['operaciones','admin','contabilidad','master'],
+        roles: ['operaciones','master_operaciones','admin','contabilidad','master'],
         vessels: ['María Fátima','María de Gracia'],
         onclick: 'openProyectos()',
         linkLabel: 'Abrir proyectos',
@@ -50,7 +50,7 @@
         iconColor: 'teal',
         color: 'color-teal',
         status: 'active',
-        roles: ['operaciones','admin','contabilidad','master'],
+        roles: ['operaciones','master_operaciones','admin','contabilidad','master'],
         vessels: ['María Fátima','María de Gracia'],
         onclick: 'openDocumentos()',
         linkLabel: 'Abrir control documental',
@@ -63,7 +63,7 @@
         iconColor: 'blue',
         color: 'color-blue',
         status: 'active',
-        roles: ['admin','operaciones','contabilidad','master'],
+        roles: ['admin','operaciones','master_operaciones','contabilidad','master'],
         vessels: ['María Fátima','María de Gracia'],
         onclick: 'openEquipos()',
         linkLabel: 'Abrir control',
@@ -76,7 +76,7 @@
         iconColor: 'teal',
         color: 'color-teal',
         status: 'active',
-        roles: ['operaciones','admin','contabilidad','master'],
+        roles: ['operaciones','master_operaciones','admin','contabilidad','master'],
         vessels: ['María Fátima','María de Gracia'],
         onclick: 'openBoyas()',
         linkLabel: 'Abrir control de boyas',
@@ -89,7 +89,7 @@
         iconColor: 'purple',
         color: 'color-purple',
         status: 'active',
-        roles: ['operaciones','admin','master'],
+        roles: ['operaciones','master_operaciones','admin','master'],
         vessels: ['María Fátima'],
         onclick: 'openPlano()',
         linkLabel: 'Abrir plano de red',
@@ -104,7 +104,7 @@
         iconColor: 'green',
         color: 'color-green',
         status: 'active',
-        roles: ['operaciones','admin','contabilidad','master'],
+        roles: ['operaciones','master_operaciones','admin','contabilidad','master'],
         vessels: [],
         url: null,
         linkLabel: 'Abrir Gestor',
@@ -144,6 +144,7 @@
   const ROLE_LABELS = {
     admin: 'Administración',
     operaciones: 'Operaciones',
+    master_operaciones: 'Master Operaciones',
     contabilidad: 'Contabilidad',
     master: 'Gerencia / Master',
   };
@@ -435,7 +436,7 @@
   function closeAdminPanel() { document.getElementById('admin-overlay').classList.remove('show'); }
   function renderAdminUsers() {
     var container = document.getElementById('admin-users-list');
-    var roleOptions = ['operaciones','admin','contabilidad','master'];
+    var roleOptions = ['operaciones','master_operaciones','admin','contabilidad','master'];
     var html = '';
     Object.entries(AUTH.users).forEach(function(entry) {
       var uid = entry[0], u = entry[1];

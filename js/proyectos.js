@@ -31,7 +31,7 @@ let db = null, fbReady = false, applyingRemote = false;
 let isTyping = false, typingTimer = null, persistTimer = null;
 
 /* ── helpers ── */
-function isMaster() { return !!activeUser && (activeUser.role==='master'||activeUser.role==='admin'); }
+function isMaster() { return !!activeUser && (activeUser.role==='master'||activeUser.role==='admin'||activeUser.role==='master_operaciones'); }
 function vesselState() { return state[currentVessel]; }
 function lsKey(v) { return 'atuntro_proy_v1_'+v; }
 function uid() { return 'p'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6); }
