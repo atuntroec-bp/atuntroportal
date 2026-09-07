@@ -114,8 +114,9 @@
       if(b.estado2==='IRRECUPERABLE') r.irrec++;
       if(b.propietario==='BODEGA EN TIERRA') r.bodega++;
       if(b.estado2==='A BORDO PARA VIAJE'){
-        if(b.propietario==='MARIA FATIMA') r.fatima++;
-        if(b.propietario==='MARIA DE GRACIA') r.gracia++;
+        r.activa++;
+        if(b.propietario==='MARIA FATIMA') { r.fatima++; r.activaF++; }
+        if(b.propietario==='MARIA DE GRACIA') { r.gracia++; r.activaG++; }
       }
     });
     return r;
@@ -225,7 +226,7 @@
         '<td>'+(edit?'<select data-c="estado">'+opts(ESTADOS,b.estado||'Dada de alta')+'</select>'
                     :'<span class="boy-pill '+(b.estado==='Dada de baja'?'baja':'alta')+'">'+(b.estado||'')+'</span>')+'</td>' +
         '<td>'+(edit?'<input type="date" data-c="fechaAlta" value="'+(b.fechaAlta||'')+'">':ro(b.fechaAlta))+'</td>' +
-        '<td>'+(edit?'<input type="date" data-c="fechaBaja" value="'+(b.fechaBaja||'')+'">':ro(b.fechaBaja))+'</td>' +
+        '<td>'+(b.estado==='Dada de alta'?'<span class="boy-ro">—</span>':(edit?'<input type="date" data-c="fechaBaja" value="'+(b.fechaBaja||'')+'">':ro(b.fechaBaja)))+'</td>' +
         '<td>'+(edit?'<select data-c="estado2">'+opts(ESTADOS2,b.estado2)+'</select>':ro(b.estado2))+'</td>' +
         '<td>'+(edit?'<select data-c="origen">'+opts(ORIGENES,b.origen)+'</select>':ro(b.origen))+'</td>' +
         '<td style="text-align:center"><span class="boy-ro" style="font-weight:bold">'+nRec(b)+'</span></td>' +
@@ -440,6 +441,9 @@
       }
       if(!el.dataset.c) return;
       guardar(tr.dataset.k, el.dataset.c, el.type==='number' ? (parseInt(el.value,10)||0) : el.value);
+      if(el.dataset.c === 'estado' && el.value === 'Dada de alta'){
+        guardar(tr.dataset.k, 'fechaBaja', '');
+      }
       if(['propietario','estado','estado2'].indexOf(el.dataset.c) !== -1) renderCards();
     });
     body.addEventListener('click', function(e){
