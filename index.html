@@ -11961,6 +11961,28 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
 .pr-cell-date{display:block;font-family:'Courier New',monospace;font-size:8px;font-weight:500;letter-spacing:.02em;background:rgba(0,0,0,.22);color:#fff;border-radius:3px;padding:1px 5px;white-space:nowrap;line-height:1.5;pointer-events:none;margin-top:3px}
 .pr-s-sin .pr-cell-date{background:rgba(0,0,0,.15);color:#0b1f38}
 .pr-cell-vert .pr-cell-date{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);margin-top:0}
+/* ── selección múltiple / cambios masivos ── */
+.pr-btn.pr-btn-on{background:#38a8d8!important;border-color:#38a8d8!important;color:#04121f!important;font-weight:700}
+.pr-selmode .pr-cell{cursor:cell}
+.pr-selmode .pr-th-section,.pr-selmode .pr-td-label{cursor:pointer}
+.pr-selmode .pr-th-section:hover,.pr-selmode .pr-td-label:hover{background:#12416e!important}
+.pr-cell.pr-sel{box-shadow:inset 0 0 0 3px #ffd400,inset 0 0 0 100vmax rgba(255,212,0,.20)!important;z-index:2}
+.pr-sel-hint{padding:8px 18px;font-size:11.5px;color:#0b1f38;background:#fff7d6;border-bottom:1px solid #e6d48a}
+.pr-bulk{background:#fff;border-bottom:1px solid #b8cce0;padding:12px 18px 14px}
+.pr-bulk h3{margin:0 0 10px;font-size:14px;color:#07213a;display:flex;align-items:center;gap:10px}
+.pr-tag{background:#e2eaf4;color:#0256a0;font-size:11px;font-weight:700;border-radius:10px;padding:2px 10px}
+.pr-bulk-grid{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px}
+.pr-f{display:flex;flex-direction:column;gap:3px;min-width:180px}
+.pr-f label{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#4e6a88}
+.pr-f select,.pr-f input{border:1px solid #b8cce0;border-radius:6px;padding:5px 7px;font-size:12px;font-family:inherit;background:#fff;color:#0b1f38}
+.pr-bulk-acc{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px}
+.pr-chk{display:flex;align-items:center;gap:5px;font-size:12px;color:#0b1f38;cursor:pointer}
+.pr-bbtn{border-radius:6px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid #b8cce0;background:#e2eaf4;color:#0b1f38}
+.pr-bbtn:hover{background:#b8cce0}
+.pr-bbtn.ok{background:#16a34a;border-color:#16a34a;color:#fff}
+.pr-bbtn.ok:hover{background:#128a3e}
+.pr-bulk-hint{font-size:11px;color:#4e6a88;margin-top:8px}
+@media print{.pr-bulk,.pr-sel-hint{display:none!important}.pr-cell.pr-sel{box-shadow:none!important}}
 /* ── vessel tabs ── */
 .pr-vessel-tabs{display:flex;gap:6px;flex-shrink:0}
 .pr-vessel-tabs .vtab{padding:6px 15px;border-radius:20px;border:1.5px solid rgba(255,255,255,.35);background:transparent;color:rgba(255,255,255,.8);font-size:12px;font-weight:500;cursor:pointer;transition:.2s;font-family:inherit}
@@ -12037,6 +12059,7 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
         <span id="pr-syncLbl">Sincronizado</span>
       </div>
       <button class="pr-btn" id="pr-resetBtn" onclick="PR.resetAll()">↺ Resetear</button>
+      <button class="pr-btn" id="pr-btnSel" onclick="PR.toggleSelMode()">☐ Selección múltiple</button>
       <button class="pr-btn" onclick="PR.exportarExcel()">⤓ Excel</button>
       <button class="pr-btn" onclick="PR.imprimir()">⎙ Imprimir</button>
       <button class="pr-btn" onclick="goBackFromPlano()">← Volver</button>
@@ -12055,6 +12078,46 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
   </div>
 
   <div class="pr-stats-bar" id="pr-statsBar"></div>
+
+  <div class="pr-bulk" id="pr-panelMasivo" style="display:none">
+    <h3>Cambios masivos <span class="pr-tag"><span id="pr-selCount">0</span> tramos seleccionados</span></h3>
+    <div class="pr-bulk-grid">
+      <div class="pr-f"><label>Estado a aplicar</label>
+        <select id="pr-mEstado">
+          <option value="">(sin cambio)</option>
+          <option value="nuevo">Nuevo</option>
+          <option value="bueno">Bueno</option>
+          <option value="regular">Regular</option>
+          <option value="malo">Malo / Dañado</option>
+          <option value="cambio_urgente">Cambio Urgente</option>
+          <option value="sin_asignar">Sin Asignar</option>
+        </select></div>
+      <div class="pr-f"><label>Fecha de último cambio</label><input type="date" id="pr-mFecha"></div>
+      <div class="pr-f"><label>Seleccionar por estado actual</label>
+        <select id="pr-mSelEstado">
+          <option value="">(elegir)</option>
+          <option value="nuevo">Nuevo</option>
+          <option value="bueno">Bueno</option>
+          <option value="regular">Regular</option>
+          <option value="malo">Malo / Dañado</option>
+          <option value="cambio_urgente">Cambio Urgente</option>
+          <option value="sin_asignar">Sin Asignar</option>
+        </select></div>
+    </div>
+    <div class="pr-bulk-acc">
+      <label class="pr-chk"><input type="checkbox" id="pr-mUsarFecha"> Aplicar esa fecha</label>
+      <label class="pr-chk"><input type="checkbox" id="pr-mQuitarFecha"> Quitar la fecha</label>
+      <span style="flex:1"></span>
+      <button class="pr-bbtn ok" onclick="PR.aplicarMasivo()">Aplicar a la selección</button>
+    </div>
+    <div class="pr-bulk-acc">
+      <button class="pr-bbtn sec" onclick="PR.selPorEstado()">+ Añadir los de ese estado</button>
+      <button class="pr-bbtn sec" onclick="PR.selTodo()">Seleccionar todo</button>
+      <button class="pr-bbtn sec" onclick="PR.selInvertir()">Invertir</button>
+      <button class="pr-bbtn sec" onclick="PR.selLimpiar()">Quitar selección</button>
+    </div>
+    <div class="pr-bulk-hint">Haz clic o <b>arrastra</b> sobre los tramos. También puedes hacer clic en el <b>nombre de una sección</b> para tomarla completa, o en el <b>número de paño</b> para tomar toda la fila. Lo que dejes en "(sin cambio)" no se modifica, y el texto de cada tramo nunca se toca.</div>
+  </div>
 
   <div class="pr-table-wrapper">
     <table id="pr-netPlan" role="grid" aria-label="Plano de red B/P María Fátima"></table>
@@ -12710,9 +12773,19 @@ function mkCell(tr, text, status, id, colspan, rawText, secName, panoNum, isFirs
     ds.textContent = formatCellDate(dt);
     el.appendChild(ds);
   }
-  el.addEventListener('click', function () { openModal(el); });
+  if (selected[id]) el.classList.add('pr-sel');
+  el.addEventListener('click', function () {
+    /* En modo selección NO se toca aquí: mousedown ya marcó la celda.
+       Si además se conmutara en el click, un clic normal la marcaría y
+       la desmarcaría en el mismo gesto y parecería que no pasa nada. */
+    if (selMode) return;
+    openModal(el);
+  });
   el.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(el); }
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    if (selMode) { setSel(el, !selected[id]); refrescarBarraSel(); return; }
+    openModal(el);
   });
   tr.appendChild(el);
   return el;
@@ -12761,7 +12834,9 @@ function renderTable() {
   th(hr1, 'PAÑO', { cls:'pr-th-label pr-th-section', rowspan:2, style:'vertical-align:middle' });
   secs.forEach(function (sec, si) {
     if (sec.divider) { th(hr1, '', { cls:'pr-th-divider-hdr', colspan:1, rowspan:2 }); return; }
-    th(hr1, sec.name, { cls:'pr-th-section' + (si === 0 ? ' pr-th-section-first' : ''), colspan:sec.cols });
+    var hcell = th(hr1, sec.name, { cls:'pr-th-section' + (si === 0 ? ' pr-th-section-first' : ''), colspan:sec.cols });
+    hcell.title = 'Clic para seleccionar toda la sección (en modo selección)';
+    hcell.addEventListener('click', function () { selSeccion(sec.id); });
   });
   thead.appendChild(hr1);
 
@@ -12785,7 +12860,9 @@ function renderTable() {
     (function (pIdx) {
       var tr = document.createElement('tr');
       if (pIdx % 2 === 1) tr.classList.add('pr-row-even');
-      td(tr, pIdx + 1, { cls:'pr-td-label' });
+      var lbl = td(tr, pIdx + 1, { cls:'pr-td-label' });
+      lbl.title = 'Clic para seleccionar todo el paño (en modo selección)';
+      lbl.addEventListener('click', function () { selPano(tr); });
 
       secs.forEach(function (sec, si) {
         if (sec.vertical) {
@@ -12814,9 +12891,16 @@ function renderTable() {
                 vDs.textContent = formatCellDate(vDt);
                 el.appendChild(vDs);
               }
-              el.addEventListener('click', function () { openModal(el); });
+              if (selected[id]) el.classList.add('pr-sel');
+              el.addEventListener('click', function () {
+                if (selMode) return;   /* ya lo resolvió mousedown */
+                openModal(el);
+              });
               el.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(el); }
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                if (selMode) { setSel(el, !selected[id]); refrescarBarraSel(); return; }
+                openModal(el);
               });
               tr.appendChild(el);
             });
@@ -12859,8 +12943,11 @@ function renderTable() {
   });
 
   tbl.appendChild(tbody);
+  tbl.classList.toggle('pr-selmode', selMode);
   updateStats();
   renderVesselHeader();
+  initDrag();
+  refrescarBarraSel();
 }
 
 /* ── cabecera del buque ── */
@@ -12878,6 +12965,7 @@ function renderVesselHeader() {
 function switchVessel(v, btn) {
   if (!NETS[v] || v === currentVessel) return;
   currentVessel = v;
+  selected = {};
   var tabs = document.querySelectorAll('#pr-vessel-tabs .vtab');
   tabs.forEach(function (b) { b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
@@ -13150,6 +13238,153 @@ document.addEventListener('DOMContentLoaded', function () {
     if (o && !o.classList.contains('pr-hidden')) closeModal();
   });
 });
+
+/* ══════════════════════════════════════════════════════════════════
+   CAMBIOS MASIVOS — mismo patrón que Control de Boyas, adaptado a
+   una rejilla: en vez de casillas por fila se selecciona sobre el
+   propio plano (clic, arrastre, encabezado de sección o nº de paño).
+   ══════════════════════════════════════════════════════════════════ */
+let selMode = false, selected = {}, dragging = false, dragAdd = true;
+
+function nSel() { return Object.keys(selected).filter(function (k) { return selected[k]; }).length; }
+
+function refrescarBarraSel() {
+  var n = nSel();
+  var c = document.getElementById('pr-selCount');   if (c) c.textContent = n;
+  /* el panel se muestra en cuanto se activa el modo, no al primer clic:
+     si apareciera a mitad de un arrastre empujaría la rejilla hacia abajo
+     y la selección perdería las celdas de debajo del cursor. */
+  var p = document.getElementById('pr-panelMasivo'); if (p) p.style.display = selMode ? 'block' : 'none';
+  var b = document.getElementById('pr-btnSel');
+  if (b) {
+    b.classList.toggle('pr-btn-on', selMode);
+    b.textContent = selMode ? '☑ Selección: ACTIVA' : '☐ Selección múltiple';
+  }
+}
+
+function toggleSelMode() {
+  selMode = !selMode;
+  if (!selMode) selected = {};
+  document.getElementById('pr-netPlan').classList.toggle('pr-selmode', selMode);
+  pintarSel();
+  refrescarBarraSel();
+}
+
+/* celdas elegibles: excluye separadores */
+function celdas() {
+  return [].slice.call(document.querySelectorAll('#pr-netPlan .pr-cell'))
+    .filter(function (el) { return !el.classList.contains('pr-cell-div'); });
+}
+function pintarSel() {
+  celdas().forEach(function (el) { el.classList.toggle('pr-sel', !!selected[el.dataset.id]); });
+}
+function setSel(el, on) {
+  if (!el || el.classList.contains('pr-cell-div')) return;
+  if (on) selected[el.dataset.id] = true; else delete selected[el.dataset.id];
+  el.classList.toggle('pr-sel', !!on);
+}
+
+/* selectores por bloque */
+function selSeccion(secId) {
+  if (!selMode) return;
+  var pref = secId + '_';
+  var els = celdas().filter(function (el) { return el.dataset.id.indexOf(pref) === 0; });
+  var todos = els.length && els.every(function (el) { return selected[el.dataset.id]; });
+  els.forEach(function (el) { setSel(el, !todos); });
+  refrescarBarraSel();
+}
+function selPano(tr) {
+  if (!selMode) return;
+  var els = [].slice.call(tr.querySelectorAll('.pr-cell'))
+    .filter(function (el) { return !el.classList.contains('pr-cell-div'); });
+  var todos = els.length && els.every(function (el) { return selected[el.dataset.id]; });
+  els.forEach(function (el) { setSel(el, !todos); });
+  refrescarBarraSel();
+}
+function selTodo() {
+  if (!selMode) return;
+  var els = celdas();
+  var todos = els.length && els.every(function (el) { return selected[el.dataset.id]; });
+  els.forEach(function (el) { setSel(el, !todos); });
+  refrescarBarraSel();
+}
+function selPorEstado() {
+  if (!selMode) return;
+  var v = document.getElementById('pr-mSelEstado').value;
+  if (!v) return;
+  celdas().forEach(function (el) {
+    if (getStatus(el.dataset.id, getDefaultStatus(el.dataset.id)) === v) setSel(el, true);
+  });
+  refrescarBarraSel();
+}
+function selInvertir() {
+  if (!selMode) return;
+  celdas().forEach(function (el) { setSel(el, !selected[el.dataset.id]); });
+  refrescarBarraSel();
+}
+function selLimpiar() { selected = {}; pintarSel(); refrescarBarraSel(); }
+
+/* aplicar el cambio a lo seleccionado */
+function aplicarMasivo() {
+  var ids = Object.keys(selected).filter(function (k) { return selected[k]; });
+  if (!ids.length) { alert('No hay tramos seleccionados.'); return; }
+
+  var estado = document.getElementById('pr-mEstado').value;
+  var fecha  = document.getElementById('pr-mFecha').value;
+  var ponerFecha = document.getElementById('pr-mUsarFecha').checked;
+  var quitarFecha = document.getElementById('pr-mQuitarFecha').checked;
+
+  if (!estado && !ponerFecha && !quitarFecha) {
+    alert('Elige al menos un cambio: un estado, o una fecha de último cambio.');
+    return;
+  }
+  if (ponerFecha && !fecha) { alert('Escribe la fecha que quieres aplicar.'); return; }
+
+  var resumen = [];
+  if (estado) resumen.push('estado "' + getEstado(estado).label + '"');
+  if (ponerFecha) resumen.push('fecha ' + formatCellDate(fecha));
+  if (quitarFecha) resumen.push('quitar la fecha');
+  if (!confirm('Se aplicará ' + resumen.join(' y ') + ' a ' + ids.length + ' tramo(s) de ' +
+               net().label + '.\n\n¿Continuar?')) return;
+
+  var B = bucket();
+  ids.forEach(function (id) {
+    if (estado) B.estados[id] = estado;
+    if (quitarFecha) delete B.fechas[id];
+    else if (ponerFecha) B.fechas[id] = fecha;
+  });
+  markTyping();
+  persistNow();
+  renderTable();
+  pintarSel();
+  refrescarBarraSel();
+}
+
+/* arrastre para pintar selección sobre la rejilla */
+function initDrag() {
+  var tbl = document.getElementById('pr-netPlan');
+  if (!tbl || tbl.dataset.dragReady) return;
+  tbl.dataset.dragReady = '1';
+
+  tbl.addEventListener('mousedown', function (e) {
+    if (!selMode) return;
+    var el = e.target.closest ? e.target.closest('.pr-cell') : null;
+    if (!el || el.classList.contains('pr-cell-div')) return;
+    e.preventDefault();
+    dragging = true;
+    dragAdd = !selected[el.dataset.id];
+    setSel(el, dragAdd);
+    refrescarBarraSel();
+  });
+  tbl.addEventListener('mouseover', function (e) {
+    if (!selMode || !dragging) return;
+    var el = e.target.closest ? e.target.closest('.pr-cell') : null;
+    if (!el || el.classList.contains('pr-cell-div')) return;
+    setSel(el, dragAdd);
+    refrescarBarraSel();
+  });
+  document.addEventListener('mouseup', function () { dragging = false; });
+}
 
 /* ══════════════════════════════════════════════════════════════════
    EXPORTAR A EXCEL — .xlsx nativo con colores
@@ -13524,6 +13759,12 @@ return {
   resetAll: resetAll,
   imprimir: imprimir,
   exportarExcel: exportarExcel,
+  toggleSelMode: toggleSelMode,
+  aplicarMasivo: aplicarMasivo,
+  selTodo: selTodo,
+  selInvertir: selInvertir,
+  selLimpiar: selLimpiar,
+  selPorEstado: selPorEstado,
 };
 
 })();

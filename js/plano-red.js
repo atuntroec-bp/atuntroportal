@@ -624,9 +624,19 @@ function mkCell(tr, text, status, id, colspan, rawText, secName, panoNum, isFirs
     ds.textContent = formatCellDate(dt);
     el.appendChild(ds);
   }
-  el.addEventListener('click', function () { openModal(el); });
+  if (selected[id]) el.classList.add('pr-sel');
+  el.addEventListener('click', function () {
+    /* En modo selección NO se toca aquí: mousedown ya marcó la celda.
+       Si además se conmutara en el click, un clic normal la marcaría y
+       la desmarcaría en el mismo gesto y parecería que no pasa nada. */
+    if (selMode) return;
+    openModal(el);
+  });
   el.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(el); }
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    if (selMode) { setSel(el, !selected[id]); refrescarBarraSel(); return; }
+    openModal(el);
   });
   tr.appendChild(el);
   return el;
@@ -675,7 +685,9 @@ function renderTable() {
   th(hr1, 'PAÑO', { cls:'pr-th-label pr-th-section', rowspan:2, style:'vertical-align:middle' });
   secs.forEach(function (sec, si) {
     if (sec.divider) { th(hr1, '', { cls:'pr-th-divider-hdr', colspan:1, rowspan:2 }); return; }
-    th(hr1, sec.name, { cls:'pr-th-section' + (si === 0 ? ' pr-th-section-first' : ''), colspan:sec.cols });
+    var hcell = th(hr1, sec.name, { cls:'pr-th-section' + (si === 0 ? ' pr-th-section-first' : ''), colspan:sec.cols });
+    hcell.title = 'Clic para seleccionar toda la sección (en modo selección)';
+    hcell.addEventListener('click', function () { selSeccion(sec.id); });
   });
   thead.appendChild(hr1);
 
@@ -699,7 +711,9 @@ function renderTable() {
     (function (pIdx) {
       var tr = document.createElement('tr');
       if (pIdx % 2 === 1) tr.classList.add('pr-row-even');
-      td(tr, pIdx + 1, { cls:'pr-td-label' });
+      var lbl = td(tr, pIdx + 1, { cls:'pr-td-label' });
+      lbl.title = 'Clic para seleccionar todo el paño (en modo selección)';
+      lbl.addEventListener('click', function () { selPano(tr); });
 
       secs.forEach(function (sec, si) {
         if (sec.vertical) {
@@ -728,9 +742,16 @@ function renderTable() {
                 vDs.textContent = formatCellDate(vDt);
                 el.appendChild(vDs);
               }
-              el.addEventListener('click', function () { openModal(el); });
+              if (selected[id]) el.classList.add('pr-sel');
+              el.addEventListener('click', function () {
+                if (selMode) return;   /* ya lo resolvió mousedown */
+                openModal(el);
+              });
               el.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(el); }
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                if (selMode) { setSel(el, !selected[id]); refrescarBarraSel(); return; }
+                openModal(el);
               });
               tr.appendChild(el);
             });
@@ -773,8 +794,11 @@ function renderTable() {
   });
 
   tbl.appendChild(tbody);
+  tbl.classList.toggle('pr-selmode', selMode);
   updateStats();
   renderVesselHeader();
+  initDrag();
+  refrescarBarraSel();
 }
 
 /* ── cabecera del buque ── */
@@ -792,6 +816,7 @@ function renderVesselHeader() {
 function switchVessel(v, btn) {
   if (!NETS[v] || v === currentVessel) return;
   currentVessel = v;
+  selected = {};
   var tabs = document.querySelectorAll('#pr-vessel-tabs .vtab');
   tabs.forEach(function (b) { b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
@@ -1064,6 +1089,153 @@ document.addEventListener('DOMContentLoaded', function () {
     if (o && !o.classList.contains('pr-hidden')) closeModal();
   });
 });
+
+/* ══════════════════════════════════════════════════════════════════
+   CAMBIOS MASIVOS — mismo patrón que Control de Boyas, adaptado a
+   una rejilla: en vez de casillas por fila se selecciona sobre el
+   propio plano (clic, arrastre, encabezado de sección o nº de paño).
+   ══════════════════════════════════════════════════════════════════ */
+let selMode = false, selected = {}, dragging = false, dragAdd = true;
+
+function nSel() { return Object.keys(selected).filter(function (k) { return selected[k]; }).length; }
+
+function refrescarBarraSel() {
+  var n = nSel();
+  var c = document.getElementById('pr-selCount');   if (c) c.textContent = n;
+  /* el panel se muestra en cuanto se activa el modo, no al primer clic:
+     si apareciera a mitad de un arrastre empujaría la rejilla hacia abajo
+     y la selección perdería las celdas de debajo del cursor. */
+  var p = document.getElementById('pr-panelMasivo'); if (p) p.style.display = selMode ? 'block' : 'none';
+  var b = document.getElementById('pr-btnSel');
+  if (b) {
+    b.classList.toggle('pr-btn-on', selMode);
+    b.textContent = selMode ? '☑ Selección: ACTIVA' : '☐ Selección múltiple';
+  }
+}
+
+function toggleSelMode() {
+  selMode = !selMode;
+  if (!selMode) selected = {};
+  document.getElementById('pr-netPlan').classList.toggle('pr-selmode', selMode);
+  pintarSel();
+  refrescarBarraSel();
+}
+
+/* celdas elegibles: excluye separadores */
+function celdas() {
+  return [].slice.call(document.querySelectorAll('#pr-netPlan .pr-cell'))
+    .filter(function (el) { return !el.classList.contains('pr-cell-div'); });
+}
+function pintarSel() {
+  celdas().forEach(function (el) { el.classList.toggle('pr-sel', !!selected[el.dataset.id]); });
+}
+function setSel(el, on) {
+  if (!el || el.classList.contains('pr-cell-div')) return;
+  if (on) selected[el.dataset.id] = true; else delete selected[el.dataset.id];
+  el.classList.toggle('pr-sel', !!on);
+}
+
+/* selectores por bloque */
+function selSeccion(secId) {
+  if (!selMode) return;
+  var pref = secId + '_';
+  var els = celdas().filter(function (el) { return el.dataset.id.indexOf(pref) === 0; });
+  var todos = els.length && els.every(function (el) { return selected[el.dataset.id]; });
+  els.forEach(function (el) { setSel(el, !todos); });
+  refrescarBarraSel();
+}
+function selPano(tr) {
+  if (!selMode) return;
+  var els = [].slice.call(tr.querySelectorAll('.pr-cell'))
+    .filter(function (el) { return !el.classList.contains('pr-cell-div'); });
+  var todos = els.length && els.every(function (el) { return selected[el.dataset.id]; });
+  els.forEach(function (el) { setSel(el, !todos); });
+  refrescarBarraSel();
+}
+function selTodo() {
+  if (!selMode) return;
+  var els = celdas();
+  var todos = els.length && els.every(function (el) { return selected[el.dataset.id]; });
+  els.forEach(function (el) { setSel(el, !todos); });
+  refrescarBarraSel();
+}
+function selPorEstado() {
+  if (!selMode) return;
+  var v = document.getElementById('pr-mSelEstado').value;
+  if (!v) return;
+  celdas().forEach(function (el) {
+    if (getStatus(el.dataset.id, getDefaultStatus(el.dataset.id)) === v) setSel(el, true);
+  });
+  refrescarBarraSel();
+}
+function selInvertir() {
+  if (!selMode) return;
+  celdas().forEach(function (el) { setSel(el, !selected[el.dataset.id]); });
+  refrescarBarraSel();
+}
+function selLimpiar() { selected = {}; pintarSel(); refrescarBarraSel(); }
+
+/* aplicar el cambio a lo seleccionado */
+function aplicarMasivo() {
+  var ids = Object.keys(selected).filter(function (k) { return selected[k]; });
+  if (!ids.length) { alert('No hay tramos seleccionados.'); return; }
+
+  var estado = document.getElementById('pr-mEstado').value;
+  var fecha  = document.getElementById('pr-mFecha').value;
+  var ponerFecha = document.getElementById('pr-mUsarFecha').checked;
+  var quitarFecha = document.getElementById('pr-mQuitarFecha').checked;
+
+  if (!estado && !ponerFecha && !quitarFecha) {
+    alert('Elige al menos un cambio: un estado, o una fecha de último cambio.');
+    return;
+  }
+  if (ponerFecha && !fecha) { alert('Escribe la fecha que quieres aplicar.'); return; }
+
+  var resumen = [];
+  if (estado) resumen.push('estado "' + getEstado(estado).label + '"');
+  if (ponerFecha) resumen.push('fecha ' + formatCellDate(fecha));
+  if (quitarFecha) resumen.push('quitar la fecha');
+  if (!confirm('Se aplicará ' + resumen.join(' y ') + ' a ' + ids.length + ' tramo(s) de ' +
+               net().label + '.\n\n¿Continuar?')) return;
+
+  var B = bucket();
+  ids.forEach(function (id) {
+    if (estado) B.estados[id] = estado;
+    if (quitarFecha) delete B.fechas[id];
+    else if (ponerFecha) B.fechas[id] = fecha;
+  });
+  markTyping();
+  persistNow();
+  renderTable();
+  pintarSel();
+  refrescarBarraSel();
+}
+
+/* arrastre para pintar selección sobre la rejilla */
+function initDrag() {
+  var tbl = document.getElementById('pr-netPlan');
+  if (!tbl || tbl.dataset.dragReady) return;
+  tbl.dataset.dragReady = '1';
+
+  tbl.addEventListener('mousedown', function (e) {
+    if (!selMode) return;
+    var el = e.target.closest ? e.target.closest('.pr-cell') : null;
+    if (!el || el.classList.contains('pr-cell-div')) return;
+    e.preventDefault();
+    dragging = true;
+    dragAdd = !selected[el.dataset.id];
+    setSel(el, dragAdd);
+    refrescarBarraSel();
+  });
+  tbl.addEventListener('mouseover', function (e) {
+    if (!selMode || !dragging) return;
+    var el = e.target.closest ? e.target.closest('.pr-cell') : null;
+    if (!el || el.classList.contains('pr-cell-div')) return;
+    setSel(el, dragAdd);
+    refrescarBarraSel();
+  });
+  document.addEventListener('mouseup', function () { dragging = false; });
+}
 
 /* ══════════════════════════════════════════════════════════════════
    EXPORTAR A EXCEL — .xlsx nativo con colores
@@ -1438,6 +1610,12 @@ return {
   resetAll: resetAll,
   imprimir: imprimir,
   exportarExcel: exportarExcel,
+  toggleSelMode: toggleSelMode,
+  aplicarMasivo: aplicarMasivo,
+  selTodo: selTodo,
+  selInvertir: selInvertir,
+  selLimpiar: selLimpiar,
+  selPorEstado: selPorEstado,
 };
 
 })();
