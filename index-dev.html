@@ -3321,7 +3321,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 
@@ -5067,6 +5066,18 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
 .pr-cell-date{display:block;font-family:'Courier New',monospace;font-size:8px;font-weight:500;letter-spacing:.02em;background:rgba(0,0,0,.22);color:#fff;border-radius:3px;padding:1px 5px;white-space:nowrap;line-height:1.5;pointer-events:none;margin-top:3px}
 .pr-s-sin .pr-cell-date{background:rgba(0,0,0,.15);color:#0b1f38}
 .pr-cell-vert .pr-cell-date{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);margin-top:0}
+/* ── vessel tabs ── */
+.pr-vessel-tabs{display:flex;gap:6px;flex-shrink:0}
+.pr-vessel-tabs .vtab{padding:6px 15px;border-radius:20px;border:1.5px solid rgba(255,255,255,.35);background:transparent;color:rgba(255,255,255,.8);font-size:12px;font-weight:500;cursor:pointer;transition:.2s;font-family:inherit}
+.pr-vessel-tabs .vtab.active{background:#fff;color:#07213a;border-color:#fff;font-weight:700}
+.pr-vessel-tabs .vtab:hover:not(.active){background:rgba(255,255,255,.15)}
+/* ── top relinga row ── */
+.pr-row-relinga-sup td:not(.pr-cell){background:#0d3258;color:#6a9ab8;font-size:9.5px;text-align:center;padding:5px 8px;border:1px solid #07213a}
+.pr-row-relinga-sup .pr-td-label{background:#07213a!important;color:#6a9ab8;font-size:8px;letter-spacing:.05em}
+.pr-row-relinga-sup .pr-cell{font-size:10px;padding:5px 8px;border-bottom:2px solid #38a8d8}
+/* ── cuchilla marker ── */
+.pr-cuchilla{display:block;font-family:Arial,Helvetica,sans-serif;font-size:8.5px;font-weight:700;letter-spacing:.06em;background:#c41e1e;color:#fff;border-radius:3px;padding:1px 6px;margin-top:3px;white-space:nowrap;pointer-events:none}
+.pr-has-cuchilla{border:2px dashed rgba(196,30,30,.85)!important}
 /* ── vertical cells ── */
 .pr-cell-vert{height:280px;min-width:52px;max-width:72px;padding:12px 6px;overflow:hidden;position:relative;white-space:nowrap;word-break:keep-all;vertical-align:middle;text-align:center;line-height:1.6;font-size:10.5px}
 .pr-cell-vert-text{position:absolute;top:50%;left:50%;transform-origin:center center;transform:translate(-50%,-50%) rotate(-90deg);width:max-content;max-width:250px;white-space:nowrap;text-align:center;font-size:10px;font-family:inherit;font-weight:500;letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
@@ -5105,7 +5116,11 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
   .pr-header-mid{width:100%;align-items:flex-start}
 }
 @media print{
-  .pr-header,.pr-legend-hint,.pr-btn{display:none!important}
+  /* se conserva el título y las cifras del buque; fuera los controles */
+  .pr-btn,.pr-vessel-tabs,.pr-sync,.pr-legend-hint{display:none!important}
+  .pr-header{position:static!important;display:block!important;padding:6px 0 8px!important;background:#07213a!important}
+  .pr-table-wrapper{padding:6px 0 0!important}
+  .pr-cell,.pr-th-section,.pr-th-stats{border-color:rgba(0,0,0,.35)!important}
 }
 </style>
 
@@ -5113,19 +5128,21 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
   <div class="pr-header">
     <div class="pr-header-left">
       <h2>🕸️ Plano de Red</h2>
-      <span class="pr-vessel-sub">B/P María Fátima</span>
+      <span class="pr-vessel-sub" id="pr-vessel-sub">B/P María Fátima</span>
       <div id="pr-lastMod"></div>
     </div>
-    <div class="pr-header-mid">
-      <span>Estiradas <b>583 brazas</b> · Armadas <b>474 brazas</b></span>
-      <span>15 paños · 84 bz. de profundidad</span>
+    <div class="pr-vessel-tabs" id="pr-vessel-tabs">
+      <button class="vtab active" id="pr-tab-fatima" onclick="PR.switchVessel('fatima',this)">María Fátima</button>
+      <button class="vtab" id="pr-tab-gracia" onclick="PR.switchVessel('gracia',this)">María de Gracia</button>
     </div>
+    <div class="pr-header-mid" id="pr-header-mid"></div>
     <div class="pr-header-right">
       <div class="pr-sync">
         <span class="sync-dot ok" id="pr-syncDot"></span>
         <span id="pr-syncLbl">Sincronizado</span>
       </div>
       <button class="pr-btn" id="pr-resetBtn" onclick="PR.resetAll()">↺ Resetear</button>
+      <button class="pr-btn" onclick="PR.exportarExcel()">⤓ Excel</button>
       <button class="pr-btn" onclick="PR.imprimir()">⎙ Imprimir</button>
       <button class="pr-btn" onclick="goBackFromPlano()">← Volver</button>
     </div>
@@ -5175,6 +5192,49 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
 <!-- =============== FIN MÓDULO PLANO DE RED =============== -->
 </div>
 
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     IMPRESIÓN — GLOBAL. Debe ir al FINAL del documento.
+     El bloque "PORTAL CRITICAL OVERRIDES" fija html/body en
+     height:100% !important. Como está declarado DESPUÉS del @media print
+     del <head> y con la misma especificidad, lo gana: el body queda de
+     una sola pantalla de alto y el navegador imprime una única página.
+     Estas reglas van al final para ganar la cascada.
+     ═══════════════════════════════════════════════════════════════════ -->
+<style>
+@media print{
+  /* 1 · liberar la altura del documento — esto es lo que paginaba mal */
+  html,body{
+    height:auto!important;min-height:0!important;max-height:none!important;
+    overflow:visible!important;overflow-x:visible!important;overflow-y:visible!important;
+    background:#fff!important;color:#111!important;
+  }
+  /* 2 · solo la pantalla activa, fluyendo en vertical */
+  .screen{display:none!important}
+  .screen.active{
+    display:block!important;position:static!important;
+    height:auto!important;min-height:0!important;max-height:none!important;
+    overflow:visible!important;padding:0!important;
+  }
+  /* 3 · ningún contenedor con scroll debe recortar al imprimir */
+  .screen.active *{overflow:visible!important;max-height:none!important}
+  /* 4 · cabeceras pegajosas: al imprimir se quedan quietas */
+  .proy-header,.pr-header,.ckops-wrap .header,.ckadm-wrap .header,
+  .docs-wrap .topbar,.equipos-wrap .header,.simulador-wrap .header{
+    position:static!important
+  }
+  /* 5 · adornos y flotantes fuera */
+  .bg,.waves,.alert-bell-wrap,.gt-modal-overlay,.modal-bg,.ovl,
+  .overlay,.pr-overlay{display:none!important}
+  /* 6 · no partir filas ni tarjetas por la mitad */
+  tr,.proy-area,.docs-wrap .panel,.docs-wrap .kpi{
+    break-inside:avoid;page-break-inside:avoid
+  }
+  /* 7 · imprimir los colores de estado tal cual */
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  @page{margin:10mm}
+}
+</style>
 
 </body>
 </html>

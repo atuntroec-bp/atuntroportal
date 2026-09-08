@@ -18,85 +18,6 @@ function uid(){ return 'd'+Date.now()+Math.floor(Math.random()*1000); }
 // ── Firebase ──
 const FB_PATH = 'atuntro_documentos/data';
 let _db=null, _fbHandler=null, _saveDebounce=null, _lastRemoteJSON=null, _isTyping=false, _typingTO=null;
-let _st=null;
-
-function _getStorage(){
-  try{
-    if(typeof firebase==='undefined') return null;
-    if(!firebase.apps||!firebase.apps.length) return null;
-    if(!_st) _st=firebase.storage();
-    return _st;
-  }catch(e){ return null; }
-}
-
-function _ensureAuth(){
-  return new Promise(resolve=>{
-    try{
-      const auth=firebase.auth();
-      if(auth.currentUser){ resolve(); return; }
-      auth.signInAnonymously().then(()=>resolve()).catch(()=>resolve());
-    }catch(e){ resolve(); }
-  });
-}
-
-// input de archivo reutilizable
-let _fileInput=null;
-function _getFileInput(){
-  if(!_fileInput){
-    _fileInput=document.createElement('input');
-    _fileInput.type='file'; _fileInput.accept='*/*';
-    _fileInput.style.display='none';
-    document.body.appendChild(_fileInput);
-  }
-  return _fileInput;
-}
-
-function seleccionarArchivo(id){
-  const fi=_getFileInput();
-  fi.value='';
-  fi.onchange=()=>{ if(fi.files.length) _subirArchivo(id,fi.files[0]); };
-  fi.click();
-}
-
-function _subirArchivo(id,file){
-  const r=rows.find(x=>x.id===id); if(!r) return;
-  const st=_getStorage();
-  if(!st){ alert('Firebase Storage no disponible. Verifica que el SDK esté cargado.'); return; }
-  // feedback visual
-  const btn=document.querySelector('[data-upid="'+id+'"]');
-  if(btn){ btn.textContent='⏳'; btn.disabled=true; }
-  _ensureAuth().then(()=>{
-    const path='atuntro_docs/'+id+'/'+file.name;
-    const ref=st.ref(path);
-    ref.put(file).then(snap=>snap.ref.getDownloadURL()).then(url=>{
-      // borrar archivo anterior si existía con otro path
-      if(r.archivoPath && r.archivoPath!==path){
-        try{ st.ref(r.archivoPath).delete().catch(()=>{}); }catch(e){}
-      }
-      r.archivo=url; r.archivoNom=file.name; r.archivoPath=path;
-      guardar(); render();
-    }).catch(e=>{
-      console.error('Storage upload error:',e);
-      alert('Error al subir el archivo.\n\nAsegúrese de configurar las reglas de Firebase Storage:\nallow read, write: if request.auth != null;');
-      render();
-    });
-  });
-}
-
-function quitarArchivo(id){
-  const r=rows.find(x=>x.id===id); if(!r) return;
-  if(!confirm('¿Quitar el archivo adjunto "'+(r.archivoNom||'archivo')+'"?')) return;
-  const st=_getStorage();
-  if(st && r.archivoPath){ try{ st.ref(r.archivoPath).delete().catch(()=>{}); }catch(e){} }
-  r.archivo=''; r.archivoNom=''; r.archivoPath='';
-  guardar(); render();
-}
-
-function descargarArchivo(id){
-  const r=rows.find(x=>x.id===id); if(!r||!r.archivo) return;
-  window.open(r.archivo,'_blank');
-}
-
 function _getDb(){
   try{
     if(typeof firebase==='undefined') return null;
@@ -247,9 +168,7 @@ function renderMonths(rs){
 const COLS=[
   {k:'nom',t:'Documento'},{k:'barco',t:'Embarcación'},{k:'num',t:'N° / Código'},
   {k:'emi',t:'Emisión'},{k:'ven',t:'Vencimiento'},{k:'dias',t:'Días'},
-  {k:'st',t:'Estado'},{k:'val',t:'Valor'},
-  {k:'archivo',t:'Archivo',nosort:true},
-  {k:'__',t:'',nosort:true}
+  {k:'st',t:'Estado'},{k:'val',t:'Valor'},{k:'__',t:'',nosort:true}
 ];
 
 function renderTabla(rs){
@@ -262,21 +181,9 @@ function renderTabla(rs){
   document.getElementById('thRow').innerHTML=COLS.map(c=>
     `<th class="${c.nosort?'nosort':''}" ${c.nosort?'':`onclick="DOCS.setSort('${c.k}')"`}>${c.t}${sortKey===c.k?(sortDir>0?' ▲':' ▼'):''}</th>`).join('');
   document.getElementById('tblSub').textContent=list.length+' fila(s)';
-  if(!list.length){ document.getElementById('tbody').innerHTML='<tr><td colspan="10" class="empty">Sin resultados con los filtros actuales.</td></tr>'; return; }
+  if(!list.length){ document.getElementById('tbody').innerHTML='<tr><td colspan="9" class="empty">Sin resultados con los filtros actuales.</td></tr>'; return; }
   const opts=listaBarcos();
-  document.getElementById('tbody').innerHTML=list.map(r=>{
-    const archCell=r.archivo
-      ?`<div style="display:flex;align-items:center;gap:4px;min-width:120px">
-           <a href="${att(r.archivo)}" target="_blank" title="${att(r.archivoNom||'')}"
-              style="font-size:12px;color:#1D9E75;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px">
-              📄 ${esc(r.archivoNom||'archivo')}</a>
-           <button title="Quitar archivo" onclick="DOCS.quitarArchivo('${r.id}')"
-              style="background:none;border:none;color:#C0392B;cursor:pointer;font-size:13px;padding:0;line-height:1">✕</button>
-         </div>`
-      :`<button data-upid="${r.id}" title="Adjuntar archivo" onclick="DOCS.seleccionarArchivo('${r.id}')"
-           style="background:none;border:1px dashed #aaa;border-radius:4px;color:#555;cursor:pointer;font-size:12px;padding:2px 6px;white-space:nowrap">
-           📎 Adjuntar</button>`;
-    return `<tr class="${nuevosIds.has(r.id)?'nueva':''}">
+  document.getElementById('tbody').innerHTML=list.map(r=>`<tr class="${nuevosIds.has(r.id)?'nueva':''}">
     <td class="accent" style="border-left-color:${EST[r.st].color}"><input class="cell-in${r.nom?'':' vacio'}" value="${att(r.nom)}" placeholder="Nombre del documento" onchange="DOCS.setCampo('${r.id}','nom',this.value)"></td>
     <td><select class="cell-in" onchange="DOCS.setCampo('${r.id}','barco',this.value)">
         ${opts.map(b=>`<option value="${att(b)}"${b===r.barco?' selected':''}>${esc(b)}</option>`).join('')}
@@ -287,9 +194,8 @@ function renderTabla(rs){
     <td class="dias-cell" style="color:${EST[r.st].color}">${r.dias===null?'—':r.dias}</td>
     <td><span class="pill ${EST[r.st].cls}">${EST[r.st].lab}</span></td>
     <td><input class="cell-in" value="${att(r.val)}" placeholder="—" style="min-width:70px" onchange="DOCS.setCampo('${r.id}','val',this.value)"></td>
-    <td>${archCell}</td>
     <td><button class="del-btn" title="Eliminar documento" onclick="DOCS.eliminar('${r.id}')">✕</button></td>
-  </tr>`;}).join('');
+  </tr>`).join('');
 }
 
 function setSort(k){ if(sortKey===k) sortDir*=-1; else {sortKey=k;sortDir=1;} render(); }
@@ -305,9 +211,6 @@ function eliminar(id){
   const r=rows.find(x=>x.id===id); if(!r) return;
   if(!confirm('¿Eliminar el documento "'+(r.nom||'sin nombre')+'" de '+r.barco+'?')) return;
   if(!confirm('Esta acción no se puede deshacer. ¿Confirmar eliminación?')) return;
-  // eliminar archivo adjunto en Storage si existe
-  const st=_getStorage();
-  if(st && r.archivoPath){ try{ st.ref(r.archivoPath).delete().catch(()=>{}); }catch(e){} }
   rows=rows.filter(x=>x.id!==id);
   nuevosIds.delete(id);
   guardar(); render();
@@ -407,6 +310,6 @@ function render(){
 
 function init(){ cargar(); render(); }
 
-return { abrirModal, cerrarModal, guardarNuevo, exportCSV, respaldar, cargarRespaldo, restaurarBase, render, toggleEstado, limpiarEstado, setSort, setCampo, eliminar, seleccionarArchivo, quitarArchivo, descargarArchivo, init };
+return { abrirModal, cerrarModal, guardarNuevo, exportCSV, respaldar, cargarRespaldo, restaurarBase, render, toggleEstado, limpiarEstado, setSort, setCampo, eliminar, init };
 })();
 

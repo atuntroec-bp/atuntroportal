@@ -1058,7 +1058,7 @@ thresholds=loadThr();
     activeUser = {
       name: portalUser.name,
       pin:  '____',  /* bypass – already authenticated */
-      isAdmin: portalUser.role === 'master' || portalUser.role === 'master_operaciones'
+      isAdmin: portalUser.role === 'master'
     };
     /* Set vessel subtitle */
     var vs = document.getElementById('ckops-vesselSub');
