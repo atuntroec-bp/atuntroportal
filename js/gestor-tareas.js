@@ -22,10 +22,11 @@ const GT = (() => {
   // operaciones → solo Operativo · contabilidad → solo Contabilidad
   // admin y master → todo (control total)
   const ROLE_DEPTS = {
-    operaciones:  ['Operativo'],
-    contabilidad: ['Contabilidad'],
-    admin:        ['Administrativo','Operativo','Contabilidad'],
-    master:       ['Administrativo','Operativo','Contabilidad'],
+    operaciones:        ['Operativo'],
+    operaciones_master: ['Operativo'],
+    contabilidad:       ['Contabilidad'],
+    admin:              ['Administrativo','Operativo','Contabilidad'],
+    master:             ['Administrativo','Operativo','Contabilidad'],
   };
   let currentRole = 'admin';  // se sobrescribe en init() con el rol real de la sesión
 

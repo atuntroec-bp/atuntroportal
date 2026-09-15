@@ -3338,7 +3338,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
         iconColor: 'blue',
         color: 'color-blue',
         status: 'active',
-        roles: ['operaciones','master'],
+        roles: ['operaciones','operaciones_master','master'],
         vessels: ['María Fátima','María de Gracia'],
         onclick: 'openChecklistOps()',
         linkLabel: 'Abrir checklist',
@@ -3364,7 +3364,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
         iconColor: 'green',
         color: 'color-green',
         status: 'active',
-        roles: ['operaciones','admin','contabilidad','master'],
+        roles: ['operaciones','operaciones_master','admin','contabilidad','master'],
         vessels: ['María Fátima','María de Gracia'],
         onclick: 'openProyectos()',
         linkLabel: 'Abrir proyectos',
@@ -3377,7 +3377,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
         iconColor: 'teal',
         color: 'color-teal',
         status: 'active',
-        roles: ['operaciones','admin','contabilidad','master'],
+        roles: ['operaciones','operaciones_master','admin','contabilidad','master'],
         vessels: ['María Fátima','María de Gracia'],
         onclick: 'openDocumentos()',
         linkLabel: 'Abrir control documental',
@@ -3390,7 +3390,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
         iconColor: 'blue',
         color: 'color-blue',
         status: 'active',
-        roles: ['admin','operaciones','contabilidad','master'],
+        roles: ['admin','operaciones','operaciones_master','contabilidad','master'],
         vessels: ['María Fátima','María de Gracia'],
         onclick: 'openEquipos()',
         linkLabel: 'Abrir control',
@@ -3403,7 +3403,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
         iconColor: 'teal',
         color: 'color-teal',
         status: 'active',
-        roles: ['operaciones','admin','contabilidad','master'],
+        roles: ['operaciones','operaciones_master','admin','contabilidad','master'],
         vessels: ['María Fátima','María de Gracia'],
         onclick: 'openBoyas()',
         linkLabel: 'Abrir control de boyas',
@@ -3416,7 +3416,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
         iconColor: 'purple',
         color: 'color-purple',
         status: 'active',
-        roles: ['operaciones','admin','master'],
+        roles: ['operaciones','operaciones_master','admin','master'],
         vessels: ['María Fátima'],
         onclick: 'openPlano()',
         linkLabel: 'Abrir plano de red',
@@ -3431,7 +3431,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
         iconColor: 'green',
         color: 'color-green',
         status: 'active',
-        roles: ['operaciones','admin','contabilidad','master'],
+        roles: ['operaciones','operaciones_master','admin','contabilidad','master'],
         vessels: [],
         url: null,
         linkLabel: 'Abrir Gestor',
@@ -3471,6 +3471,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
   const ROLE_LABELS = {
     admin: 'Administración',
     operaciones: 'Operaciones',
+    operaciones_master: 'Jefe de Operaciones',
     contabilidad: 'Contabilidad',
     master: 'Gerencia / Master',
   };
@@ -3661,7 +3662,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
   };
   var AUTH_PATH = 'atuntro_portal_auth_v1';
   var DEFAULT_USERS = {
-    romulo_perez:      { name: 'Rómulo Pérez',      role: 'operaciones',  pin: '1810' },
+    romulo_perez:      { name: 'Rómulo Pérez',      role: 'operaciones_master', pin: '1810' },
     david_perez:       { name: 'David Pérez',        role: 'operaciones',  pin: '1091' },
     fernando_farfan:   { name: 'Fernando Farfán',    role: 'operaciones',  pin: '7780' },
     ricardo_baida_d:   { name: 'Ricardo Baida D.',   role: 'admin',        pin: '6864' },
@@ -3762,7 +3763,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
   function closeAdminPanel() { document.getElementById('admin-overlay').classList.remove('show'); }
   function renderAdminUsers() {
     var container = document.getElementById('admin-users-list');
-    var roleOptions = ['operaciones','admin','contabilidad','master'];
+    var roleOptions = ['operaciones','operaciones_master','admin','contabilidad','master'];
     var html = '';
     Object.entries(AUTH.users).forEach(function(entry) {
       var uid = entry[0], u = entry[1];
@@ -4032,10 +4033,11 @@ const GT = (() => {
   // operaciones → solo Operativo · contabilidad → solo Contabilidad
   // admin y master → todo (control total)
   const ROLE_DEPTS = {
-    operaciones:  ['Operativo'],
-    contabilidad: ['Contabilidad'],
-    admin:        ['Administrativo','Operativo','Contabilidad'],
-    master:       ['Administrativo','Operativo','Contabilidad'],
+    operaciones:        ['Operativo'],
+    operaciones_master: ['Operativo'],
+    contabilidad:       ['Contabilidad'],
+    admin:              ['Administrativo','Operativo','Contabilidad'],
+    master:             ['Administrativo','Operativo','Contabilidad'],
   };
   let currentRole = 'admin';  // se sobrescribe en init() con el rol real de la sesión
 
