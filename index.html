@@ -534,6 +534,36 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .gt-btn-neutral{background:#f0ede8;color:#555;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s;white-space:nowrap}
 .gt-btn-neutral:hover{background:#e0ddd8;color:#1a1a18}
 .gt-chpass-msg{font-size:11px;margin-top:5px;min-height:14px}
+
+/* ── Rutinas (tareas recurrentes por viaje) ── */
+#gt-rut-bg .gt-modal{max-width:560px;padding:0;overflow:hidden}
+#gt-rut-ed-bg .gt-modal{max-width:840px;padding:0;overflow:hidden}
+#gt-carg-bg .gt-modal{max-width:520px;padding:0;overflow:hidden}
+.gt-rut-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:#f9f9f7;border-radius:8px;border:1px solid rgba(0,0,0,.07);margin-bottom:7px}
+.gt-rut-item-info strong{display:block;font-size:12px;color:#1a1a18;font-weight:600}
+.gt-rut-item-info span{font-size:10px;color:#bbb}
+.gt-rut-item-btns{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.gt-rut-btn-load{background:#1D9E75;color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s}
+.gt-rut-btn-load:hover{background:#158060}
+.gt-rut-btn-edit,.gt-rut-btn-del{background:none;border:1px solid rgba(0,0,0,.12);border-radius:6px;color:#aaa;cursor:pointer;font-size:12px;padding:5px 8px;transition:.15s;line-height:1}
+.gt-rut-btn-edit:hover{color:#2E75B6;border-color:#2E75B6}
+.gt-rut-btn-del:hover{color:#D85A30;border-color:#D85A30}
+.gt-rut-head-grid{display:grid;grid-template-columns:1fr 130px 150px 70px 1fr 28px;gap:6px;padding:0 0 6px;font-size:9px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+.gt-rut-row{display:grid;grid-template-columns:1fr 130px 150px 70px 1fr 28px;gap:6px;margin-bottom:6px;align-items:center}
+.gt-rut-in{border:1.5px solid rgba(0,0,0,.12);border-radius:6px;padding:7px 8px;font-size:11px;font-family:inherit;outline:none;background:#f9f9f7;color:#1a1a18;min-width:0;transition:.2s}
+.gt-rut-in:focus{border-color:#2E75B6;background:#fff}
+.gt-rut-in-off{text-align:center}
+.gt-rut-row-del{background:none;border:none;color:#ddd;cursor:pointer;font-size:13px;padding:2px;border-radius:5px;transition:.15s}
+.gt-rut-row-del:hover{color:#D85A30;background:#FAECE7}
+.gt-rut-addrow{background:none;border:1.5px dashed rgba(0,0,0,.18);border-radius:7px;padding:8px;width:100%;font-size:11px;font-weight:600;color:#888;cursor:pointer;font-family:inherit;transition:.2s;margin-top:4px}
+.gt-rut-addrow:hover{border-color:#2E75B6;color:#2E75B6}
+.gt-rut-hint{font-size:10px;color:#bbb;margin-top:8px;line-height:1.5}
+.gt-carg-prev{max-height:220px;overflow-y:auto;border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:8px 10px;background:#f9f9f7;margin-top:6px}
+.gt-carg-prev-row{display:flex;gap:10px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.05)}
+.gt-carg-prev-row:last-child{border-bottom:none}
+.gt-carg-prev-fecha{font-size:10px;color:#2E75B6;font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;padding-top:1px}
+.gt-carg-prev-tarea{font-size:11px;color:#1a1a18;line-height:1.4}
+.gt-carg-prev-meta{display:block;font-size:9px;color:#bbb;margin-top:1px}
 .gt-chpass-ok{color:#1D9E75}.gt-chpass-err{color:#D85A30}
 
 /* Footer */
@@ -1160,6 +1190,36 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .gt-btn-neutral{background:#f0ede8;color:#555;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s;white-space:nowrap}
 .gt-btn-neutral:hover{background:#e0ddd8;color:#1a1a18}
 .gt-chpass-msg{font-size:11px;margin-top:5px;min-height:14px}
+
+/* ── Rutinas (tareas recurrentes por viaje) ── */
+#gt-rut-bg .gt-modal{max-width:560px;padding:0;overflow:hidden}
+#gt-rut-ed-bg .gt-modal{max-width:840px;padding:0;overflow:hidden}
+#gt-carg-bg .gt-modal{max-width:520px;padding:0;overflow:hidden}
+.gt-rut-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:#f9f9f7;border-radius:8px;border:1px solid rgba(0,0,0,.07);margin-bottom:7px}
+.gt-rut-item-info strong{display:block;font-size:12px;color:#1a1a18;font-weight:600}
+.gt-rut-item-info span{font-size:10px;color:#bbb}
+.gt-rut-item-btns{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.gt-rut-btn-load{background:#1D9E75;color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s}
+.gt-rut-btn-load:hover{background:#158060}
+.gt-rut-btn-edit,.gt-rut-btn-del{background:none;border:1px solid rgba(0,0,0,.12);border-radius:6px;color:#aaa;cursor:pointer;font-size:12px;padding:5px 8px;transition:.15s;line-height:1}
+.gt-rut-btn-edit:hover{color:#2E75B6;border-color:#2E75B6}
+.gt-rut-btn-del:hover{color:#D85A30;border-color:#D85A30}
+.gt-rut-head-grid{display:grid;grid-template-columns:1fr 130px 150px 70px 1fr 28px;gap:6px;padding:0 0 6px;font-size:9px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+.gt-rut-row{display:grid;grid-template-columns:1fr 130px 150px 70px 1fr 28px;gap:6px;margin-bottom:6px;align-items:center}
+.gt-rut-in{border:1.5px solid rgba(0,0,0,.12);border-radius:6px;padding:7px 8px;font-size:11px;font-family:inherit;outline:none;background:#f9f9f7;color:#1a1a18;min-width:0;transition:.2s}
+.gt-rut-in:focus{border-color:#2E75B6;background:#fff}
+.gt-rut-in-off{text-align:center}
+.gt-rut-row-del{background:none;border:none;color:#ddd;cursor:pointer;font-size:13px;padding:2px;border-radius:5px;transition:.15s}
+.gt-rut-row-del:hover{color:#D85A30;background:#FAECE7}
+.gt-rut-addrow{background:none;border:1.5px dashed rgba(0,0,0,.18);border-radius:7px;padding:8px;width:100%;font-size:11px;font-weight:600;color:#888;cursor:pointer;font-family:inherit;transition:.2s;margin-top:4px}
+.gt-rut-addrow:hover{border-color:#2E75B6;color:#2E75B6}
+.gt-rut-hint{font-size:10px;color:#bbb;margin-top:8px;line-height:1.5}
+.gt-carg-prev{max-height:220px;overflow-y:auto;border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:8px 10px;background:#f9f9f7;margin-top:6px}
+.gt-carg-prev-row{display:flex;gap:10px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.05)}
+.gt-carg-prev-row:last-child{border-bottom:none}
+.gt-carg-prev-fecha{font-size:10px;color:#2E75B6;font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;padding-top:1px}
+.gt-carg-prev-tarea{font-size:11px;color:#1a1a18;line-height:1.4}
+.gt-carg-prev-meta{display:block;font-size:9px;color:#bbb;margin-top:1px}
 .gt-chpass-ok{color:#1D9E75}.gt-chpass-err{color:#D85A30}
 
 /* Footer */
@@ -2443,7 +2503,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .equipos-wrap .add-viaje-form{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(0,0,0,.1)}
 .equipos-wrap .add-viaje-form input{border:1.5px solid #e2e2de;border-radius:6px;padding:6px 9px;font-size:12px;font-family:inherit;outline:none}
 .equipos-wrap .add-viaje-form input:focus{border-color:#2E75B6}
-.equipos-wrap .add-viaje-form input#newViajeId{width:90px}
+.equipos-wrap .add-viaje-form input#eq-newViajeId{width:90px}
+.equipos-wrap table.vjt input.vjt-id{width:80px;font-weight:700;color:#153a5b}
+.equipos-wrap .th-sub{font-weight:400;opacity:.75;font-size:9px;text-transform:none}
+.equipos-wrap .col-fill-input{width:74px;margin-top:4px;border:1.5px solid #9fc3e4;border-radius:5px;padding:3px 5px;font-size:11px;font-family:inherit;text-align:center;outline:none;background:#fff;color:#0000FF}
+.equipos-wrap .col-fill-input:focus{border-color:#ffd166;box-shadow:0 0 0 2px rgba(255,209,102,.35)}
+.equipos-wrap td.pct-cell{font-size:11.5px;font-weight:700;color:#245e93;text-align:center;white-space:nowrap}
 /* Fechas dentro del header azul de las tablas */
 .equipos-wrap .th-id{font-size:10.5px}
 .equipos-wrap .th-date-sm{font-size:9px;font-weight:400;color:#cfe0ef;text-transform:none;letter-spacing:0;margin-top:2px;white-space:nowrap}
@@ -3055,6 +3120,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       <p>ATUNTRO S.A. — Seguimiento de compromisos operativos y administrativos</p>
     </div>
     <div class="gt-header-btns">
+      <button class="gt-admin-btn" id="gt-rut-btn" onclick="GT.openRutinas()" title="Rutinas de tareas por viaje (solo admin)">🚢 Rutinas</button>
       <button class="gt-admin-btn" onclick="GT.openPin()" title="Panel de administrador">🔒 Admin</button>
       <button class="gt-add-btn"   onclick="GT.openModal()">+ Nueva tarea</button>
     </div>
@@ -3251,6 +3317,115 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       </div>
 
     </div><!-- /gt-admin-body -->
+  </div>
+</div>
+
+<!-- ── Modal: Rutinas (lista de plantillas) ── -->
+<div id="gt-rut-bg" class="gt-modal-overlay" onclick="GT.closeRutinasBg(event)">
+  <div class="gt-modal" style="max-width:560px">
+    <div class="gt-admin-header">
+      <h3>🚢 Rutinas de tareas por viaje</h3>
+      <button class="gt-admin-close" onclick="GT.closeRutinas()">×</button>
+    </div>
+    <div class="gt-admin-body">
+      <div class="gt-admin-section">
+        <div class="gt-admin-section-title">📋 Plantillas guardadas</div>
+        <div id="gt-rut-list"></div>
+        <button class="gt-rut-addrow" onclick="GT.openRutEditor()">+ Nueva rutina</button>
+        <div class="gt-rut-hint">
+          Cada rutina agrupa las tareas que se repiten en cada viaje. Al pulsar <strong>Cargar</strong>
+          se elige el buque y la fecha de zarpe, y las tareas se crean con su fecha calculada automáticamente.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Editor de rutina ── -->
+<div id="gt-rut-ed-bg" class="gt-modal-overlay" onclick="GT.closeRutEditorBg(event)">
+  <div class="gt-modal" style="max-width:840px">
+    <div class="gt-admin-header">
+      <h3 id="gt-rut-ed-title">Nueva rutina</h3>
+      <button class="gt-admin-close" onclick="GT.closeRutEditor()">×</button>
+    </div>
+    <div class="gt-admin-body">
+
+      <div class="gt-modal-grid">
+        <div class="gt-modal-row">
+          <label>Nombre de la rutina</label>
+          <input type="text" id="gt-rut-nombre" placeholder="Ej.: Zarpe — trámites estándar">
+        </div>
+        <div class="gt-modal-row">
+          <label>Buque</label>
+          <select id="gt-rut-buque">
+            <option value="AMBOS">Ambos buques</option>
+            <option value="MF">María Fátima</option>
+            <option value="MG">María de Gracia</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="gt-admin-section" style="margin-top:18px">
+        <div class="gt-admin-section-title">✅ Tareas de la rutina</div>
+        <div class="gt-rut-head-grid">
+          <div>Tarea</div><div>Área</div><div>Responsable</div><div>Días</div><div>Observación</div><div></div>
+        </div>
+        <div id="gt-rut-rows"></div>
+        <button class="gt-rut-addrow" onclick="GT.rutDraftAdd()">+ Agregar tarea</button>
+        <div class="gt-rut-hint">
+          <strong>Días</strong> = desplazamiento respecto a la fecha de zarpe.
+          Use <strong>-3</strong> para “3 días antes del zarpe”, <strong>0</strong> para el día del zarpe
+          y <strong>5</strong> para “5 días después”.
+        </div>
+        <div class="gt-resp-add-error" id="gt-rut-ed-error"></div>
+      </div>
+
+      <div class="gt-modal-actions">
+        <button class="gt-btn-cancel" onclick="GT.closeRutEditor()">Cancelar</button>
+        <button class="gt-btn-save"   onclick="GT.saveRutina()">Guardar rutina</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Cargar rutina a un viaje ── -->
+<div id="gt-carg-bg" class="gt-modal-overlay" onclick="GT.closeCargarBg(event)">
+  <div class="gt-modal" style="max-width:520px">
+    <div class="gt-admin-header">
+      <h3>⚓ Cargar rutina</h3>
+      <button class="gt-admin-close" onclick="GT.closeCargar()">×</button>
+    </div>
+    <div class="gt-admin-body">
+
+      <div class="gt-modal-row">
+        <label>Rutina</label>
+        <div style="font-size:13px;font-weight:600;color:#1F4E79" id="gt-carg-nombre"></div>
+      </div>
+
+      <div class="gt-modal-grid" style="margin-top:12px">
+        <div class="gt-modal-row">
+          <label>Buque</label>
+          <select id="gt-carg-buque"></select>
+        </div>
+        <div class="gt-modal-row">
+          <label>Fecha de zarpe</label>
+          <input type="date" id="gt-carg-fecha" onchange="GT.renderCargarPreview()">
+        </div>
+      </div>
+
+      <div class="gt-modal-row" style="margin-top:12px">
+        <label>Tareas que se crearán</label>
+        <div class="gt-carg-prev" id="gt-carg-prev"></div>
+      </div>
+      <div class="gt-resp-add-error" id="gt-carg-error"></div>
+
+      <div class="gt-modal-actions">
+        <button class="gt-btn-cancel" onclick="GT.closeCargar()">Cancelar</button>
+        <button class="gt-btn-save"   onclick="GT.confirmarCarga()">Cargar tareas</button>
+      </div>
+
+    </div>
   </div>
 </div>
 
@@ -4094,12 +4269,31 @@ const GT = (() => {
     {id:26, fecha:'2026-07-09', tarea:'Seguimiento de BanEcuador',                                              dept:'Administrativo', resp:'Rubén Vera',        estado:'COMPLETO',   obs:''},
   ];
 
+  /* ── Rutinas iniciales (plantilla de ejemplo, editable) ─ */
+  // offset = días respecto a la fecha de zarpe (negativo = antes del zarpe)
+  const SEED_RUTINAS = [
+    { id:1, nombre:'Zarpe — trámites estándar', buque:'AMBOS', items:[
+      { tarea:'Solicitar permiso de zarpe',            dept:'Operativo',      resp:'Romulo Pérez',      offset:-5, obs:'' },
+      { tarea:'Confirmar rol de tripulación en IESS',  dept:'Contabilidad',   resp:'Katherine Crespín', offset:-4, obs:'' },
+      { tarea:'Provisión de combustible y víveres',    dept:'Operativo',      resp:'Romulo Pérez',      offset:-3, obs:'' },
+      { tarea:'Adelanto de tripulación',               dept:'Contabilidad',   resp:'Katherine Crespín', offset:-2, obs:'' },
+      { tarea:'Verificar pólizas y matrícula vigentes',dept:'Administrativo', resp:'Rubén Vera',        offset:-2, obs:'' },
+      { tarea:'Reporte de salida a gerencia',          dept:'Administrativo', resp:'Ricardo Baida T',   offset: 0, obs:'' },
+    ]},
+  ];
+
+  const BUQUES = { MF:'María Fátima', MG:'María de Gracia', AMBOS:'Ambos buques' };
+
   /* ── State ──────────────────────────────────────────── */
   let tasks       = [];
   let responsables= [];
   let adminPass   = DEFAULT_PASS;
   let nextId      = 200;
   let editingId   = null;
+  let rutinas     = [];        // plantillas de tareas recurrentes por viaje
+  let nextRutinaId= 1;
+  let editingRutId= null;      // rutina que se está editando
+  let rutDraft    = [];        // items de la rutina en edición (buffer del modal)
   let adminUnlocked = false;   // true tras validar la contraseña admin del Gestor
 
   /* ── Firebase (sincronización entre dispositivos) ───── */
@@ -4142,7 +4336,9 @@ const GT = (() => {
       responsables = data.responsables || responsables;
       adminPass    = data.adminPass    || adminPass;
       nextId       = data.nextId       || nextId;
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, adminPass, nextId })); } catch(e) {}
+      rutinas      = data.rutinas      || rutinas;
+      nextRutinaId = data.nextRutinaId || nextRutinaId;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, adminPass, nextId, rutinas, nextRutinaId })); } catch(e) {}
       renderAll();
       flashSaveDot();
     };
@@ -4159,24 +4355,30 @@ const GT = (() => {
         responsables= p.responsables || [...SEED_RESP];
         adminPass   = p.adminPass    || DEFAULT_PASS;
         nextId      = p.nextId       || 200;
+        rutinas     = p.rutinas      || JSON.parse(JSON.stringify(SEED_RUTINAS));
+        nextRutinaId= p.nextRutinaId || (rutinas.reduce((m,r)=>Math.max(m,r.id),0) + 1);
       } else {
         tasks        = JSON.parse(JSON.stringify(SEED_TASKS));
         responsables = [...SEED_RESP];
         adminPass    = DEFAULT_PASS;
         nextId       = 200;
+        rutinas      = JSON.parse(JSON.stringify(SEED_RUTINAS));
+        nextRutinaId = 2;
       }
     } catch(e) {
       tasks        = JSON.parse(JSON.stringify(SEED_TASKS));
       responsables = [...SEED_RESP];
+      rutinas      = JSON.parse(JSON.stringify(SEED_RUTINAS));
+      nextRutinaId = 2;
     }
   }
 
   function save() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, adminPass, nextId }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, adminPass, nextId, rutinas, nextRutinaId }));
     } catch(e) {}
     const db = _getDb();
-    if (db) { db.ref(FB_PATH).set({ tasks, responsables, adminPass, nextId }).then(flashSaveDot).catch(()=>{}); }
+    if (db) { db.ref(FB_PATH).set({ tasks, responsables, adminPass, nextId, rutinas, nextRutinaId }).then(flashSaveDot).catch(()=>{}); }
   }
 
   /* ── Stats ──────────────────────────────────────────── */
@@ -4418,6 +4620,8 @@ const GT = (() => {
   }
 
   /* ── PIN modal ──────────────────────────────────────── */
+  let pinTarget = 'admin';   // 'admin' | 'rutinas' — a dónde ir tras validar el PIN
+
   function openPin() {
     document.getElementById('gt-pin-input').value = '';
     document.getElementById('gt-pin-error').textContent = '';
@@ -4434,7 +4638,8 @@ const GT = (() => {
     if (val === adminPass) {
       adminUnlocked = true;   // habilita eliminar tareas una por una
       closePin();
-      openAdmin();
+      if (pinTarget === 'rutinas') { pinTarget = 'admin'; openRutinas(); }
+      else { openAdmin(); }
       applyFilters();          // re-render para mostrar los botones 🗑
     } else {
       errEl.textContent = 'Contraseña incorrecta. Intente de nuevo.';
@@ -4546,6 +4751,202 @@ const GT = (() => {
     setTimeout(() => { msg.textContent = ''; }, 3000);
   }
 
+  /* ══════════════════════════════════════════════════════
+     RUTINAS — plantillas de tareas recurrentes por viaje
+     Solo visibles y operables por admin / master.
+     ══════════════════════════════════════════════════════ */
+
+  // Suma días a una fecha 'YYYY-MM-DD' sin sufrir desfases de zona horaria.
+  function addDays(fechaISO, n) {
+    const [y, m, d] = String(fechaISO).split('-').map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    dt.setUTCDate(dt.getUTCDate() + Number(n || 0));
+    return dt.toISOString().slice(0, 10);
+  }
+
+  function offsetLabel(n) {
+    const v = Number(n || 0);
+    if (v === 0) return 'día del zarpe';
+    return v < 0 ? `${Math.abs(v)} día${Math.abs(v) > 1 ? 's' : ''} antes` : `${v} día${v > 1 ? 's' : ''} después`;
+  }
+
+  // Punto de entrada del botón 🚢 Rutinas: exige desbloqueo admin.
+  function openRutinas() {
+    if (!seesAll()) { alert('Las rutinas solo están disponibles para el administrador.'); return; }
+    if (!adminUnlocked) { pinTarget = 'rutinas'; openPin(); return; }
+    renderRutinasList();
+    show('gt-rut-bg');
+  }
+  function closeRutinas()    { hide('gt-rut-bg'); }
+  function closeRutinasBg(e) { if (e.target.id === 'gt-rut-bg') closeRutinas(); }
+
+  function renderRutinasList() {
+    const cont = document.getElementById('gt-rut-list');
+    if (!cont) return;
+    cont.innerHTML = rutinas.length ? rutinas.map(r => `
+      <div class="gt-rut-item">
+        <div class="gt-rut-item-info">
+          <strong>${esc(r.nombre)}</strong>
+          <span>${esc(BUQUES[r.buque] || r.buque)} · ${r.items.length} tarea${r.items.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div class="gt-rut-item-btns">
+          <button class="gt-rut-btn-load" onclick="GT.openCargar(${r.id})" title="Crear las tareas de esta rutina">Cargar</button>
+          <button class="gt-rut-btn-edit" onclick="GT.openRutEditor(${r.id})" title="Editar la plantilla">✎</button>
+          <button class="gt-rut-btn-del"  onclick="GT.deleteRutina(${r.id})" title="Eliminar la plantilla">🗑</button>
+        </div>
+      </div>`).join('')
+      : '<div style="font-size:12px;color:#ccc;padding:10px 0">Sin rutinas creadas. Use “+ Nueva rutina”.</div>';
+  }
+
+  /* ── Editor de plantilla ─────────────────────────────── */
+  function openRutEditor(id) {
+    editingRutId = id || null;
+    const r = id ? rutinas.find(x => x.id === id) : null;
+    document.getElementById('gt-rut-ed-title').textContent = r ? 'Editar rutina' : 'Nueva rutina';
+    document.getElementById('gt-rut-nombre').value = r ? r.nombre : '';
+    document.getElementById('gt-rut-buque').value  = r ? r.buque : 'AMBOS';
+    rutDraft = r ? JSON.parse(JSON.stringify(r.items)) : [];
+    if (!rutDraft.length) rutDraft.push({ tarea:'', dept:'Operativo', resp: responsables[0] || '', offset:0, obs:'' });
+    renderRutDraft();
+    show('gt-rut-ed-bg');
+  }
+  function closeRutEditor()    { hide('gt-rut-ed-bg'); }
+  function closeRutEditorBg(e) { if (e.target.id === 'gt-rut-ed-bg') closeRutEditor(); }
+
+  function renderRutDraft() {
+    const cont = document.getElementById('gt-rut-rows');
+    if (!cont) return;
+    const depts = ['Administrativo','Operativo','Contabilidad'];
+    cont.innerHTML = rutDraft.map((it, i) => `
+      <div class="gt-rut-row">
+        <input class="gt-rut-in gt-rut-in-tarea" type="text" placeholder="Descripción de la tarea…"
+          value="${esc(it.tarea)}" oninput="GT.rutDraftSet(${i},'tarea',this.value)">
+        <select class="gt-rut-in" onchange="GT.rutDraftSet(${i},'dept',this.value)">
+          ${depts.map(d => `<option value="${d}"${d === it.dept ? ' selected' : ''}>${d}</option>`).join('')}
+        </select>
+        <select class="gt-rut-in" onchange="GT.rutDraftSet(${i},'resp',this.value)">
+          ${responsables.map(rp => `<option value="${esc(rp)}"${rp === it.resp ? ' selected' : ''}>${esc(rp)}</option>`).join('')}
+        </select>
+        <input class="gt-rut-in gt-rut-in-off" type="number" step="1" title="Días respecto al zarpe (negativo = antes)"
+          value="${Number(it.offset || 0)}" oninput="GT.rutDraftSet(${i},'offset',this.value)">
+        <input class="gt-rut-in" type="text" placeholder="Observación…"
+          value="${esc(it.obs || '')}" oninput="GT.rutDraftSet(${i},'obs',this.value)">
+        <button class="gt-rut-row-del" onclick="GT.rutDraftDel(${i})" title="Quitar esta línea">✕</button>
+      </div>`).join('');
+  }
+
+  function rutDraftSet(i, campo, val) {
+    if (!rutDraft[i]) return;
+    rutDraft[i][campo] = (campo === 'offset') ? (parseInt(val, 10) || 0) : val;
+    // No se re-renderiza: evita perder el foco mientras se escribe.
+  }
+  function rutDraftAdd() {
+    const last = rutDraft[rutDraft.length - 1];
+    rutDraft.push({ tarea:'', dept: last ? last.dept : 'Operativo', resp: last ? last.resp : (responsables[0] || ''), offset: last ? last.offset : 0, obs:'' });
+    renderRutDraft();
+  }
+  function rutDraftDel(i) {
+    rutDraft.splice(i, 1);
+    if (!rutDraft.length) rutDraft.push({ tarea:'', dept:'Operativo', resp: responsables[0] || '', offset:0, obs:'' });
+    renderRutDraft();
+  }
+
+  function saveRutina() {
+    const nombre = document.getElementById('gt-rut-nombre').value.trim();
+    const errEl  = document.getElementById('gt-rut-ed-error');
+    errEl.textContent = '';
+    if (!nombre) { errEl.textContent = 'Ingrese un nombre para la rutina.'; return; }
+    const items = rutDraft.filter(it => it.tarea.trim()).map(it => ({
+      tarea: it.tarea.trim(), dept: it.dept, resp: it.resp,
+      offset: parseInt(it.offset, 10) || 0, obs: (it.obs || '').trim()
+    }));
+    if (!items.length) { errEl.textContent = 'Agregue al menos una tarea con descripción.'; return; }
+    const obj = { id: editingRutId || nextRutinaId++, nombre, buque: document.getElementById('gt-rut-buque').value, items };
+    if (editingRutId) {
+      const idx = rutinas.findIndex(r => r.id === editingRutId);
+      if (idx > -1) rutinas[idx] = obj;
+    } else {
+      rutinas.push(obj);
+    }
+    save(); closeRutEditor(); renderRutinasList();
+  }
+
+  function deleteRutina(id) {
+    const r = rutinas.find(x => x.id === id);
+    if (!r) return;
+    if (!confirm(`¿Eliminar la rutina "${r.nombre}"?\n\nLas tareas ya cargadas al cuadro no se borran.`)) return;
+    rutinas = rutinas.filter(x => x.id !== id);
+    save(); renderRutinasList();
+  }
+
+  /* ── Cargar rutina a un viaje ────────────────────────── */
+  let cargarRutId = null;
+
+  function openCargar(id) {
+    const r = rutinas.find(x => x.id === id);
+    if (!r) return;
+    cargarRutId = id;
+    document.getElementById('gt-carg-nombre').textContent = r.nombre;
+    document.getElementById('gt-carg-fecha').value  = today();
+    document.getElementById('gt-carg-error').textContent = '';
+    const selB = document.getElementById('gt-carg-buque');
+    selB.innerHTML = (r.buque === 'AMBOS'
+      ? ['MF','MG'] : [r.buque]).map(b => `<option value="${b}">${BUQUES[b]}</option>`).join('');
+    renderCargarPreview();
+    show('gt-carg-bg');
+  }
+  function closeCargar()    { hide('gt-carg-bg'); }
+  function closeCargarBg(e) { if (e.target.id === 'gt-carg-bg') closeCargar(); }
+
+  function renderCargarPreview() {
+    const r = rutinas.find(x => x.id === cargarRutId);
+    const cont = document.getElementById('gt-carg-prev');
+    if (!r || !cont) return;
+    const zarpe = document.getElementById('gt-carg-fecha').value || today();
+    cont.innerHTML = r.items.map(it => `
+      <div class="gt-carg-prev-row">
+        <div class="gt-carg-prev-fecha">${addDays(zarpe, it.offset)}</div>
+        <div class="gt-carg-prev-tarea">${esc(it.tarea)}
+          <span class="gt-carg-prev-meta">${esc(it.resp)} · ${offsetLabel(it.offset)}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  function confirmarCarga() {
+    const r = rutinas.find(x => x.id === cargarRutId);
+    if (!r) return;
+    const zarpe = document.getElementById('gt-carg-fecha').value;
+    const errEl = document.getElementById('gt-carg-error');
+    errEl.textContent = '';
+    if (!zarpe) { errEl.textContent = 'Seleccione la fecha de zarpe.'; return; }
+    const buque = document.getElementById('gt-carg-buque').value;
+    const etiqueta = `${BUQUES[buque]} · zarpe ${zarpe}`;
+    if (!confirm(`¿Cargar ${r.items.length} tarea(s) de "${r.nombre}"?\n\n${etiqueta}`)) return;
+    r.items.forEach(it => {
+      tasks.push({
+        id: nextId++,
+        fecha: addDays(zarpe, it.offset),
+        tarea: it.tarea,
+        dept: it.dept,
+        resp: it.resp,
+        estado: 'PENDIENTE',
+        obs: (it.obs ? it.obs + ' — ' : '') + etiqueta,
+        upd: today(),
+        rutina: r.id,
+        buque: buque,
+        zarpe: zarpe,
+      });
+    });
+    save(); closeCargar(); closeRutinas(); renderAll();
+    alert(`✓ Se cargaron ${r.items.length} tarea(s) para ${etiqueta}.`);
+  }
+
+  // Muestra u oculta el botón 🚢 Rutinas según el rol de la sesión.
+  function applyRoleToRutinas() {
+    const btn = document.getElementById('gt-rut-btn');
+    if (btn) btn.style.display = seesAll() ? '' : 'none';
+  }
+
   /* ── Helpers ────────────────────────────────────────── */
   function show(id) { document.getElementById(id).classList.add('gt-show'); }
   function hide(id) { document.getElementById(id).classList.remove('gt-show'); }
@@ -4580,6 +4981,7 @@ const GT = (() => {
     adminUnlocked = false;     // cada vez que se entra al Gestor se re-bloquea eliminar
     load();
     applyRoleToDeptFilter();
+    applyRoleToRutinas();
     renderAll();
     startRealtimeSync();
   }
@@ -4590,7 +4992,11 @@ const GT = (() => {
     openPin, closePin, closePinBg, checkPin,
     openAdmin, closeAdmin, closeAdminBg,
     addResponsable, removeResponsable,
-    resetTasks, changePass, deleteTask
+    resetTasks, changePass, deleteTask,
+    openRutinas, closeRutinas, closeRutinasBg,
+    openRutEditor, closeRutEditor, closeRutEditorBg,
+    rutDraftSet, rutDraftAdd, rutDraftDel, saveRutina, deleteRutina,
+    openCargar, closeCargar, closeCargarBg, renderCargarPreview, confirmarCarga
   };
 })();
 </script>
@@ -6947,13 +7353,17 @@ const ESTADO_OPTIONS = ['auto','OK','ATENCION','MANTENIMIENTO','BAJA','SIN_DATOS
 function sumVals(obj){
   return Object.values(obj||{}).reduce((s,v)=>{const n=parseFloat(v);return s+(isNaN(n)?0:n);},0);
 }
+// Horas del anio en curso = suma de las columnas de viaje (auto).
+function horasViajes(eq){ return sumVals(eq.horas); }
+// Horometro TOTAL de vida del equipo = historico de anios anteriores + horas de viajes.
+function horasTotales(eq){ const h = parseFloat(eq.hist); return (isNaN(h)?0:h) + horasViajes(eq); }
 function calcEstadoEquipo(eq){
   if(eq.estadoManual && eq.estadoManual!=='auto') return ESTADOS[eq.estadoManual];
-  const h26 = parseFloat(eq.h26);
+  const tot = horasTotales(eq);
   const umb = parseFloat(eq.umbral);
-  if(isNaN(h26) || h26===0) return ESTADOS.SIN_DATOS;
+  if(tot===0) return ESTADOS.SIN_DATOS;
   if(isNaN(umb) || umb<=0) return ESTADOS.N_A;
-  const pct = h26/umb*100;
+  const pct = tot/umb*100;
   if(pct<80) return ESTADOS.OK;
   if(pct<95) return ESTADOS.ATENCION;
   return ESTADOS.MANTENIMIENTO;
@@ -7297,7 +7707,8 @@ function addViaje(){
   const id = idEl.value.trim();
   if(!id){ idEl.focus(); return; }
   if(V().viajes.some(v=>v.id===id)){ alert('Ya existe un viaje con ese ID.'); return; }
-  V().viajes.push({id, inicio:iEl.value, fin:fEl.value});
+  V().viajes.push({id, inicio:_inputToFecha(iEl.value), fin:_inputToFecha(fEl.value)});
+  idEl.value=''; iEl.value=''; fEl.value='';
   persist();
   render();
 }
@@ -7311,9 +7722,40 @@ function deleteViaje(id){
   persist();
   render();
 }
+/* Conversion entre el formato guardado (dd/mm/aa) y el que exige <input type="date"> (yyyy-mm-dd) */
+function _fechaToInput(val){
+  if(!val) return '';
+  const s = String(val).trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(!m) return '';
+  let y = m[3]; if(y.length===2) y = (parseInt(y,10) >= 70 ? '19' : '20') + y;
+  return y + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
+}
+function _inputToFecha(iso){
+  if(!iso) return '';
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return String(iso);
+  return m[3] + '/' + m[2] + '/' + m[1].slice(2);
+}
+// Renombra el ID de un viaje y arrastra las horas/lances ya registrados en esa columna.
+function renameViaje(oldId, val){
+  const nuevo = String(val||'').trim();
+  const v = V();
+  if(!nuevo || nuevo === oldId){ render(); return; }
+  if(v.viajes.some(x=>x.id===nuevo)){ alert('Ya existe un viaje con el ID "'+nuevo+'".'); render(); return; }
+  const vj = v.viajes.find(x=>x.id===oldId); if(!vj) return;
+  vj.id = nuevo;
+  const mover = obj => { if(obj && Object.prototype.hasOwnProperty.call(obj, oldId)){ obj[nuevo] = obj[oldId]; delete obj[oldId]; } };
+  v.categorias.forEach(c=>c.equipos.forEach(e=>mover(e.horas)));
+  v.winches.forEach(w=>{ mover(w.horas); mover(w.lances); });
+  v.cables.forEach(c=>mover(c.lances));
+  persist();
+  render();
+}
 function updateViajeFecha(id,field,val){
   const vj = V().viajes.find(v=>v.id===id); if(!vj) return;
-  vj[field] = val;
+  vj[field] = _inputToFecha(val);
   persist();
   const dates = (vj.inicio||vj.fin) ? (vj.inicio||'?')+' → '+(vj.fin||'?') : 'sin fecha';
   document.querySelectorAll('.th-date-sm[data-viaje="'+id+'"]').forEach(el=>{ el.textContent = dates; });
@@ -7325,9 +7767,9 @@ function viajeHeaderHtml(vj){
 function renderViajesBar(){
   const v = V();
   const rows = v.viajes.map(vj=>`<tr>
-      <td><b>${escHtml(vj.id)}</b></td>
-      <td><input type="text" value="${escHtml(vj.inicio||'')}" placeholder="dd/mm/aa" oninput="EQUIPOS.updateViajeFecha('${vj.id}','inicio',this.value)"></td>
-      <td><input type="text" value="${escHtml(vj.fin||'')}" placeholder="dd/mm/aa" oninput="EQUIPOS.updateViajeFecha('${vj.id}','fin',this.value)"></td>
+      <td><input type="text" class="vjt-id" value="${escHtml(vj.id)}" title="Editar el ID del viaje" onchange="EQUIPOS.renameViaje('${vj.id}',this.value)"></td>
+      <td><input type="date" value="${escHtml(_fechaToInput(vj.inicio))}" onchange="EQUIPOS.updateViajeFecha('${vj.id}','inicio',this.value)"></td>
+      <td><input type="date" value="${escHtml(_fechaToInput(vj.fin))}" onchange="EQUIPOS.updateViajeFecha('${vj.id}','fin',this.value)"></td>
       <td><button class="del-btn" onclick="EQUIPOS.deleteViaje('${vj.id}')">✕</button></td>
     </tr>`).join('');
   return `<div class="panel">
@@ -7335,9 +7777,9 @@ function renderViajesBar(){
     <table class="vjt"><thead><tr><th>Viaje</th><th>Fecha de zarpe</th><th>Fecha de salida</th><th></th></tr></thead>
     <tbody>${rows || '<tr><td colspan="4" style="color:#aaa">Aún no hay viajes registrados.</td></tr>'}</tbody></table>
     <div class="add-viaje-form">
-      <input type="text" id="newViajeId" placeholder="ID ej. V79">
-      <input type="text" id="newViajeInicio" placeholder="Zarpe dd/mm/aa">
-      <input type="text" id="newViajeFin" placeholder="Salida dd/mm/aa">
+      <input type="text" id="eq-newViajeId" placeholder="ID ej. V79">
+      <input type="date" id="eq-newViajeInicio" title="Fecha de zarpe">
+      <input type="date" id="eq-newViajeFin" title="Fecha de salida">
       <button class="mini-btn" onclick="EQUIPOS.addViaje()">+ Agregar viaje</button>
     </div>
   </div>`;
@@ -7394,9 +7836,19 @@ function setEquipoEstadoManual(catId,eqId,val){
 }
 function refreshEquipoRow(catId,eqId){
   const e = findEquipo(catId,eqId); if(!e) return;
+  e.h26 = horasViajes(e);                       // el horometro del anio se mantiene solo
   const est = calcEstadoEquipo(e);
   const badge = document.getElementById('badge_'+eqId);
   if(badge){ badge.textContent = est.label; badge.className = 'badge '+est.cls; }
+  const h26El = document.getElementById('h26_'+eqId);
+  if(h26El) h26El.value = e.h26;
+  const totEl = document.getElementById('tot_'+eqId);
+  if(totEl) totEl.value = horasTotales(e);
+  const pctEl = document.getElementById('pct_'+eqId);
+  if(pctEl){
+    const umb = parseFloat(e.umbral);
+    pctEl.textContent = (!isNaN(umb) && umb>0) ? Math.round(horasTotales(e)/umb*100)+'%' : '—';
+  }
 }
 
 function renderMotoresTab(){
@@ -7411,27 +7863,32 @@ function renderMotoresTab(){
       </div>
       <div class="table-scroll"><table class="eqt"><thead><tr>
         <th style="min-width:200px">Equipo</th>
-        <th>Histórico</th>
-        <th>Horóm. 2026</th>
+        <th title="Horas acumuladas de años anteriores">Histórico<br><span class="th-sub">años ant.</span></th>
+        <th title="Suma automática de las columnas de viaje">Horóm. año<br><span class="th-sub">auto</span></th>
         <th>Umbral mant.</th>
         ${v.viajes.map(vj=>`<th>${viajeHeaderHtml(vj)}</th>`).join('')}
-        <th>Total viajes</th>
+        <th title="Histórico + horas de los viajes">Total acum.</th>
+        <th>% umbral</th>
         <th>Estado</th>
         <th>Nota</th>
         <th></th>
       </tr></thead><tbody>`;
       cat.equipos.forEach(e=>{
+        e.h26 = horasViajes(e);
         const est = calcEstadoEquipo(e);
-        const total = sumVals(e.horas);
+        const total = horasTotales(e);
+        const _umb = parseFloat(e.umbral);
+        const pctTxt = (!isNaN(_umb) && _umb>0) ? Math.round(total/_umb*100)+'%' : '—';
         html += `<tr>
           <td class="td-equipo">
             <input type="text" class="name-input" value="${escHtml(e.nombre)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','nombre',this.value)">
           </td>
           <td><input type="text" class="num-input" value="${escHtml(e.hist)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','hist',this.value)"></td>
-          <td><input type="text" class="num-input" value="${escHtml(e.h26)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','h26',this.value)"></td>
+          <td><input type="text" class="readonly-total" id="h26_${e.id}" value="${escHtml(e.h26)}" readonly title="Suma automática de los viajes"></td>
           <td><input type="text" class="num-input" value="${escHtml(e.umbral)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','umbral',this.value)"></td>
           ${v.viajes.map(vj=>`<td><input type="text" class="num-input" value="${escHtml(e.horas[vj.id]!==undefined?e.horas[vj.id]:'')}" oninput="EQUIPOS.updateEquipoHoras('${cat.id}','${e.id}','${vj.id}',this.value)"></td>`).join('')}
-          <td><input type="text" class="readonly-total" value="${total}" readonly></td>
+          <td><input type="text" class="readonly-total" id="tot_${e.id}" value="${total}" readonly></td>
+          <td class="pct-cell" id="pct_${e.id}">${pctTxt}</td>
           <td>
             <select class="estado-select" onchange="EQUIPOS.setEquipoEstadoManual('${cat.id}','${e.id}',this.value)">
               ${ESTADO_OPTIONS.map(o=>`<option value="${o}" ${((e.estadoManual||'auto')===o)?'selected':''}>${o==='auto'?'Automático':ESTADOS[o].label}</option>`).join('')}
@@ -7468,6 +7925,31 @@ function updateWincheVal(id,tipo,viajeId,val){
 }
 function setWincheEstadoManual(id,val){ const w=findWinche(id); if(w){w.estadoManual=val; persist(); refreshWincheRow(id);} }
 
+// Devuelve el valor de lances si TODOS los items de la columna comparten el mismo; si no, ''.
+function valorComunColumna(lista, viajeId){
+  if(!lista || !lista.length) return '';
+  const primero = lista[0].lances[viajeId];
+  if(primero===undefined || primero==='') return '';
+  return lista.every(it=>it.lances[viajeId]===primero) ? primero : '';
+}
+// Escribe el mismo número de lances en toda la columna de un viaje, en vivo,
+// sin volver a dibujar la tabla (para no perder el foco mientras se escribe).
+function setLancesColumna(tipo, viajeId, val){
+  _markTyping();
+  const v = V();
+  const lista = tipo==='winches' ? v.winches : v.cables;
+  if(!lista) return;
+  const limpio = String(val).trim();
+  lista.forEach(item=>{
+    if(limpio==='') delete item.lances[viajeId];
+    else item.lances[viajeId] = limpio;
+  });
+  persist();
+  document.querySelectorAll('.lance-cell').forEach(el=>{
+    if(el.dataset.tipo===tipo && el.dataset.viaje===viajeId) el.value = limpio;
+  });
+  lista.forEach(item=>{ tipo==='winches' ? refreshWincheRow(item.id) : refreshCableRow(item.id); });
+}
 // Aplica un mismo número de lances a TODA la columna de un viaje.
 // tipo: 'winches' o 'cables'. Cada celda queda editable después por si
 // hubo algún cambio durante el viaje.
@@ -7506,13 +7988,13 @@ function renderWinchesTab(){
     ${v.viajes.map(vj=>`<th colspan="2">${viajeHeaderHtml(vj)}</th>`).join('')}
     <th rowspan="2">Total horas</th><th rowspan="2">Total lances</th><th rowspan="2">Estado</th><th rowspan="2"></th>
   </tr>
-  <tr>${v.viajes.map(vj=>`<th class="sub">Horas</th><th class="sub">Lances <button class="col-fill-btn" title="Aplicar un mismo número de lances a todos los winches de este viaje" onclick="EQUIPOS.fillLancesColumna('winches','${vj.id}')">⤓</button></th>`).join('')}</tr>
+  <tr>${v.viajes.map(vj=>`<th class="sub">Horas</th><th class="sub">Lances<br><input type="text" class="col-fill-input" placeholder="todos" title="Escribe aquí el número de lances del viaje y se aplica a todos los winches" value="${escHtml(valorComunColumna(v.winches,vj.id))}" oninput="EQUIPOS.setLancesColumna('winches','${vj.id}',this.value)"></th>`).join('')}</tr>
   </thead><tbody>`;
   v.winches.forEach(w=>{
     const est = calcEstadoWinche(w);
     html += `<tr>
       <td><input type="text" class="name-input" value="${escHtml(w.nombre)}" oninput="EQUIPOS.updateWincheNombre('${w.id}',this.value)"></td>
-      ${v.viajes.map(vj=>`<td><input type="text" class="num-input" value="${escHtml(w.horas[vj.id]!==undefined?w.horas[vj.id]:'')}" oninput="EQUIPOS.updateWincheVal('${w.id}','horas','${vj.id}',this.value)"></td><td><input type="text" class="num-input" value="${escHtml(w.lances[vj.id]!==undefined?w.lances[vj.id]:'')}" oninput="EQUIPOS.updateWincheVal('${w.id}','lances','${vj.id}',this.value)"></td>`).join('')}
+      ${v.viajes.map(vj=>`<td><input type="text" class="num-input" value="${escHtml(w.horas[vj.id]!==undefined?w.horas[vj.id]:'')}" oninput="EQUIPOS.updateWincheVal('${w.id}','horas','${vj.id}',this.value)"></td><td><input type="text" class="num-input lance-cell" data-tipo="winches" data-viaje="${escHtml(vj.id)}" value="${escHtml(w.lances[vj.id]!==undefined?w.lances[vj.id]:'')}" oninput="EQUIPOS.updateWincheVal('${w.id}','lances','${vj.id}',this.value)"></td>`).join('')}
       <td><input type="text" class="readonly-total" id="wtoth_${w.id}" value="${sumVals(w.horas)}" readonly></td>
       <td><input type="text" class="readonly-total" id="wtotl_${w.id}" value="${sumVals(w.lances)}" readonly></td>
       <td>
@@ -7563,7 +8045,7 @@ function renderCablesTab(){
     <th style="min-width:220px">Especificación</th>
     <th>Último cambio</th>
     <th>Días uso</th>
-    ${v.viajes.map(vj=>`<th>${viajeHeaderHtml(vj)}<button class="col-fill-btn" title="Aplicar un mismo número de lances a todos los cables de este viaje" onclick="EQUIPOS.fillLancesColumna('cables','${vj.id}')">⤓</button></th>`).join('')}
+    ${v.viajes.map(vj=>`<th>${viajeHeaderHtml(vj)}<input type="text" class="col-fill-input" placeholder="lances todos" title="Escribe aquí el número de lances del viaje y se aplica a todos los cables" value="${escHtml(valorComunColumna(v.cables,vj.id))}" oninput="EQUIPOS.setLancesColumna('cables','${vj.id}',this.value)"></th>`).join('')}
     <th>Total lances</th>
     <th>Vida útil ref.</th>
     <th>Estado</th>
@@ -7577,7 +8059,7 @@ function renderCablesTab(){
       <td><input type="text" style="min-width:210px" value="${escHtml(c.esp)}" oninput="EQUIPOS.updateCableField('${c.id}','esp',this.value)"></td>
       <td><input type="date" value="${escHtml(c.ultimoCambio||'')}" oninput="EQUIPOS.updateCableField('${c.id}','ultimoCambio',this.value)"></td>
       <td id="cdias_${c.id}">${dias===null?'N/A':dias+' d'}</td>
-      ${v.viajes.map(vj=>`<td><input type="text" class="num-input" value="${escHtml(c.lances[vj.id]!==undefined?c.lances[vj.id]:'')}" oninput="EQUIPOS.updateCableLances('${c.id}','${vj.id}',this.value)"></td>`).join('')}
+      ${v.viajes.map(vj=>`<td><input type="text" class="num-input lance-cell" data-tipo="cables" data-viaje="${escHtml(vj.id)}" value="${escHtml(c.lances[vj.id]!==undefined?c.lances[vj.id]:'')}" oninput="EQUIPOS.updateCableLances('${c.id}','${vj.id}',this.value)"></td>`).join('')}
       <td><input type="text" class="readonly-total" id="ctot_${c.id}" value="${sumVals(c.lances)}" readonly></td>
       <td><input type="text" class="num-input" value="${escHtml(c.vidaUtilRef)}" oninput="EQUIPOS.updateCableField('${c.id}','vidaUtilRef',this.value)"></td>
       <td>
@@ -7686,7 +8168,7 @@ function buildVesselSheets(wb, vesselKey, label){
 
   const motRows = [];
   v.categorias.forEach(cat=>cat.equipos.forEach(e=>{
-    const row = {Categoria:cat.nombre, Equipo:e.nombre, 'Historico':e.hist, 'Horometro 2026':e.h26, 'Umbral Mant.':e.umbral};
+    const row = {Categoria:cat.nombre, Equipo:e.nombre, 'Historico anios ant.':e.hist, 'Horometro anio (auto)':horasViajes(e), 'Total acumulado':horasTotales(e), 'Umbral Mant.':e.umbral};
     v.viajes.forEach(vj=>{ row[vj.id] = e.horas[vj.id]!==undefined?e.horas[vj.id]:''; });
     row['Total viajes'] = sumVals(e.horas);
     row['Estado manual'] = e.estadoManual||'auto';
@@ -7818,9 +8300,11 @@ function init(){
     updateEquipoField,
     updateEquipoHoras,
     updateViajeFecha,
+    renameViaje,
     updateWincheNombre,
     updateWincheVal,
-    fillLancesColumna
+    fillLancesColumna,
+    setLancesColumna
   };
 })();
 </script>

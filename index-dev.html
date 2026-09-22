@@ -534,6 +534,36 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .gt-btn-neutral{background:#f0ede8;color:#555;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s;white-space:nowrap}
 .gt-btn-neutral:hover{background:#e0ddd8;color:#1a1a18}
 .gt-chpass-msg{font-size:11px;margin-top:5px;min-height:14px}
+
+/* ── Rutinas (tareas recurrentes por viaje) ── */
+#gt-rut-bg .gt-modal{max-width:560px;padding:0;overflow:hidden}
+#gt-rut-ed-bg .gt-modal{max-width:840px;padding:0;overflow:hidden}
+#gt-carg-bg .gt-modal{max-width:520px;padding:0;overflow:hidden}
+.gt-rut-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:#f9f9f7;border-radius:8px;border:1px solid rgba(0,0,0,.07);margin-bottom:7px}
+.gt-rut-item-info strong{display:block;font-size:12px;color:#1a1a18;font-weight:600}
+.gt-rut-item-info span{font-size:10px;color:#bbb}
+.gt-rut-item-btns{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.gt-rut-btn-load{background:#1D9E75;color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s}
+.gt-rut-btn-load:hover{background:#158060}
+.gt-rut-btn-edit,.gt-rut-btn-del{background:none;border:1px solid rgba(0,0,0,.12);border-radius:6px;color:#aaa;cursor:pointer;font-size:12px;padding:5px 8px;transition:.15s;line-height:1}
+.gt-rut-btn-edit:hover{color:#2E75B6;border-color:#2E75B6}
+.gt-rut-btn-del:hover{color:#D85A30;border-color:#D85A30}
+.gt-rut-head-grid{display:grid;grid-template-columns:1fr 130px 150px 70px 1fr 28px;gap:6px;padding:0 0 6px;font-size:9px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+.gt-rut-row{display:grid;grid-template-columns:1fr 130px 150px 70px 1fr 28px;gap:6px;margin-bottom:6px;align-items:center}
+.gt-rut-in{border:1.5px solid rgba(0,0,0,.12);border-radius:6px;padding:7px 8px;font-size:11px;font-family:inherit;outline:none;background:#f9f9f7;color:#1a1a18;min-width:0;transition:.2s}
+.gt-rut-in:focus{border-color:#2E75B6;background:#fff}
+.gt-rut-in-off{text-align:center}
+.gt-rut-row-del{background:none;border:none;color:#ddd;cursor:pointer;font-size:13px;padding:2px;border-radius:5px;transition:.15s}
+.gt-rut-row-del:hover{color:#D85A30;background:#FAECE7}
+.gt-rut-addrow{background:none;border:1.5px dashed rgba(0,0,0,.18);border-radius:7px;padding:8px;width:100%;font-size:11px;font-weight:600;color:#888;cursor:pointer;font-family:inherit;transition:.2s;margin-top:4px}
+.gt-rut-addrow:hover{border-color:#2E75B6;color:#2E75B6}
+.gt-rut-hint{font-size:10px;color:#bbb;margin-top:8px;line-height:1.5}
+.gt-carg-prev{max-height:220px;overflow-y:auto;border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:8px 10px;background:#f9f9f7;margin-top:6px}
+.gt-carg-prev-row{display:flex;gap:10px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.05)}
+.gt-carg-prev-row:last-child{border-bottom:none}
+.gt-carg-prev-fecha{font-size:10px;color:#2E75B6;font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;padding-top:1px}
+.gt-carg-prev-tarea{font-size:11px;color:#1a1a18;line-height:1.4}
+.gt-carg-prev-meta{display:block;font-size:9px;color:#bbb;margin-top:1px}
 .gt-chpass-ok{color:#1D9E75}.gt-chpass-err{color:#D85A30}
 
 /* Footer */
@@ -1160,6 +1190,36 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .gt-btn-neutral{background:#f0ede8;color:#555;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s;white-space:nowrap}
 .gt-btn-neutral:hover{background:#e0ddd8;color:#1a1a18}
 .gt-chpass-msg{font-size:11px;margin-top:5px;min-height:14px}
+
+/* ── Rutinas (tareas recurrentes por viaje) ── */
+#gt-rut-bg .gt-modal{max-width:560px;padding:0;overflow:hidden}
+#gt-rut-ed-bg .gt-modal{max-width:840px;padding:0;overflow:hidden}
+#gt-carg-bg .gt-modal{max-width:520px;padding:0;overflow:hidden}
+.gt-rut-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:#f9f9f7;border-radius:8px;border:1px solid rgba(0,0,0,.07);margin-bottom:7px}
+.gt-rut-item-info strong{display:block;font-size:12px;color:#1a1a18;font-weight:600}
+.gt-rut-item-info span{font-size:10px;color:#bbb}
+.gt-rut-item-btns{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.gt-rut-btn-load{background:#1D9E75;color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s}
+.gt-rut-btn-load:hover{background:#158060}
+.gt-rut-btn-edit,.gt-rut-btn-del{background:none;border:1px solid rgba(0,0,0,.12);border-radius:6px;color:#aaa;cursor:pointer;font-size:12px;padding:5px 8px;transition:.15s;line-height:1}
+.gt-rut-btn-edit:hover{color:#2E75B6;border-color:#2E75B6}
+.gt-rut-btn-del:hover{color:#D85A30;border-color:#D85A30}
+.gt-rut-head-grid{display:grid;grid-template-columns:1fr 130px 150px 70px 1fr 28px;gap:6px;padding:0 0 6px;font-size:9px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+.gt-rut-row{display:grid;grid-template-columns:1fr 130px 150px 70px 1fr 28px;gap:6px;margin-bottom:6px;align-items:center}
+.gt-rut-in{border:1.5px solid rgba(0,0,0,.12);border-radius:6px;padding:7px 8px;font-size:11px;font-family:inherit;outline:none;background:#f9f9f7;color:#1a1a18;min-width:0;transition:.2s}
+.gt-rut-in:focus{border-color:#2E75B6;background:#fff}
+.gt-rut-in-off{text-align:center}
+.gt-rut-row-del{background:none;border:none;color:#ddd;cursor:pointer;font-size:13px;padding:2px;border-radius:5px;transition:.15s}
+.gt-rut-row-del:hover{color:#D85A30;background:#FAECE7}
+.gt-rut-addrow{background:none;border:1.5px dashed rgba(0,0,0,.18);border-radius:7px;padding:8px;width:100%;font-size:11px;font-weight:600;color:#888;cursor:pointer;font-family:inherit;transition:.2s;margin-top:4px}
+.gt-rut-addrow:hover{border-color:#2E75B6;color:#2E75B6}
+.gt-rut-hint{font-size:10px;color:#bbb;margin-top:8px;line-height:1.5}
+.gt-carg-prev{max-height:220px;overflow-y:auto;border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:8px 10px;background:#f9f9f7;margin-top:6px}
+.gt-carg-prev-row{display:flex;gap:10px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.05)}
+.gt-carg-prev-row:last-child{border-bottom:none}
+.gt-carg-prev-fecha{font-size:10px;color:#2E75B6;font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;padding-top:1px}
+.gt-carg-prev-tarea{font-size:11px;color:#1a1a18;line-height:1.4}
+.gt-carg-prev-meta{display:block;font-size:9px;color:#bbb;margin-top:1px}
 .gt-chpass-ok{color:#1D9E75}.gt-chpass-err{color:#D85A30}
 
 /* Footer */
@@ -2443,7 +2503,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .equipos-wrap .add-viaje-form{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(0,0,0,.1)}
 .equipos-wrap .add-viaje-form input{border:1.5px solid #e2e2de;border-radius:6px;padding:6px 9px;font-size:12px;font-family:inherit;outline:none}
 .equipos-wrap .add-viaje-form input:focus{border-color:#2E75B6}
-.equipos-wrap .add-viaje-form input#newViajeId{width:90px}
+.equipos-wrap .add-viaje-form input#eq-newViajeId{width:90px}
+.equipos-wrap table.vjt input.vjt-id{width:80px;font-weight:700;color:#153a5b}
+.equipos-wrap .th-sub{font-weight:400;opacity:.75;font-size:9px;text-transform:none}
+.equipos-wrap .col-fill-input{width:74px;margin-top:4px;border:1.5px solid #9fc3e4;border-radius:5px;padding:3px 5px;font-size:11px;font-family:inherit;text-align:center;outline:none;background:#fff;color:#0000FF}
+.equipos-wrap .col-fill-input:focus{border-color:#ffd166;box-shadow:0 0 0 2px rgba(255,209,102,.35)}
+.equipos-wrap td.pct-cell{font-size:11.5px;font-weight:700;color:#245e93;text-align:center;white-space:nowrap}
 /* Fechas dentro del header azul de las tablas */
 .equipos-wrap .th-id{font-size:10.5px}
 .equipos-wrap .th-date-sm{font-size:9px;font-weight:400;color:#cfe0ef;text-transform:none;letter-spacing:0;margin-top:2px;white-space:nowrap}
@@ -3055,6 +3120,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       <p>ATUNTRO S.A. — Seguimiento de compromisos operativos y administrativos</p>
     </div>
     <div class="gt-header-btns">
+      <button class="gt-admin-btn" id="gt-rut-btn" onclick="GT.openRutinas()" title="Rutinas de tareas por viaje (solo admin)">🚢 Rutinas</button>
       <button class="gt-admin-btn" onclick="GT.openPin()" title="Panel de administrador">🔒 Admin</button>
       <button class="gt-add-btn"   onclick="GT.openModal()">+ Nueva tarea</button>
     </div>
@@ -3251,6 +3317,115 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       </div>
 
     </div><!-- /gt-admin-body -->
+  </div>
+</div>
+
+<!-- ── Modal: Rutinas (lista de plantillas) ── -->
+<div id="gt-rut-bg" class="gt-modal-overlay" onclick="GT.closeRutinasBg(event)">
+  <div class="gt-modal" style="max-width:560px">
+    <div class="gt-admin-header">
+      <h3>🚢 Rutinas de tareas por viaje</h3>
+      <button class="gt-admin-close" onclick="GT.closeRutinas()">×</button>
+    </div>
+    <div class="gt-admin-body">
+      <div class="gt-admin-section">
+        <div class="gt-admin-section-title">📋 Plantillas guardadas</div>
+        <div id="gt-rut-list"></div>
+        <button class="gt-rut-addrow" onclick="GT.openRutEditor()">+ Nueva rutina</button>
+        <div class="gt-rut-hint">
+          Cada rutina agrupa las tareas que se repiten en cada viaje. Al pulsar <strong>Cargar</strong>
+          se elige el buque y la fecha de zarpe, y las tareas se crean con su fecha calculada automáticamente.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Editor de rutina ── -->
+<div id="gt-rut-ed-bg" class="gt-modal-overlay" onclick="GT.closeRutEditorBg(event)">
+  <div class="gt-modal" style="max-width:840px">
+    <div class="gt-admin-header">
+      <h3 id="gt-rut-ed-title">Nueva rutina</h3>
+      <button class="gt-admin-close" onclick="GT.closeRutEditor()">×</button>
+    </div>
+    <div class="gt-admin-body">
+
+      <div class="gt-modal-grid">
+        <div class="gt-modal-row">
+          <label>Nombre de la rutina</label>
+          <input type="text" id="gt-rut-nombre" placeholder="Ej.: Zarpe — trámites estándar">
+        </div>
+        <div class="gt-modal-row">
+          <label>Buque</label>
+          <select id="gt-rut-buque">
+            <option value="AMBOS">Ambos buques</option>
+            <option value="MF">María Fátima</option>
+            <option value="MG">María de Gracia</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="gt-admin-section" style="margin-top:18px">
+        <div class="gt-admin-section-title">✅ Tareas de la rutina</div>
+        <div class="gt-rut-head-grid">
+          <div>Tarea</div><div>Área</div><div>Responsable</div><div>Días</div><div>Observación</div><div></div>
+        </div>
+        <div id="gt-rut-rows"></div>
+        <button class="gt-rut-addrow" onclick="GT.rutDraftAdd()">+ Agregar tarea</button>
+        <div class="gt-rut-hint">
+          <strong>Días</strong> = desplazamiento respecto a la fecha de zarpe.
+          Use <strong>-3</strong> para “3 días antes del zarpe”, <strong>0</strong> para el día del zarpe
+          y <strong>5</strong> para “5 días después”.
+        </div>
+        <div class="gt-resp-add-error" id="gt-rut-ed-error"></div>
+      </div>
+
+      <div class="gt-modal-actions">
+        <button class="gt-btn-cancel" onclick="GT.closeRutEditor()">Cancelar</button>
+        <button class="gt-btn-save"   onclick="GT.saveRutina()">Guardar rutina</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Cargar rutina a un viaje ── -->
+<div id="gt-carg-bg" class="gt-modal-overlay" onclick="GT.closeCargarBg(event)">
+  <div class="gt-modal" style="max-width:520px">
+    <div class="gt-admin-header">
+      <h3>⚓ Cargar rutina</h3>
+      <button class="gt-admin-close" onclick="GT.closeCargar()">×</button>
+    </div>
+    <div class="gt-admin-body">
+
+      <div class="gt-modal-row">
+        <label>Rutina</label>
+        <div style="font-size:13px;font-weight:600;color:#1F4E79" id="gt-carg-nombre"></div>
+      </div>
+
+      <div class="gt-modal-grid" style="margin-top:12px">
+        <div class="gt-modal-row">
+          <label>Buque</label>
+          <select id="gt-carg-buque"></select>
+        </div>
+        <div class="gt-modal-row">
+          <label>Fecha de zarpe</label>
+          <input type="date" id="gt-carg-fecha" onchange="GT.renderCargarPreview()">
+        </div>
+      </div>
+
+      <div class="gt-modal-row" style="margin-top:12px">
+        <label>Tareas que se crearán</label>
+        <div class="gt-carg-prev" id="gt-carg-prev"></div>
+      </div>
+      <div class="gt-resp-add-error" id="gt-carg-error"></div>
+
+      <div class="gt-modal-actions">
+        <button class="gt-btn-cancel" onclick="GT.closeCargar()">Cancelar</button>
+        <button class="gt-btn-save"   onclick="GT.confirmarCarga()">Cargar tareas</button>
+      </div>
+
+    </div>
   </div>
 </div>
 

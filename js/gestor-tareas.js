@@ -83,12 +83,31 @@ const GT = (() => {
     {id:26, fecha:'2026-07-09', tarea:'Seguimiento de BanEcuador',                                              dept:'Administrativo', resp:'Rubén Vera',        estado:'COMPLETO',   obs:''},
   ];
 
+  /* ── Rutinas iniciales (plantilla de ejemplo, editable) ─ */
+  // offset = días respecto a la fecha de zarpe (negativo = antes del zarpe)
+  const SEED_RUTINAS = [
+    { id:1, nombre:'Zarpe — trámites estándar', buque:'AMBOS', items:[
+      { tarea:'Solicitar permiso de zarpe',            dept:'Operativo',      resp:'Romulo Pérez',      offset:-5, obs:'' },
+      { tarea:'Confirmar rol de tripulación en IESS',  dept:'Contabilidad',   resp:'Katherine Crespín', offset:-4, obs:'' },
+      { tarea:'Provisión de combustible y víveres',    dept:'Operativo',      resp:'Romulo Pérez',      offset:-3, obs:'' },
+      { tarea:'Adelanto de tripulación',               dept:'Contabilidad',   resp:'Katherine Crespín', offset:-2, obs:'' },
+      { tarea:'Verificar pólizas y matrícula vigentes',dept:'Administrativo', resp:'Rubén Vera',        offset:-2, obs:'' },
+      { tarea:'Reporte de salida a gerencia',          dept:'Administrativo', resp:'Ricardo Baida T',   offset: 0, obs:'' },
+    ]},
+  ];
+
+  const BUQUES = { MF:'María Fátima', MG:'María de Gracia', AMBOS:'Ambos buques' };
+
   /* ── State ──────────────────────────────────────────── */
   let tasks       = [];
   let responsables= [];
   let adminPass   = DEFAULT_PASS;
   let nextId      = 200;
   let editingId   = null;
+  let rutinas     = [];        // plantillas de tareas recurrentes por viaje
+  let nextRutinaId= 1;
+  let editingRutId= null;      // rutina que se está editando
+  let rutDraft    = [];        // items de la rutina en edición (buffer del modal)
   let adminUnlocked = false;   // true tras validar la contraseña admin del Gestor
 
   /* ── Firebase (sincronización entre dispositivos) ───── */
@@ -131,7 +150,9 @@ const GT = (() => {
       responsables = data.responsables || responsables;
       adminPass    = data.adminPass    || adminPass;
       nextId       = data.nextId       || nextId;
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, adminPass, nextId })); } catch(e) {}
+      rutinas      = data.rutinas      || rutinas;
+      nextRutinaId = data.nextRutinaId || nextRutinaId;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, adminPass, nextId, rutinas, nextRutinaId })); } catch(e) {}
       renderAll();
       flashSaveDot();
     };
@@ -148,24 +169,30 @@ const GT = (() => {
         responsables= p.responsables || [...SEED_RESP];
         adminPass   = p.adminPass    || DEFAULT_PASS;
         nextId      = p.nextId       || 200;
+        rutinas     = p.rutinas      || JSON.parse(JSON.stringify(SEED_RUTINAS));
+        nextRutinaId= p.nextRutinaId || (rutinas.reduce((m,r)=>Math.max(m,r.id),0) + 1);
       } else {
         tasks        = JSON.parse(JSON.stringify(SEED_TASKS));
         responsables = [...SEED_RESP];
         adminPass    = DEFAULT_PASS;
         nextId       = 200;
+        rutinas      = JSON.parse(JSON.stringify(SEED_RUTINAS));
+        nextRutinaId = 2;
       }
     } catch(e) {
       tasks        = JSON.parse(JSON.stringify(SEED_TASKS));
       responsables = [...SEED_RESP];
+      rutinas      = JSON.parse(JSON.stringify(SEED_RUTINAS));
+      nextRutinaId = 2;
     }
   }
 
   function save() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, adminPass, nextId }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, adminPass, nextId, rutinas, nextRutinaId }));
     } catch(e) {}
     const db = _getDb();
-    if (db) { db.ref(FB_PATH).set({ tasks, responsables, adminPass, nextId }).then(flashSaveDot).catch(()=>{}); }
+    if (db) { db.ref(FB_PATH).set({ tasks, responsables, adminPass, nextId, rutinas, nextRutinaId }).then(flashSaveDot).catch(()=>{}); }
   }
 
   /* ── Stats ──────────────────────────────────────────── */
@@ -407,6 +434,8 @@ const GT = (() => {
   }
 
   /* ── PIN modal ──────────────────────────────────────── */
+  let pinTarget = 'admin';   // 'admin' | 'rutinas' — a dónde ir tras validar el PIN
+
   function openPin() {
     document.getElementById('gt-pin-input').value = '';
     document.getElementById('gt-pin-error').textContent = '';
@@ -423,7 +452,8 @@ const GT = (() => {
     if (val === adminPass) {
       adminUnlocked = true;   // habilita eliminar tareas una por una
       closePin();
-      openAdmin();
+      if (pinTarget === 'rutinas') { pinTarget = 'admin'; openRutinas(); }
+      else { openAdmin(); }
       applyFilters();          // re-render para mostrar los botones 🗑
     } else {
       errEl.textContent = 'Contraseña incorrecta. Intente de nuevo.';
@@ -535,6 +565,202 @@ const GT = (() => {
     setTimeout(() => { msg.textContent = ''; }, 3000);
   }
 
+  /* ══════════════════════════════════════════════════════
+     RUTINAS — plantillas de tareas recurrentes por viaje
+     Solo visibles y operables por admin / master.
+     ══════════════════════════════════════════════════════ */
+
+  // Suma días a una fecha 'YYYY-MM-DD' sin sufrir desfases de zona horaria.
+  function addDays(fechaISO, n) {
+    const [y, m, d] = String(fechaISO).split('-').map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    dt.setUTCDate(dt.getUTCDate() + Number(n || 0));
+    return dt.toISOString().slice(0, 10);
+  }
+
+  function offsetLabel(n) {
+    const v = Number(n || 0);
+    if (v === 0) return 'día del zarpe';
+    return v < 0 ? `${Math.abs(v)} día${Math.abs(v) > 1 ? 's' : ''} antes` : `${v} día${v > 1 ? 's' : ''} después`;
+  }
+
+  // Punto de entrada del botón 🚢 Rutinas: exige desbloqueo admin.
+  function openRutinas() {
+    if (!seesAll()) { alert('Las rutinas solo están disponibles para el administrador.'); return; }
+    if (!adminUnlocked) { pinTarget = 'rutinas'; openPin(); return; }
+    renderRutinasList();
+    show('gt-rut-bg');
+  }
+  function closeRutinas()    { hide('gt-rut-bg'); }
+  function closeRutinasBg(e) { if (e.target.id === 'gt-rut-bg') closeRutinas(); }
+
+  function renderRutinasList() {
+    const cont = document.getElementById('gt-rut-list');
+    if (!cont) return;
+    cont.innerHTML = rutinas.length ? rutinas.map(r => `
+      <div class="gt-rut-item">
+        <div class="gt-rut-item-info">
+          <strong>${esc(r.nombre)}</strong>
+          <span>${esc(BUQUES[r.buque] || r.buque)} · ${r.items.length} tarea${r.items.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div class="gt-rut-item-btns">
+          <button class="gt-rut-btn-load" onclick="GT.openCargar(${r.id})" title="Crear las tareas de esta rutina">Cargar</button>
+          <button class="gt-rut-btn-edit" onclick="GT.openRutEditor(${r.id})" title="Editar la plantilla">✎</button>
+          <button class="gt-rut-btn-del"  onclick="GT.deleteRutina(${r.id})" title="Eliminar la plantilla">🗑</button>
+        </div>
+      </div>`).join('')
+      : '<div style="font-size:12px;color:#ccc;padding:10px 0">Sin rutinas creadas. Use “+ Nueva rutina”.</div>';
+  }
+
+  /* ── Editor de plantilla ─────────────────────────────── */
+  function openRutEditor(id) {
+    editingRutId = id || null;
+    const r = id ? rutinas.find(x => x.id === id) : null;
+    document.getElementById('gt-rut-ed-title').textContent = r ? 'Editar rutina' : 'Nueva rutina';
+    document.getElementById('gt-rut-nombre').value = r ? r.nombre : '';
+    document.getElementById('gt-rut-buque').value  = r ? r.buque : 'AMBOS';
+    rutDraft = r ? JSON.parse(JSON.stringify(r.items)) : [];
+    if (!rutDraft.length) rutDraft.push({ tarea:'', dept:'Operativo', resp: responsables[0] || '', offset:0, obs:'' });
+    renderRutDraft();
+    show('gt-rut-ed-bg');
+  }
+  function closeRutEditor()    { hide('gt-rut-ed-bg'); }
+  function closeRutEditorBg(e) { if (e.target.id === 'gt-rut-ed-bg') closeRutEditor(); }
+
+  function renderRutDraft() {
+    const cont = document.getElementById('gt-rut-rows');
+    if (!cont) return;
+    const depts = ['Administrativo','Operativo','Contabilidad'];
+    cont.innerHTML = rutDraft.map((it, i) => `
+      <div class="gt-rut-row">
+        <input class="gt-rut-in gt-rut-in-tarea" type="text" placeholder="Descripción de la tarea…"
+          value="${esc(it.tarea)}" oninput="GT.rutDraftSet(${i},'tarea',this.value)">
+        <select class="gt-rut-in" onchange="GT.rutDraftSet(${i},'dept',this.value)">
+          ${depts.map(d => `<option value="${d}"${d === it.dept ? ' selected' : ''}>${d}</option>`).join('')}
+        </select>
+        <select class="gt-rut-in" onchange="GT.rutDraftSet(${i},'resp',this.value)">
+          ${responsables.map(rp => `<option value="${esc(rp)}"${rp === it.resp ? ' selected' : ''}>${esc(rp)}</option>`).join('')}
+        </select>
+        <input class="gt-rut-in gt-rut-in-off" type="number" step="1" title="Días respecto al zarpe (negativo = antes)"
+          value="${Number(it.offset || 0)}" oninput="GT.rutDraftSet(${i},'offset',this.value)">
+        <input class="gt-rut-in" type="text" placeholder="Observación…"
+          value="${esc(it.obs || '')}" oninput="GT.rutDraftSet(${i},'obs',this.value)">
+        <button class="gt-rut-row-del" onclick="GT.rutDraftDel(${i})" title="Quitar esta línea">✕</button>
+      </div>`).join('');
+  }
+
+  function rutDraftSet(i, campo, val) {
+    if (!rutDraft[i]) return;
+    rutDraft[i][campo] = (campo === 'offset') ? (parseInt(val, 10) || 0) : val;
+    // No se re-renderiza: evita perder el foco mientras se escribe.
+  }
+  function rutDraftAdd() {
+    const last = rutDraft[rutDraft.length - 1];
+    rutDraft.push({ tarea:'', dept: last ? last.dept : 'Operativo', resp: last ? last.resp : (responsables[0] || ''), offset: last ? last.offset : 0, obs:'' });
+    renderRutDraft();
+  }
+  function rutDraftDel(i) {
+    rutDraft.splice(i, 1);
+    if (!rutDraft.length) rutDraft.push({ tarea:'', dept:'Operativo', resp: responsables[0] || '', offset:0, obs:'' });
+    renderRutDraft();
+  }
+
+  function saveRutina() {
+    const nombre = document.getElementById('gt-rut-nombre').value.trim();
+    const errEl  = document.getElementById('gt-rut-ed-error');
+    errEl.textContent = '';
+    if (!nombre) { errEl.textContent = 'Ingrese un nombre para la rutina.'; return; }
+    const items = rutDraft.filter(it => it.tarea.trim()).map(it => ({
+      tarea: it.tarea.trim(), dept: it.dept, resp: it.resp,
+      offset: parseInt(it.offset, 10) || 0, obs: (it.obs || '').trim()
+    }));
+    if (!items.length) { errEl.textContent = 'Agregue al menos una tarea con descripción.'; return; }
+    const obj = { id: editingRutId || nextRutinaId++, nombre, buque: document.getElementById('gt-rut-buque').value, items };
+    if (editingRutId) {
+      const idx = rutinas.findIndex(r => r.id === editingRutId);
+      if (idx > -1) rutinas[idx] = obj;
+    } else {
+      rutinas.push(obj);
+    }
+    save(); closeRutEditor(); renderRutinasList();
+  }
+
+  function deleteRutina(id) {
+    const r = rutinas.find(x => x.id === id);
+    if (!r) return;
+    if (!confirm(`¿Eliminar la rutina "${r.nombre}"?\n\nLas tareas ya cargadas al cuadro no se borran.`)) return;
+    rutinas = rutinas.filter(x => x.id !== id);
+    save(); renderRutinasList();
+  }
+
+  /* ── Cargar rutina a un viaje ────────────────────────── */
+  let cargarRutId = null;
+
+  function openCargar(id) {
+    const r = rutinas.find(x => x.id === id);
+    if (!r) return;
+    cargarRutId = id;
+    document.getElementById('gt-carg-nombre').textContent = r.nombre;
+    document.getElementById('gt-carg-fecha').value  = today();
+    document.getElementById('gt-carg-error').textContent = '';
+    const selB = document.getElementById('gt-carg-buque');
+    selB.innerHTML = (r.buque === 'AMBOS'
+      ? ['MF','MG'] : [r.buque]).map(b => `<option value="${b}">${BUQUES[b]}</option>`).join('');
+    renderCargarPreview();
+    show('gt-carg-bg');
+  }
+  function closeCargar()    { hide('gt-carg-bg'); }
+  function closeCargarBg(e) { if (e.target.id === 'gt-carg-bg') closeCargar(); }
+
+  function renderCargarPreview() {
+    const r = rutinas.find(x => x.id === cargarRutId);
+    const cont = document.getElementById('gt-carg-prev');
+    if (!r || !cont) return;
+    const zarpe = document.getElementById('gt-carg-fecha').value || today();
+    cont.innerHTML = r.items.map(it => `
+      <div class="gt-carg-prev-row">
+        <div class="gt-carg-prev-fecha">${addDays(zarpe, it.offset)}</div>
+        <div class="gt-carg-prev-tarea">${esc(it.tarea)}
+          <span class="gt-carg-prev-meta">${esc(it.resp)} · ${offsetLabel(it.offset)}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  function confirmarCarga() {
+    const r = rutinas.find(x => x.id === cargarRutId);
+    if (!r) return;
+    const zarpe = document.getElementById('gt-carg-fecha').value;
+    const errEl = document.getElementById('gt-carg-error');
+    errEl.textContent = '';
+    if (!zarpe) { errEl.textContent = 'Seleccione la fecha de zarpe.'; return; }
+    const buque = document.getElementById('gt-carg-buque').value;
+    const etiqueta = `${BUQUES[buque]} · zarpe ${zarpe}`;
+    if (!confirm(`¿Cargar ${r.items.length} tarea(s) de "${r.nombre}"?\n\n${etiqueta}`)) return;
+    r.items.forEach(it => {
+      tasks.push({
+        id: nextId++,
+        fecha: addDays(zarpe, it.offset),
+        tarea: it.tarea,
+        dept: it.dept,
+        resp: it.resp,
+        estado: 'PENDIENTE',
+        obs: (it.obs ? it.obs + ' — ' : '') + etiqueta,
+        upd: today(),
+        rutina: r.id,
+        buque: buque,
+        zarpe: zarpe,
+      });
+    });
+    save(); closeCargar(); closeRutinas(); renderAll();
+    alert(`✓ Se cargaron ${r.items.length} tarea(s) para ${etiqueta}.`);
+  }
+
+  // Muestra u oculta el botón 🚢 Rutinas según el rol de la sesión.
+  function applyRoleToRutinas() {
+    const btn = document.getElementById('gt-rut-btn');
+    if (btn) btn.style.display = seesAll() ? '' : 'none';
+  }
+
   /* ── Helpers ────────────────────────────────────────── */
   function show(id) { document.getElementById(id).classList.add('gt-show'); }
   function hide(id) { document.getElementById(id).classList.remove('gt-show'); }
@@ -569,6 +795,7 @@ const GT = (() => {
     adminUnlocked = false;     // cada vez que se entra al Gestor se re-bloquea eliminar
     load();
     applyRoleToDeptFilter();
+    applyRoleToRutinas();
     renderAll();
     startRealtimeSync();
   }
@@ -579,6 +806,10 @@ const GT = (() => {
     openPin, closePin, closePinBg, checkPin,
     openAdmin, closeAdmin, closeAdminBg,
     addResponsable, removeResponsable,
-    resetTasks, changePass, deleteTask
+    resetTasks, changePass, deleteTask,
+    openRutinas, closeRutinas, closeRutinasBg,
+    openRutEditor, closeRutEditor, closeRutEditorBg,
+    rutDraftSet, rutDraftAdd, rutDraftDel, saveRutina, deleteRutina,
+    openCargar, closeCargar, closeCargarBg, renderCargarPreview, confirmarCarga
   };
 })();

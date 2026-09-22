@@ -17,13 +17,17 @@ const ESTADO_OPTIONS = ['auto','OK','ATENCION','MANTENIMIENTO','BAJA','SIN_DATOS
 function sumVals(obj){
   return Object.values(obj||{}).reduce((s,v)=>{const n=parseFloat(v);return s+(isNaN(n)?0:n);},0);
 }
+// Horas del anio en curso = suma de las columnas de viaje (auto).
+function horasViajes(eq){ return sumVals(eq.horas); }
+// Horometro TOTAL de vida del equipo = historico de anios anteriores + horas de viajes.
+function horasTotales(eq){ const h = parseFloat(eq.hist); return (isNaN(h)?0:h) + horasViajes(eq); }
 function calcEstadoEquipo(eq){
   if(eq.estadoManual && eq.estadoManual!=='auto') return ESTADOS[eq.estadoManual];
-  const h26 = parseFloat(eq.h26);
+  const tot = horasTotales(eq);
   const umb = parseFloat(eq.umbral);
-  if(isNaN(h26) || h26===0) return ESTADOS.SIN_DATOS;
+  if(tot===0) return ESTADOS.SIN_DATOS;
   if(isNaN(umb) || umb<=0) return ESTADOS.N_A;
-  const pct = h26/umb*100;
+  const pct = tot/umb*100;
   if(pct<80) return ESTADOS.OK;
   if(pct<95) return ESTADOS.ATENCION;
   return ESTADOS.MANTENIMIENTO;
@@ -367,7 +371,8 @@ function addViaje(){
   const id = idEl.value.trim();
   if(!id){ idEl.focus(); return; }
   if(V().viajes.some(v=>v.id===id)){ alert('Ya existe un viaje con ese ID.'); return; }
-  V().viajes.push({id, inicio:iEl.value, fin:fEl.value});
+  V().viajes.push({id, inicio:_inputToFecha(iEl.value), fin:_inputToFecha(fEl.value)});
+  idEl.value=''; iEl.value=''; fEl.value='';
   persist();
   render();
 }
@@ -381,9 +386,40 @@ function deleteViaje(id){
   persist();
   render();
 }
+/* Conversion entre el formato guardado (dd/mm/aa) y el que exige <input type="date"> (yyyy-mm-dd) */
+function _fechaToInput(val){
+  if(!val) return '';
+  const s = String(val).trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(!m) return '';
+  let y = m[3]; if(y.length===2) y = (parseInt(y,10) >= 70 ? '19' : '20') + y;
+  return y + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
+}
+function _inputToFecha(iso){
+  if(!iso) return '';
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return String(iso);
+  return m[3] + '/' + m[2] + '/' + m[1].slice(2);
+}
+// Renombra el ID de un viaje y arrastra las horas/lances ya registrados en esa columna.
+function renameViaje(oldId, val){
+  const nuevo = String(val||'').trim();
+  const v = V();
+  if(!nuevo || nuevo === oldId){ render(); return; }
+  if(v.viajes.some(x=>x.id===nuevo)){ alert('Ya existe un viaje con el ID "'+nuevo+'".'); render(); return; }
+  const vj = v.viajes.find(x=>x.id===oldId); if(!vj) return;
+  vj.id = nuevo;
+  const mover = obj => { if(obj && Object.prototype.hasOwnProperty.call(obj, oldId)){ obj[nuevo] = obj[oldId]; delete obj[oldId]; } };
+  v.categorias.forEach(c=>c.equipos.forEach(e=>mover(e.horas)));
+  v.winches.forEach(w=>{ mover(w.horas); mover(w.lances); });
+  v.cables.forEach(c=>mover(c.lances));
+  persist();
+  render();
+}
 function updateViajeFecha(id,field,val){
   const vj = V().viajes.find(v=>v.id===id); if(!vj) return;
-  vj[field] = val;
+  vj[field] = _inputToFecha(val);
   persist();
   const dates = (vj.inicio||vj.fin) ? (vj.inicio||'?')+' → '+(vj.fin||'?') : 'sin fecha';
   document.querySelectorAll('.th-date-sm[data-viaje="'+id+'"]').forEach(el=>{ el.textContent = dates; });
@@ -395,9 +431,9 @@ function viajeHeaderHtml(vj){
 function renderViajesBar(){
   const v = V();
   const rows = v.viajes.map(vj=>`<tr>
-      <td><b>${escHtml(vj.id)}</b></td>
-      <td><input type="text" value="${escHtml(vj.inicio||'')}" placeholder="dd/mm/aa" oninput="EQUIPOS.updateViajeFecha('${vj.id}','inicio',this.value)"></td>
-      <td><input type="text" value="${escHtml(vj.fin||'')}" placeholder="dd/mm/aa" oninput="EQUIPOS.updateViajeFecha('${vj.id}','fin',this.value)"></td>
+      <td><input type="text" class="vjt-id" value="${escHtml(vj.id)}" title="Editar el ID del viaje" onchange="EQUIPOS.renameViaje('${vj.id}',this.value)"></td>
+      <td><input type="date" value="${escHtml(_fechaToInput(vj.inicio))}" onchange="EQUIPOS.updateViajeFecha('${vj.id}','inicio',this.value)"></td>
+      <td><input type="date" value="${escHtml(_fechaToInput(vj.fin))}" onchange="EQUIPOS.updateViajeFecha('${vj.id}','fin',this.value)"></td>
       <td><button class="del-btn" onclick="EQUIPOS.deleteViaje('${vj.id}')">✕</button></td>
     </tr>`).join('');
   return `<div class="panel">
@@ -405,9 +441,9 @@ function renderViajesBar(){
     <table class="vjt"><thead><tr><th>Viaje</th><th>Fecha de zarpe</th><th>Fecha de salida</th><th></th></tr></thead>
     <tbody>${rows || '<tr><td colspan="4" style="color:#aaa">Aún no hay viajes registrados.</td></tr>'}</tbody></table>
     <div class="add-viaje-form">
-      <input type="text" id="newViajeId" placeholder="ID ej. V79">
-      <input type="text" id="newViajeInicio" placeholder="Zarpe dd/mm/aa">
-      <input type="text" id="newViajeFin" placeholder="Salida dd/mm/aa">
+      <input type="text" id="eq-newViajeId" placeholder="ID ej. V79">
+      <input type="date" id="eq-newViajeInicio" title="Fecha de zarpe">
+      <input type="date" id="eq-newViajeFin" title="Fecha de salida">
       <button class="mini-btn" onclick="EQUIPOS.addViaje()">+ Agregar viaje</button>
     </div>
   </div>`;
@@ -464,9 +500,19 @@ function setEquipoEstadoManual(catId,eqId,val){
 }
 function refreshEquipoRow(catId,eqId){
   const e = findEquipo(catId,eqId); if(!e) return;
+  e.h26 = horasViajes(e);                       // el horometro del anio se mantiene solo
   const est = calcEstadoEquipo(e);
   const badge = document.getElementById('badge_'+eqId);
   if(badge){ badge.textContent = est.label; badge.className = 'badge '+est.cls; }
+  const h26El = document.getElementById('h26_'+eqId);
+  if(h26El) h26El.value = e.h26;
+  const totEl = document.getElementById('tot_'+eqId);
+  if(totEl) totEl.value = horasTotales(e);
+  const pctEl = document.getElementById('pct_'+eqId);
+  if(pctEl){
+    const umb = parseFloat(e.umbral);
+    pctEl.textContent = (!isNaN(umb) && umb>0) ? Math.round(horasTotales(e)/umb*100)+'%' : '—';
+  }
 }
 
 function renderMotoresTab(){
@@ -481,27 +527,32 @@ function renderMotoresTab(){
       </div>
       <div class="table-scroll"><table class="eqt"><thead><tr>
         <th style="min-width:200px">Equipo</th>
-        <th>Histórico</th>
-        <th>Horóm. 2026</th>
+        <th title="Horas acumuladas de años anteriores">Histórico<br><span class="th-sub">años ant.</span></th>
+        <th title="Suma automática de las columnas de viaje">Horóm. año<br><span class="th-sub">auto</span></th>
         <th>Umbral mant.</th>
         ${v.viajes.map(vj=>`<th>${viajeHeaderHtml(vj)}</th>`).join('')}
-        <th>Total viajes</th>
+        <th title="Histórico + horas de los viajes">Total acum.</th>
+        <th>% umbral</th>
         <th>Estado</th>
         <th>Nota</th>
         <th></th>
       </tr></thead><tbody>`;
       cat.equipos.forEach(e=>{
+        e.h26 = horasViajes(e);
         const est = calcEstadoEquipo(e);
-        const total = sumVals(e.horas);
+        const total = horasTotales(e);
+        const _umb = parseFloat(e.umbral);
+        const pctTxt = (!isNaN(_umb) && _umb>0) ? Math.round(total/_umb*100)+'%' : '—';
         html += `<tr>
           <td class="td-equipo">
             <input type="text" class="name-input" value="${escHtml(e.nombre)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','nombre',this.value)">
           </td>
           <td><input type="text" class="num-input" value="${escHtml(e.hist)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','hist',this.value)"></td>
-          <td><input type="text" class="num-input" value="${escHtml(e.h26)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','h26',this.value)"></td>
+          <td><input type="text" class="readonly-total" id="h26_${e.id}" value="${escHtml(e.h26)}" readonly title="Suma automática de los viajes"></td>
           <td><input type="text" class="num-input" value="${escHtml(e.umbral)}" oninput="EQUIPOS.updateEquipoField('${cat.id}','${e.id}','umbral',this.value)"></td>
           ${v.viajes.map(vj=>`<td><input type="text" class="num-input" value="${escHtml(e.horas[vj.id]!==undefined?e.horas[vj.id]:'')}" oninput="EQUIPOS.updateEquipoHoras('${cat.id}','${e.id}','${vj.id}',this.value)"></td>`).join('')}
-          <td><input type="text" class="readonly-total" value="${total}" readonly></td>
+          <td><input type="text" class="readonly-total" id="tot_${e.id}" value="${total}" readonly></td>
+          <td class="pct-cell" id="pct_${e.id}">${pctTxt}</td>
           <td>
             <select class="estado-select" onchange="EQUIPOS.setEquipoEstadoManual('${cat.id}','${e.id}',this.value)">
               ${ESTADO_OPTIONS.map(o=>`<option value="${o}" ${((e.estadoManual||'auto')===o)?'selected':''}>${o==='auto'?'Automático':ESTADOS[o].label}</option>`).join('')}
@@ -538,6 +589,31 @@ function updateWincheVal(id,tipo,viajeId,val){
 }
 function setWincheEstadoManual(id,val){ const w=findWinche(id); if(w){w.estadoManual=val; persist(); refreshWincheRow(id);} }
 
+// Devuelve el valor de lances si TODOS los items de la columna comparten el mismo; si no, ''.
+function valorComunColumna(lista, viajeId){
+  if(!lista || !lista.length) return '';
+  const primero = lista[0].lances[viajeId];
+  if(primero===undefined || primero==='') return '';
+  return lista.every(it=>it.lances[viajeId]===primero) ? primero : '';
+}
+// Escribe el mismo número de lances en toda la columna de un viaje, en vivo,
+// sin volver a dibujar la tabla (para no perder el foco mientras se escribe).
+function setLancesColumna(tipo, viajeId, val){
+  _markTyping();
+  const v = V();
+  const lista = tipo==='winches' ? v.winches : v.cables;
+  if(!lista) return;
+  const limpio = String(val).trim();
+  lista.forEach(item=>{
+    if(limpio==='') delete item.lances[viajeId];
+    else item.lances[viajeId] = limpio;
+  });
+  persist();
+  document.querySelectorAll('.lance-cell').forEach(el=>{
+    if(el.dataset.tipo===tipo && el.dataset.viaje===viajeId) el.value = limpio;
+  });
+  lista.forEach(item=>{ tipo==='winches' ? refreshWincheRow(item.id) : refreshCableRow(item.id); });
+}
 // Aplica un mismo número de lances a TODA la columna de un viaje.
 // tipo: 'winches' o 'cables'. Cada celda queda editable después por si
 // hubo algún cambio durante el viaje.
@@ -576,13 +652,13 @@ function renderWinchesTab(){
     ${v.viajes.map(vj=>`<th colspan="2">${viajeHeaderHtml(vj)}</th>`).join('')}
     <th rowspan="2">Total horas</th><th rowspan="2">Total lances</th><th rowspan="2">Estado</th><th rowspan="2"></th>
   </tr>
-  <tr>${v.viajes.map(vj=>`<th class="sub">Horas</th><th class="sub">Lances <button class="col-fill-btn" title="Aplicar un mismo número de lances a todos los winches de este viaje" onclick="EQUIPOS.fillLancesColumna('winches','${vj.id}')">⤓</button></th>`).join('')}</tr>
+  <tr>${v.viajes.map(vj=>`<th class="sub">Horas</th><th class="sub">Lances<br><input type="text" class="col-fill-input" placeholder="todos" title="Escribe aquí el número de lances del viaje y se aplica a todos los winches" value="${escHtml(valorComunColumna(v.winches,vj.id))}" oninput="EQUIPOS.setLancesColumna('winches','${vj.id}',this.value)"></th>`).join('')}</tr>
   </thead><tbody>`;
   v.winches.forEach(w=>{
     const est = calcEstadoWinche(w);
     html += `<tr>
       <td><input type="text" class="name-input" value="${escHtml(w.nombre)}" oninput="EQUIPOS.updateWincheNombre('${w.id}',this.value)"></td>
-      ${v.viajes.map(vj=>`<td><input type="text" class="num-input" value="${escHtml(w.horas[vj.id]!==undefined?w.horas[vj.id]:'')}" oninput="EQUIPOS.updateWincheVal('${w.id}','horas','${vj.id}',this.value)"></td><td><input type="text" class="num-input" value="${escHtml(w.lances[vj.id]!==undefined?w.lances[vj.id]:'')}" oninput="EQUIPOS.updateWincheVal('${w.id}','lances','${vj.id}',this.value)"></td>`).join('')}
+      ${v.viajes.map(vj=>`<td><input type="text" class="num-input" value="${escHtml(w.horas[vj.id]!==undefined?w.horas[vj.id]:'')}" oninput="EQUIPOS.updateWincheVal('${w.id}','horas','${vj.id}',this.value)"></td><td><input type="text" class="num-input lance-cell" data-tipo="winches" data-viaje="${escHtml(vj.id)}" value="${escHtml(w.lances[vj.id]!==undefined?w.lances[vj.id]:'')}" oninput="EQUIPOS.updateWincheVal('${w.id}','lances','${vj.id}',this.value)"></td>`).join('')}
       <td><input type="text" class="readonly-total" id="wtoth_${w.id}" value="${sumVals(w.horas)}" readonly></td>
       <td><input type="text" class="readonly-total" id="wtotl_${w.id}" value="${sumVals(w.lances)}" readonly></td>
       <td>
@@ -633,7 +709,7 @@ function renderCablesTab(){
     <th style="min-width:220px">Especificación</th>
     <th>Último cambio</th>
     <th>Días uso</th>
-    ${v.viajes.map(vj=>`<th>${viajeHeaderHtml(vj)}<button class="col-fill-btn" title="Aplicar un mismo número de lances a todos los cables de este viaje" onclick="EQUIPOS.fillLancesColumna('cables','${vj.id}')">⤓</button></th>`).join('')}
+    ${v.viajes.map(vj=>`<th>${viajeHeaderHtml(vj)}<input type="text" class="col-fill-input" placeholder="lances todos" title="Escribe aquí el número de lances del viaje y se aplica a todos los cables" value="${escHtml(valorComunColumna(v.cables,vj.id))}" oninput="EQUIPOS.setLancesColumna('cables','${vj.id}',this.value)"></th>`).join('')}
     <th>Total lances</th>
     <th>Vida útil ref.</th>
     <th>Estado</th>
@@ -647,7 +723,7 @@ function renderCablesTab(){
       <td><input type="text" style="min-width:210px" value="${escHtml(c.esp)}" oninput="EQUIPOS.updateCableField('${c.id}','esp',this.value)"></td>
       <td><input type="date" value="${escHtml(c.ultimoCambio||'')}" oninput="EQUIPOS.updateCableField('${c.id}','ultimoCambio',this.value)"></td>
       <td id="cdias_${c.id}">${dias===null?'N/A':dias+' d'}</td>
-      ${v.viajes.map(vj=>`<td><input type="text" class="num-input" value="${escHtml(c.lances[vj.id]!==undefined?c.lances[vj.id]:'')}" oninput="EQUIPOS.updateCableLances('${c.id}','${vj.id}',this.value)"></td>`).join('')}
+      ${v.viajes.map(vj=>`<td><input type="text" class="num-input lance-cell" data-tipo="cables" data-viaje="${escHtml(vj.id)}" value="${escHtml(c.lances[vj.id]!==undefined?c.lances[vj.id]:'')}" oninput="EQUIPOS.updateCableLances('${c.id}','${vj.id}',this.value)"></td>`).join('')}
       <td><input type="text" class="readonly-total" id="ctot_${c.id}" value="${sumVals(c.lances)}" readonly></td>
       <td><input type="text" class="num-input" value="${escHtml(c.vidaUtilRef)}" oninput="EQUIPOS.updateCableField('${c.id}','vidaUtilRef',this.value)"></td>
       <td>
@@ -756,7 +832,7 @@ function buildVesselSheets(wb, vesselKey, label){
 
   const motRows = [];
   v.categorias.forEach(cat=>cat.equipos.forEach(e=>{
-    const row = {Categoria:cat.nombre, Equipo:e.nombre, 'Historico':e.hist, 'Horometro 2026':e.h26, 'Umbral Mant.':e.umbral};
+    const row = {Categoria:cat.nombre, Equipo:e.nombre, 'Historico anios ant.':e.hist, 'Horometro anio (auto)':horasViajes(e), 'Total acumulado':horasTotales(e), 'Umbral Mant.':e.umbral};
     v.viajes.forEach(vj=>{ row[vj.id] = e.horas[vj.id]!==undefined?e.horas[vj.id]:''; });
     row['Total viajes'] = sumVals(e.horas);
     row['Estado manual'] = e.estadoManual||'auto';
@@ -888,8 +964,10 @@ function init(){
     updateEquipoField,
     updateEquipoHoras,
     updateViajeFecha,
+    renameViaje,
     updateWincheNombre,
     updateWincheVal,
-    fillLancesColumna
+    fillLancesColumna,
+    setLancesColumna
   };
 })();
