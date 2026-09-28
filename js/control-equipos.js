@@ -388,6 +388,25 @@ function deleteViaje(id){
   persist();
   render();
 }
+/* Safari (Mac/iPhone) muestra la fecha de HOY dentro de un <input type="date"> vacío.
+   Para no dar una lectura falsa, un campo de fecha vacío se dibuja como texto ("—")
+   y se convierte en calendario solo al hacer clic. */
+function dtAttrs(valorIso){
+  return valorIso
+    ? 'type="date" class="eq-dt" value="'+escHtml(valorIso)+'"'
+    : 'type="text" class="eq-dt" value="" placeholder="—"';
+}
+document.addEventListener('focusin', function(e){
+  const el = e.target;
+  if(!el.classList || !el.classList.contains('eq-dt') || el.type === 'date') return;
+  el.type = 'date';
+  try{ if(el.showPicker) el.showPicker(); }catch(x){}
+});
+document.addEventListener('focusout', function(e){
+  const el = e.target;
+  if(el.classList && el.classList.contains('eq-dt') && !el.value) el.type = 'text';
+});
+
 /* Conversion entre el formato guardado (dd/mm/aa) y el que exige <input type="date"> (yyyy-mm-dd) */
 function _fechaToInput(val){
   if(!val) return '';
@@ -434,8 +453,8 @@ function renderViajesBar(){
   const v = V();
   const rows = v.viajes.map(vj=>`<tr>
       <td><input type="text" class="vjt-id" value="${escHtml(vj.id)}" title="Editar el ID del viaje" onchange="EQUIPOS.renameViaje('${vj.id}',this.value)"></td>
-      <td><input type="date" value="${escHtml(_fechaToInput(vj.inicio))}" onchange="EQUIPOS.updateViajeFecha('${vj.id}','inicio',this.value)"></td>
-      <td><input type="date" value="${escHtml(_fechaToInput(vj.fin))}" onchange="EQUIPOS.updateViajeFecha('${vj.id}','fin',this.value)"></td>
+      <td><input ${dtAttrs(_fechaToInput(vj.inicio))} onchange="EQUIPOS.updateViajeFecha('${vj.id}','inicio',this.value)"></td>
+      <td><input ${dtAttrs(_fechaToInput(vj.fin))} onchange="EQUIPOS.updateViajeFecha('${vj.id}','fin',this.value)"></td>
       <td><button class="del-btn" onclick="EQUIPOS.deleteViaje('${vj.id}')">✕</button></td>
     </tr>`).join('');
   return `<div class="panel">
@@ -444,8 +463,8 @@ function renderViajesBar(){
     <tbody>${rows || '<tr><td colspan="4" style="color:#aaa">Aún no hay viajes registrados.</td></tr>'}</tbody></table>
     <div class="add-viaje-form">
       <input type="text" id="eq-newViajeId" placeholder="ID ej. V79">
-      <input type="date" id="eq-newViajeInicio" title="Fecha de zarpe">
-      <input type="date" id="eq-newViajeFin" title="Fecha de arribo">
+      <input type="text" class="eq-dt" id="eq-newViajeInicio" title="Fecha de zarpe" placeholder="Fecha de zarpe">
+      <input type="text" class="eq-dt" id="eq-newViajeFin" title="Fecha de arribo" placeholder="Fecha de arribo">
       <button class="mini-btn" onclick="EQUIPOS.addViaje()">+ Agregar viaje</button>
     </div>
   </div>`;
@@ -786,7 +805,7 @@ function histCableHtml(c, colspan){
       <tbody>${filas || '<tr><td colspan="8" style="color:#999">Sin cambios registrados todavía. Se llena solo al cambiar la fecha de "Último cambio".</td></tr>'}</tbody></table>
       <div class="hist-cable-add">
         <span>Agregar un cambio anterior:</span>
-        <input type="date" id="hcf_${c.id}" title="Fecha en que se retiró">
+        <input type="text" class="eq-dt" id="hcf_${c.id}" title="Fecha en que se retiró" placeholder="fecha retiro">
         <input type="text" id="hcl_${c.id}" class="num-input" placeholder="lances">
         <input type="text" id="hcn_${c.id}" placeholder="nota (opcional)">
         <button class="mini-btn" onclick="EQUIPOS.addHistManual('${c.id}')">+ Agregar</button>
@@ -825,7 +844,7 @@ function renderCablesTab(){
     html += `<tr>
       <td><input type="text" class="name-input" style="min-width:130px" value="${escHtml(c.funcion)}" oninput="EQUIPOS.updateCableField('${c.id}','funcion',this.value)"></td>
       <td><input type="text" style="min-width:210px" value="${escHtml(c.esp)}" oninput="EQUIPOS.updateCableField('${c.id}','esp',this.value)"></td>
-      <td><input type="date" value="${escHtml(c.ultimoCambio||'')}" oninput="EQUIPOS.updateCableField('${c.id}','ultimoCambio',this.value)" onchange="EQUIPOS.cambioCable('${c.id}',this.value,this.defaultValue)"></td>
+      <td><input ${dtAttrs(c.ultimoCambio||'')} oninput="EQUIPOS.updateCableField('${c.id}','ultimoCambio',this.value)" onchange="EQUIPOS.cambioCable('${c.id}',this.value,this.defaultValue)"></td>
       <td id="cdias_${c.id}">${dias===null?'N/A':dias+' d'}</td>
       ${v.viajes.map(vj=>`<td><input type="text" class="num-input lance-cell" data-tipo="cables" data-viaje="${escHtml(vj.id)}" value="${escHtml(c.lances[vj.id]!==undefined?c.lances[vj.id]:'')}" oninput="EQUIPOS.updateCableLances('${c.id}','${vj.id}',this.value)"></td>`).join('')}
       <td><input type="text" class="readonly-total" id="ctot_${c.id}" value="${sumVals(c.lances)}" readonly></td>
