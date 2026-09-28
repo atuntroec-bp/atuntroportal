@@ -261,8 +261,10 @@ function startRealtimeSync(){
     if(json === _lastRemoteJSON) return;   // es el eco de nuestro propio guardado
     if(_isTyping) return;                    // no reconstruir la tabla mientras se escribe
     _lastRemoteJSON = json;
+    _fechasReparadas = 0;
     state = normalizeState(data);
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+    if(_fechasReparadas) setTimeout(persist, 0);   // guarda en Firebase las fechas con año corregido (ej. 20025 → 2025)
     document.getElementById('eq-vesselSub').textContent = VESSEL_INFO[currentVessel];
     render();
     flashSave();
@@ -297,9 +299,12 @@ function normalizeVessel(v, seedFn){
   });
   v.cables.forEach(c=>{
     if(!c.lances || typeof c.lances!=='object') c.lances = {};
+    if(c.ultimoCambio) c.ultimoCambio = repararFecha(c.ultimoCambio);
     if(!c.historial) c.historial = [];
     else if(!Array.isArray(c.historial)) c.historial = Object.values(c.historial);
   });
+  (v.viajes||[]).forEach(vj=>{ if(vj){ vj.inicio = repararFecha(vj.inicio); vj.fin = repararFecha(vj.fin); } });
+  v.cables.forEach(c=>(c.historial||[]).forEach(x=>{ if(x){ x.instalado = repararFecha(x.instalado); x.retirado = repararFecha(x.retirado); } }));
   return v;
 }
 function normalizeState(st){
@@ -373,6 +378,7 @@ function addViaje(){
   const id = idEl.value.trim();
   if(!id){ idEl.focus(); return; }
   if(V().viajes.some(v=>v.id===id)){ alert('Ya existe un viaje con ese ID.'); return; }
+  if((iEl.value && !fechaValida(iEl.value)) || (fEl.value && !fechaValida(fEl.value))){ alert('Revisa las fechas: el año debe tener 4 dígitos (ej. 2026).'); return; }
   V().viajes.push({id, inicio:_inputToFecha(iEl.value), fin:_inputToFecha(fEl.value)});
   idEl.value=''; iEl.value=''; fEl.value='';
   persist();
@@ -391,15 +397,40 @@ function deleteViaje(id){
 /* Safari (Mac/iPhone) muestra la fecha de HOY dentro de un <input type="date"> vacío.
    Para no dar una lectura falsa, un campo de fecha vacío se dibuja como texto ("—")
    y se convierte en calendario solo al hacer clic. */
+const DT_MIN = '2000-01-01', DT_MAX = '2099-12-31';
+let _fechasReparadas = 0;
 function dtAttrs(valorIso){
   return valorIso
-    ? 'type="date" class="eq-dt" value="'+escHtml(valorIso)+'"'
+    ? 'type="date" class="eq-dt" min="'+DT_MIN+'" max="'+DT_MAX+'" value="'+escHtml(valorIso)+'"'
     : 'type="text" class="eq-dt" value="" placeholder="—"';
+}
+// Fecha válida = aaaa-mm-dd con año de 4 dígitos entre 2000 y 2099
+function fechaValida(iso){
+  const m = String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return !!m && +m[1] >= 2000 && +m[1] <= 2099;
+}
+// Repara años mal digitados: 20025 → 2025, 20206 → 2026 (se quita un 0 sobrante)
+function repararFecha(val){
+  const s = String(val||'').trim();
+  if(!s) return s;
+  let m = s.match(/^(\d{5,6})-(\d{2})-(\d{2})$/);          // formato aaaa-mm-dd
+  if(m){ const y = arreglarAnio(m[1]); if(y){ _fechasReparadas++; return y+'-'+m[2]+'-'+m[3]; } return s; }
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{5,6})$/);           // formato dd/mm/aaaa
+  if(m){ const y = arreglarAnio(m[3]); if(y){ _fechasReparadas++; return m[1]+'/'+m[2]+'/'+y; } return s; }
+  return s;
+}
+function arreglarAnio(y){
+  for(let i=0;i<y.length;i++){
+    if(y[i] !== '0') continue;
+    const c = y.slice(0,i)+y.slice(i+1);
+    if(c.length===4 && +c>=2000 && +c<=2099) return c;
+  }
+  return null;
 }
 document.addEventListener('focusin', function(e){
   const el = e.target;
   if(!el.classList || !el.classList.contains('eq-dt') || el.type === 'date') return;
-  el.type = 'date';
+  el.type = 'date'; el.min = DT_MIN; el.max = DT_MAX;
   try{ if(el.showPicker) el.showPicker(); }catch(x){}
 });
 document.addEventListener('focusout', function(e){
@@ -440,6 +471,7 @@ function renameViaje(oldId, val){
 }
 function updateViajeFecha(id,field,val){
   const vj = V().viajes.find(v=>v.id===id); if(!vj) return;
+  if(val && !fechaValida(val)){ alert('La fecha '+val+' no es válida. Revisa el año (debe tener 4 dígitos, ej. 2026).'); render(); return; }
   vj[field] = _inputToFecha(val);
   persist();
   const dates = (vj.inicio||vj.fin) ? (vj.inicio||'?')+' → '+(vj.fin||'?') : 'sin fecha';
@@ -704,7 +736,10 @@ function deleteCable(id){
   V().cables = V().cables.filter(c=>c.id!==id); persist(); render();
 }
 function findCable(id){ return V().cables.find(c=>c.id===id); }
-function updateCableField(id,field,val){ _markTyping(); const c=findCable(id); if(!c) return; c[field]=val; persist(); refreshCableRow(id); }
+function updateCableField(id,field,val){
+  if(field==='ultimoCambio' && val && !fechaValida(val)) return;   // no guarda mientras el año esté incompleto o mal escrito
+  _markTyping(); const c=findCable(id); if(!c) return; c[field]=val; persist(); refreshCableRow(id);
+}
 function updateCableLances(id,viajeId,val){
   _markTyping();
   const c=findCable(id); if(!c) return;
@@ -726,6 +761,10 @@ function viajesAntesDe(fechaIso){
 }
 function cambioCable(id, fechaIso, fechaAnterior){
   const c = findCable(id); if(!c) return;
+  if(fechaIso && !fechaValida(fechaIso)){
+    alert('La fecha '+fechaIso+' no es válida. Revisa el año (debe tener 4 dígitos, ej. 2026).');
+    c.ultimoCambio = fechaAnterior || ''; persist(); render(); return;
+  }
   c.ultimoCambio = fechaIso;
   const previos = viajesAntesDe(fechaIso).filter(vj=>String(c.lances[vj.id]===undefined?'':c.lances[vj.id])!=='0');
   if(previos.length){
@@ -764,6 +803,7 @@ function addHistManual(id){
   const f = document.getElementById('hcf_'+id), l = document.getElementById('hcl_'+id), n = document.getElementById('hcn_'+id);
   const lances = parseFloat(l && l.value);
   if(!f || !f.value){ alert('Indica la fecha en que se retiró el cable.'); return; }
+  if(!fechaValida(f.value)){ alert('La fecha no es válida. Revisa el año (debe tener 4 dígitos, ej. 2026).'); return; }
   if(isNaN(lances)){ alert('Indica cuántos lances hizo el cable retirado.'); return; }
   if(!Array.isArray(c.historial)) c.historial = [];
   c.historial.push({id:uid('hc'), instalado:'', retirado:f.value, lances:lances, viajes:'', esp:c.esp||'', vidaUtilRef:c.vidaUtilRef, nota:(n&&n.value)||'registro manual'});
@@ -1063,7 +1103,9 @@ function importBackup(input){
 }
 
 function init(){
+  _fechasReparadas = 0;
   state = loadState();
+  if(_fechasReparadas) persist();
   document.getElementById('eq-vesselSub').textContent = VESSEL_INFO.fatima;
   render();
   startRealtimeSync();
