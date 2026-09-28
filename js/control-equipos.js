@@ -297,6 +297,8 @@ function normalizeVessel(v, seedFn){
   });
   v.cables.forEach(c=>{
     if(!c.lances || typeof c.lances!=='object') c.lances = {};
+    if(!c.historial) c.historial = [];
+    else if(!Array.isArray(c.historial)) c.historial = Object.values(c.historial);
   });
   return v;
 }
@@ -438,12 +440,12 @@ function renderViajesBar(){
     </tr>`).join('');
   return `<div class="panel">
     <div class="panel-title">Viajes (${v.viajes.length}) — columnas compartidas por Motores, Winches y Cables</div>
-    <table class="vjt"><thead><tr><th>Viaje</th><th>Fecha de zarpe</th><th>Fecha de salida</th><th></th></tr></thead>
+    <table class="vjt"><thead><tr><th>Viaje</th><th>Fecha de zarpe</th><th>Fecha de arribo</th><th></th></tr></thead>
     <tbody>${rows || '<tr><td colspan="4" style="color:#aaa">Aún no hay viajes registrados.</td></tr>'}</tbody></table>
     <div class="add-viaje-form">
       <input type="text" id="eq-newViajeId" placeholder="ID ej. V79">
       <input type="date" id="eq-newViajeInicio" title="Fecha de zarpe">
-      <input type="date" id="eq-newViajeFin" title="Fecha de salida">
+      <input type="date" id="eq-newViajeFin" title="Fecha de arribo">
       <button class="mini-btn" onclick="EQUIPOS.addViaje()">+ Agregar viaje</button>
     </div>
   </div>`;
@@ -690,6 +692,108 @@ function updateCableLances(id,viajeId,val){
   if(val==='') delete c.lances[viajeId]; else c.lances[viajeId]=val;
   persist(); refreshCableRow(id);
 }
+// Al registrar el cambio de un cable, los lances de los viajes ANTERIORES a esa fecha
+// quedan en 0: el cable es nuevo y no arrastra lances del cable viejo.
+// Viaje anterior = su fecha de arribo es igual o anterior al cambio
+// (si el viaje no tiene arribo, se usa la fecha de zarpe y debe ser anterior al cambio).
+function viajesAntesDe(fechaIso){
+  if(!fechaIso) return [];
+  return V().viajes.filter(vj=>{
+    const arribo = _fechaToInput(vj.fin), zarpe = _fechaToInput(vj.inicio);
+    if(arribo) return arribo <= fechaIso;
+    if(zarpe)  return zarpe < fechaIso;
+    return false;
+  });
+}
+function cambioCable(id, fechaIso, fechaAnterior){
+  const c = findCable(id); if(!c) return;
+  c.ultimoCambio = fechaIso;
+  const previos = viajesAntesDe(fechaIso).filter(vj=>String(c.lances[vj.id]===undefined?'':c.lances[vj.id])!=='0');
+  if(previos.length){
+    const lista = previos.map(vj=>vj.id).join(', ');
+    const acumulado = previos.reduce((s,vj)=>{ const n=parseFloat(c.lances[vj.id]); return s+(isNaN(n)?0:n); },0);
+    if(confirm('Cambio de cable: '+(c.funcion||'')+'\n\nEl cable retirado hizo '+acumulado+' lances ('+lista+').\nEse dato se guarda en el historial y los lances de esos viajes se ponen en 0.\n\n¿Continuar?')){
+      if(!Array.isArray(c.historial)) c.historial = [];
+      c.historial.push({
+        id: uid('hc'),
+        instalado: fechaAnterior || '',          // cuándo se había puesto el cable retirado
+        retirado: fechaIso,                        // fecha del cambio
+        lances: acumulado,
+        viajes: lista,
+        esp: c.esp || '',
+        vidaUtilRef: c.vidaUtilRef,
+        nota: ''
+      });
+      previos.forEach(vj=>{ c.lances[vj.id] = '0'; });
+      _histAbierto[id] = true;
+    }
+  }
+  persist(); _isTyping = false; clearTimeout(_typingTO); render();
+}
+
+/* ---------- historial de cambios de cable ---------- */
+const _histAbierto = {};
+function toggleHistCable(id){ _histAbierto[id] = !_histAbierto[id]; render(); }
+function fmtFecha(iso){ const m = String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3]+'/'+m[2]+'/'+m[1] : (iso||'—'); }
+function promedioHist(c){
+  const h = (c.historial||[]).filter(x=>!isNaN(parseFloat(x.lances)));
+  if(!h.length) return null;
+  return Math.round(h.reduce((s,x)=>s+parseFloat(x.lances),0)/h.length);
+}
+function addHistManual(id){
+  const c = findCable(id); if(!c) return;
+  const f = document.getElementById('hcf_'+id), l = document.getElementById('hcl_'+id), n = document.getElementById('hcn_'+id);
+  const lances = parseFloat(l && l.value);
+  if(!f || !f.value){ alert('Indica la fecha en que se retiró el cable.'); return; }
+  if(isNaN(lances)){ alert('Indica cuántos lances hizo el cable retirado.'); return; }
+  if(!Array.isArray(c.historial)) c.historial = [];
+  c.historial.push({id:uid('hc'), instalado:'', retirado:f.value, lances:lances, viajes:'', esp:c.esp||'', vidaUtilRef:c.vidaUtilRef, nota:(n&&n.value)||'registro manual'});
+  c.historial.sort((a,b)=>String(a.retirado).localeCompare(String(b.retirado)));
+  persist(); render();
+}
+function delHistCable(id, hid){
+  const c = findCable(id); if(!c) return;
+  if(!confirm('¿Eliminar este registro del historial?')) return;
+  c.historial = (c.historial||[]).filter(x=>x.id!==hid);
+  persist(); render();
+}
+function updateHistNota(id, hid, val){
+  _markTyping();
+  const c = findCable(id); if(!c) return;
+  const h = (c.historial||[]).find(x=>x.id===hid); if(h){ h.nota = val; persist(); }
+}
+function histCableHtml(c, colspan){
+  const h = c.historial||[];
+  const prom = promedioHist(c);
+  const vu = parseFloat(c.vidaUtilRef);
+  const pct = (lances)=> (!isNaN(vu) && vu>0) ? Math.round(lances/vu*100)+'%' : '—';
+  const filas = h.map(x=>`<tr>
+      <td>${escHtml(fmtFecha(x.instalado))}</td>
+      <td>${escHtml(fmtFecha(x.retirado))}</td>
+      <td style="text-align:right;font-weight:600">${escHtml(x.lances)}</td>
+      <td style="text-align:right">${pct(parseFloat(x.lances))}</td>
+      <td>${escHtml(x.viajes||'—')}</td>
+      <td>${escHtml(x.esp||'')}</td>
+      <td><input type="text" value="${escHtml(x.nota||'')}" placeholder="nota (motivo, estado del cable...)" style="min-width:200px" oninput="EQUIPOS.updateHistNota('${c.id}','${x.id}',this.value)"></td>
+      <td><button class="del-btn" onclick="EQUIPOS.delHistCable('${c.id}','${x.id}')">✕</button></td>
+    </tr>`).join('');
+  return `<tr class="hist-cable-row"><td colspan="${colspan}">
+    <div class="hist-cable-box">
+      <div class="hist-cable-head">Historial de cambios — ${escHtml(c.funcion)}
+        ${prom!==null?`<span class="hist-cable-prom">Promedio: <b>${prom}</b> lances por cable${(!isNaN(vu)&&vu>0)?' ('+Math.round(prom/vu*100)+'% de la vida útil ref. de '+vu+')':''}</span>`:''}
+      </div>
+      <table class="hist-cable-t"><thead><tr><th>Instalado</th><th>Retirado</th><th>Lances</th><th>% vida útil</th><th>Viajes</th><th>Especificación</th><th>Nota</th><th></th></tr></thead>
+      <tbody>${filas || '<tr><td colspan="8" style="color:#999">Sin cambios registrados todavía. Se llena solo al cambiar la fecha de "Último cambio".</td></tr>'}</tbody></table>
+      <div class="hist-cable-add">
+        <span>Agregar un cambio anterior:</span>
+        <input type="date" id="hcf_${c.id}" title="Fecha en que se retiró">
+        <input type="text" id="hcl_${c.id}" class="num-input" placeholder="lances">
+        <input type="text" id="hcn_${c.id}" placeholder="nota (opcional)">
+        <button class="mini-btn" onclick="EQUIPOS.addHistManual('${c.id}')">+ Agregar</button>
+      </div>
+    </div>
+  </td></tr>`;
+}
 function setCableEstadoManual(id,val){ const c=findCable(id); if(c){c.estadoManual=val; persist(); refreshCableRow(id);} }
 function refreshCableRow(id){
   const c=findCable(id); if(!c) return;
@@ -721,7 +825,7 @@ function renderCablesTab(){
     html += `<tr>
       <td><input type="text" class="name-input" style="min-width:130px" value="${escHtml(c.funcion)}" oninput="EQUIPOS.updateCableField('${c.id}','funcion',this.value)"></td>
       <td><input type="text" style="min-width:210px" value="${escHtml(c.esp)}" oninput="EQUIPOS.updateCableField('${c.id}','esp',this.value)"></td>
-      <td><input type="date" value="${escHtml(c.ultimoCambio||'')}" oninput="EQUIPOS.updateCableField('${c.id}','ultimoCambio',this.value)"></td>
+      <td><input type="date" value="${escHtml(c.ultimoCambio||'')}" oninput="EQUIPOS.updateCableField('${c.id}','ultimoCambio',this.value)" onchange="EQUIPOS.cambioCable('${c.id}',this.value,this.defaultValue)"></td>
       <td id="cdias_${c.id}">${dias===null?'N/A':dias+' d'}</td>
       ${v.viajes.map(vj=>`<td><input type="text" class="num-input lance-cell" data-tipo="cables" data-viaje="${escHtml(vj.id)}" value="${escHtml(c.lances[vj.id]!==undefined?c.lances[vj.id]:'')}" oninput="EQUIPOS.updateCableLances('${c.id}','${vj.id}',this.value)"></td>`).join('')}
       <td><input type="text" class="readonly-total" id="ctot_${c.id}" value="${sumVals(c.lances)}" readonly></td>
@@ -732,8 +836,10 @@ function renderCablesTab(){
         </select><br>
         <span class="badge ${est.cls}" id="cbadge_${c.id}">${est.label}</span>
       </td>
-      <td><button class="del-btn" onclick="EQUIPOS.deleteCable('${c.id}')">✕</button></td>
+      <td style="white-space:nowrap"><button class="mini-btn outline hist-btn${_histAbierto[c.id]?' on':''}" onclick="EQUIPOS.toggleHistCable('${c.id}')" title="Ver historial de cambios de este cable">🕘 ${(c.historial||[]).length}</button>
+        <button class="del-btn" onclick="EQUIPOS.deleteCable('${c.id}')">✕</button></td>
     </tr>`;
+    if(_histAbierto[c.id]) html += histCableHtml(c, 8 + v.viajes.length);
   });
   html += `</tbody></table></div>
   <button class="mini-btn outline" style="margin-top:10px" onclick="EQUIPOS.addCable()">+ Agregar cable / aparejo</button>
@@ -827,8 +933,8 @@ function exportBackup(){
 function buildVesselSheets(wb, vesselKey, label){
   const v = state[vesselKey];
 
-  const viajesRows = v.viajes.map(vj=>({ID:vj.id, 'Fecha de zarpe':vj.inicio||'', 'Fecha de salida':vj.fin||''}));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(viajesRows.length?viajesRows:[{ID:'', 'Fecha de zarpe':'','Fecha de salida':''}]), label+' Viajes');
+  const viajesRows = v.viajes.map(vj=>({ID:vj.id, 'Fecha de zarpe':vj.inicio||'', 'Fecha de arribo':vj.fin||''}));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(viajesRows.length?viajesRows:[{ID:'', 'Fecha de zarpe':'','Fecha de arribo':''}]), label+' Viajes');
 
   const motRows = [];
   v.categorias.forEach(cat=>cat.equipos.forEach(e=>{
@@ -862,6 +968,12 @@ function buildVesselSheets(wb, vesselKey, label){
     return row;
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(cabRows.length?cabRows:[{Funcion:''}]), label+' Cables');
+  const histRows = [];
+  v.cables.forEach(c=>(c.historial||[]).forEach(x=>histRows.push({
+    Funcion:c.funcion, 'Especificacion al retirar':x.esp||'', Instalado:x.instalado||'', Retirado:x.retirado||'',
+    Lances:x.lances, 'Vida util ref (lances)':x.vidaUtilRef, Viajes:x.viajes||'', Nota:x.nota||''
+  })));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(histRows.length?histRows:[{Funcion:''}]), label+' Hist cables');
 }
 
 function sheetRows(wb,name){
@@ -870,7 +982,7 @@ function sheetRows(wb,name){
 }
 function parseVesselFromWorkbook(wb,label){
   const viajesRows = sheetRows(wb,label+' Viajes');
-  const viajes = viajesRows.filter(r=>r['ID']!=='').map(r=>({id:String(r['ID']), inicio:String(r['Fecha de zarpe']||''), fin:String(r['Fecha de salida']||'')}));
+  const viajes = viajesRows.filter(r=>r['ID']!=='').map(r=>({id:String(r['ID']), inicio:String(r['Fecha de zarpe']||''), fin:String(r['Fecha de arribo']||r['Fecha de salida']||'')}));
   const viajeIds = viajes.map(v=>v.id);
 
   const motRows = sheetRows(wb,label+' Motores');
@@ -960,6 +1072,11 @@ function init(){
     setWincheEstadoManual,
     updateCableField,
     updateCableLances,
+    cambioCable,
+    toggleHistCable,
+    addHistManual,
+    delHistCable,
+    updateHistNota,
     updateCategoriaNombre,
     updateEquipoField,
     updateEquipoHoras,
