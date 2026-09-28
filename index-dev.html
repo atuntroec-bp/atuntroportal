@@ -5017,6 +5017,11 @@ table.boy-tabla input,table.boy-tabla select{width:100%;box-sizing:border-box;fo
 table.boy-tabla input:focus,table.boy-tabla select:focus{border-color:#2E75B6;background:#fff;outline:none}
 table.boy-tabla select{color:#1F4E79}
 table.boy-tabla input[type=checkbox]{width:16px;height:16px;cursor:pointer}
+.boy-fecha{display:flex;align-items:center;gap:2px}
+.boy-fecha input{flex:1;min-width:0}
+.boy-fx{flex:none;background:#FBE3E3;border:1px solid #E7B3B3;color:#8B0000;border-radius:4px;font-size:10px;font-weight:bold;line-height:1;padding:3px 5px;cursor:pointer}
+.boy-fx:hover{background:#C00000;color:#fff}
+@media print{.boy-fx{display:none}}
 table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
 .boy-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;white-space:nowrap}
 .boy-pill.alta{background:#E2EFDA;color:#375623}
@@ -5091,7 +5096,7 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
       </div>
       <div class="boy-f"><label>Acción</label>
         <select id="boyListaAccion"><option value="Dada de baja">DAR DE BAJA</option><option value="Dada de alta">DAR DE ALTA</option></select></div>
-      <div class="boy-f"><label>Fecha del movimiento</label><input type="date" id="boyListaFecha"></div>
+      <div class="boy-f"><label>Fecha del movimiento</label><input type="text" class="boy-dt" id="boyListaFecha" placeholder="dd/mm/aaaa"></div>
       <div class="boy-f"><label>Propietario (opcional)</label><select id="boyListaProp"></select></div>
       <div class="boy-f"><label>Estado 2 (opcional)</label><select id="boyListaEstado2"></select></div>
     </div>
@@ -5100,7 +5105,7 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
       <button class="boy-btn sec" id="boyListaCancelar">Cancelar</button>
       <span class="boy-hint" id="boyListaPrev"></span>
     </div>
-    <div class="boy-hint">Al dar de baja se registra la Fecha Baja; al dar de alta se registra la Fecha Alta y se limpia la de baja. Se avisa si alguna boya de la lista no existe en el sistema.</div>
+    <div class="boy-hint">Al dar de baja se registra la Fecha Baja solo si la indicas (si la dejas vacía, queda en blanco); al dar de alta se registra la Fecha Alta (hoy si está vacía) y se limpia la de baja. Se avisa si alguna boya de la lista no existe en el sistema.</div>
   </div>
 
   <div class="boy-filtros">
@@ -5121,15 +5126,15 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
       <div class="boy-f"><label>Estado 2</label><select id="boyMEstado2"></select></div>
       <div class="boy-f"><label>Origen</label><select id="boyMOrigen"></select></div>
       <div class="boy-f"><label>Dónde fue recuperada</label><select id="boyMDonde"></select></div>
-      <div class="boy-f"><label>Fecha</label><input type="date" id="boyMFecha"></div>
+      <div class="boy-f"><label>Fecha</label><input type="text" class="boy-dt" id="boyMFecha" placeholder="dd/mm/aaaa"></div>
       <div class="boy-f"><label>Aplicar la fecha a</label>
-        <select id="boyMFechaCampo"><option value="fechaAlta">Fecha Alta</option><option value="fechaBaja">Fecha Baja</option></select></div>
+        <select id="boyMFechaCampo"><option value="">(no aplicar)</option><option value="fechaAlta">Fecha Alta</option><option value="fechaBaja">Fecha Baja</option></select></div>
     </div>
     <div class="boy-acc" style="margin-bottom:10px;border-bottom:1px dashed #E0C9AF;padding-bottom:10px">
       <span style="font-size:12px;font-weight:bold;color:#5A7A99">Acciones rápidas:</span>
       <button class="boy-btn ok" id="boyMDarAlta">✔ Dar de ALTA las seleccionadas</button>
       <button class="boy-btn del" id="boyMDarBaja">✕ Dar de BAJA las seleccionadas</button>
-      <span class="boy-hint" style="margin:0">Usan la fecha de abajo; si está vacía, la de hoy.</span>
+      <span class="boy-hint" style="margin:0">Usan la fecha de arriba. Alta sin fecha = hoy; Baja sin fecha = queda en blanco.</span>
     </div>
     <div class="boy-acc">
       <label class="boy-chk"><input type="checkbox" id="boyMSumar"> Registrar recuperación (usa la fecha y el lugar de arriba)</label>

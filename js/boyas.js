@@ -55,6 +55,64 @@
   }
   function marcarTyping(){ isTyping = true; clearTimeout(typingTimer); typingTimer = setTimeout(function(){ isTyping=false; }, 1500); }
   function hoy(){ return new Date().toISOString().slice(0,10); }
+  /* Safari (Mac/iPhone) muestra la fecha de HOY dentro de un <input type="date"> vacío,
+     aunque no haya nada guardado. Por eso, cuando no hay fecha se dibuja un campo de texto
+     vacío ("—") y solo se convierte en calendario al hacer clic. */
+  function inputFecha(campo, valor){
+    return valor
+      ? '<input type="date" class="boy-dt" data-c="'+campo+'" value="'+valor+'">'
+      : '<input type="text" class="boy-dt" data-c="'+campo+'" value="" placeholder="—">';
+  }
+
+  /* ---------- regla: una boya activa NO tiene fecha de baja ---------- */
+  var EN_USO = ['ACTIVA','A BORDO PARA VIAJE'];
+  // devuelve los campos a corregir (o null si la boya ya está bien)
+  // bajaExplicita = el usuario acaba de dar de baja la boya: se respeta y se quita el estado "en uso"
+  function correccion(b, bajaExplicita){
+    if(!b) return null;
+    var c = {};
+    if(EN_USO.indexOf(b.estado2) !== -1 && b.estado !== 'Dada de alta'){
+      if(bajaExplicita) c.estado2 = ''; else c.estado = 'Dada de alta';
+    }
+    var estadoFinal = c.estado || b.estado;
+    if(estadoFinal !== 'Dada de baja' && b.fechaBaja) c.fechaBaja = '';
+    return Object.keys(c).length ? c : null;
+  }
+  // corrige en memoria y agrega al paquete de actualización de Firebase
+  function normalizar(k, upd, bajaExplicita){
+    var c = correccion(datos[k], bajaExplicita); if(!c) return 0;
+    Object.keys(c).forEach(function(f){ datos[k][f] = c[f]; if(upd) upd[k+'/'+f] = c[f]; });
+    return 1;
+  }
+  /* Se aplica en CADA lectura de Firebase:
+     1) corrige en pantalla siempre (aunque no se pueda escribir todavía), y
+     2) intenta guardar la corrección en Firebase; si la escritura falla (p.ej. la sesión
+        de Firebase aún no está lista) lo reintenta en la siguiente lectura / al autenticarse. */
+  var ultimoIntento = 0, pendiente = null;
+  function autenticado(){
+    try{ return !!(firebase.auth && firebase.auth().currentUser); }catch(e){ return true; }
+  }
+  function limpiezaInicial(){
+    var upd = {}, n = 0;
+    Object.keys(datos).forEach(function(k){ n += normalizar(k, upd); });
+    if(!n || !ref || !puedeEditar()) return;
+    pendiente = upd;
+    escribirPendiente();
+  }
+  function escribirPendiente(){
+    if(!pendiente || !autenticado()) return;
+    if(Date.now() - ultimoIntento < 8000) return;   // evita bucles si Firebase rechaza la escritura
+    ultimoIntento = Date.now();
+    var upd = pendiente, n = {};
+    Object.keys(upd).forEach(function(p){ n[p.split('/')[0]] = 1; });
+    ref.update(upd).then(function(){
+      pendiente = null;
+      msg(Object.keys(n).length+' boya(s) corregidas: activas sin fecha de baja');
+    }).catch(function(e){ console.warn('BOY: no se pudo guardar la corrección', e && e.message); });
+  }
+  try{
+    firebase.auth().onAuthStateChanged(function(u){ if(u){ ultimoIntento = 0; escribirPendiente(); } });
+  }catch(e){}
 
   /* ---------- Firebase ---------- */
   function db(){
@@ -80,6 +138,7 @@
       var v = snap.val();
       if(v === null){ sembrar(); return; }
       datos = v;
+      limpiezaInicial();
       if(!isTyping) render();
     });
   };
@@ -224,8 +283,12 @@
         '<td>'+(edit?'<select data-c="propietario">'+opts(PROPIETARIOS,b.propietario)+'</select>':ro(b.propietario))+'</td>' +
         '<td>'+(edit?'<select data-c="estado">'+opts(ESTADOS,b.estado||'Dada de alta')+'</select>'
                     :'<span class="boy-pill '+(b.estado==='Dada de baja'?'baja':'alta')+'">'+(b.estado||'')+'</span>')+'</td>' +
-        '<td>'+(edit?'<input type="date" data-c="fechaAlta" value="'+(b.fechaAlta||'')+'">':ro(b.fechaAlta))+'</td>' +
-        '<td>'+(edit?'<input type="date" data-c="fechaBaja" value="'+(b.fechaBaja||'')+'">':ro(b.fechaBaja))+'</td>' +
+        '<td>'+(edit?inputFecha('fechaAlta', b.fechaAlta):ro(b.fechaAlta))+'</td>' +
+        '<td>'+(edit
+                ? '<span class="boy-fecha">'+inputFecha('fechaBaja', b.fechaBaja) +
+                  (b.fechaBaja ? '<button type="button" class="boy-fx" data-clr="'+k+'" title="Quitar fecha de baja">✕</button>' : '') +
+                  '</span>'
+                : ro(b.estado==='Dada de baja'?b.fechaBaja:''))+'</td>' +
         '<td>'+(edit?'<select data-c="estado2">'+opts(ESTADOS2,b.estado2)+'</select>':ro(b.estado2))+'</td>' +
         '<td>'+(edit?'<select data-c="origen">'+opts(ORIGENES,b.origen)+'</select>':ro(b.origen))+'</td>' +
         '<td style="text-align:center"><span class="boy-ro" style="font-weight:bold">'+nRec(b)+'</span></td>' +
@@ -253,13 +316,15 @@
     var campoFecha = document.getElementById('boyMFechaCampo').value;
     var sumar = document.getElementById('boyMSumar').checked;
 
-    if(!camposFijos.length && !fecha && !sumar){ alert('Elige al menos un cambio que aplicar.'); return; }
+    var ponerFecha = !!(fecha && campoFecha);   // la fecha solo va a Alta/Baja si se elige el campo explícitamente
+    if(!camposFijos.length && !ponerFecha && !sumar){ alert('Elige al menos un cambio que aplicar.'); return; }
     if(!confirm('Se aplicarán los cambios a '+keys.length+' boya(s). ¿Continuar?')) return;
 
     var upd = {};
     keys.forEach(function(k){
       camposFijos.forEach(function(p){ upd[k+'/'+p[0]] = p[1]; datos[k][p[0]] = p[1]; });
-      if(fecha){ upd[k+'/'+campoFecha] = fecha; datos[k][campoFecha] = fecha; }
+      if(ponerFecha){ upd[k+'/'+campoFecha] = fecha; datos[k][campoFecha] = fecha; }
+      normalizar(k, upd, datos[k].estado === 'Dada de baja' && camposFijos.some(function(p){ return p[0]==='estado'; }));
     });
     if(sumar) keys.forEach(function(k){ agregarRec(k, fecha || hoy(), lugar === SIN ? '' : lugar); });
     ref.update(upd).then(function(){ msg(keys.length+' boyas actualizadas'); });
@@ -269,20 +334,29 @@
   function altaBajaSeleccion(nuevoEstado){
     var keys = Object.keys(sel).filter(function(k){ return sel[k] && datos[k]; });
     if(!keys.length){ alert('No hay boyas seleccionadas.'); return; }
-    var fecha = document.getElementById('boyMFecha').value || hoy();
+    var fecha = fechaMovimiento(nuevoEstado, document.getElementById('boyMFecha').value);
     var accion = nuevoEstado === 'Dada de alta' ? 'DAR DE ALTA' : 'DAR DE BAJA';
-    if(!confirm('Se van a '+accion+' '+keys.length+' boya(s) con fecha '+fecha+'. ¿Continuar?')) return;
-    var upd = {};
-    keys.forEach(function(k){ Object.keys(cambioEstado(nuevoEstado, fecha)).forEach(function(c){
-      var v = cambioEstado(nuevoEstado, fecha)[c]; upd[k+'/'+c] = v; datos[k][c] = v;
-    }); });
+    if(!confirm('Se van a '+accion+' '+keys.length+' boya(s) '+textoFecha(fecha)+'. ¿Continuar?')) return;
+    var base = cambioEstado(nuevoEstado, fecha), upd = {};
+    keys.forEach(function(k){
+      Object.keys(base).forEach(function(c){ upd[k+'/'+c] = base[c]; datos[k][c] = base[c]; });
+      normalizar(k, upd, nuevoEstado === 'Dada de baja');
+    });
     ref.update(upd).then(function(){ msg(keys.length+' boyas: '+accion.toLowerCase()); });
     render();
   }
+  /* Fecha Alta: si no se indica, se usa la de hoy.
+     Fecha Baja: SOLO se registra si el usuario la escribe (nunca se autocompleta con hoy),
+     para no dar la falsa lectura de que la boya se dio de baja el día que se revisó. */
+  function fechaMovimiento(nuevoEstado, valor){
+    return nuevoEstado === 'Dada de alta' ? (valor || hoy()) : (valor || '');
+  }
+  function textoFecha(fecha){ return fecha ? 'con fecha '+fecha : 'SIN fecha de baja (quedará en blanco)'; }
   function cambioEstado(nuevoEstado, fecha){
-    return nuevoEstado === 'Dada de alta'
-      ? {estado:'Dada de alta', fechaAlta:fecha, fechaBaja:''}
-      : {estado:'Dada de baja', fechaBaja:fecha};
+    if(nuevoEstado === 'Dada de alta') return {estado:'Dada de alta', fechaAlta:fecha, fechaBaja:''};
+    var r = {estado:'Dada de baja'};
+    if(fecha) r.fechaBaja = fecha;
+    return r;
   }
 
   /* alta / baja pegando una lista de números o ISN */
@@ -301,7 +375,7 @@
     var lista = parsearLista();
     if(!lista.length){ alert('Pega al menos un número o ISN.'); return; }
     var estado = document.getElementById('boyListaAccion').value;
-    var fecha  = document.getElementById('boyListaFecha').value || hoy();
+    var fecha  = fechaMovimiento(estado, document.getElementById('boyListaFecha').value);
     var prop   = document.getElementById('boyListaProp').value;
     var est2   = document.getElementById('boyListaEstado2').value;
     var enc = {}, noEnc = [];
@@ -311,7 +385,7 @@
     });
     var keys = Object.keys(enc);
     if(!keys.length){ alert('Ninguna de las boyas de la lista existe en el sistema.'); return; }
-    var txt = 'Se van a '+(estado==='Dada de alta'?'DAR DE ALTA':'DAR DE BAJA')+' '+keys.length+' boya(s) con fecha '+fecha+'.';
+    var txt = 'Se van a '+(estado==='Dada de alta'?'DAR DE ALTA':'DAR DE BAJA')+' '+keys.length+' boya(s) '+textoFecha(fecha)+'.';
     if(noEnc.length) txt += '\n\nNo se encontraron ('+noEnc.length+'): '+noEnc.slice(0,15).join(', ')+(noEnc.length>15?'...':'');
     if(!confirm(txt+'\n\n¿Continuar?')) return;
     var base = cambioEstado(estado, fecha);
@@ -320,6 +394,7 @@
       Object.keys(base).forEach(function(c){ upd[k+'/'+c] = base[c]; datos[k][c] = base[c]; });
       if(prop){ upd[k+'/propietario'] = prop; datos[k].propietario = prop; }
       if(est2){ upd[k+'/estado2'] = est2; datos[k].estado2 = est2; }
+      normalizar(k, upd, estado === 'Dada de baja');
     });
     ref.update(upd).then(function(){ msg(keys.length+' boyas actualizadas'+(noEnc.length?' ('+noEnc.length+' no encontradas)':'')); });
     document.getElementById('boyListaTexto').value = '';
@@ -331,6 +406,8 @@
   function resetMasivo(){
     ['boyMProp','boyMEstado','boyMEstado2','boyMOrigen','boyMDonde'].forEach(function(id){ document.getElementById(id).value = SIN; });
     document.getElementById('boyMFecha').value = '';
+    document.getElementById('boyMFecha').type = 'text';
+    document.getElementById('boyMFechaCampo').value = '';
     document.getElementById('boyMSumar').checked = false;
   }
   function parsearAltas(){
@@ -420,6 +497,19 @@
     document.getElementById('boyAltaDonde').innerHTML   = opts(DONDE,'');
     document.getElementById('boyAltaFecha').value = hoy();
 
+    // campos de fecha vacíos: texto → calendario al entrar, y de vuelta a texto si quedan vacíos
+    var vista = document.getElementById('vistaBoyas') || document;
+    vista.addEventListener('focusin', function(e){
+      var el = e.target;
+      if(!el.classList || !el.classList.contains('boy-dt') || el.type === 'date') return;
+      el.type = 'date';
+      try{ if(el.showPicker) el.showPicker(); }catch(x){}
+    });
+    vista.addEventListener('focusout', function(e){
+      var el = e.target;
+      if(el.classList && el.classList.contains('boy-dt') && !el.value) el.type = 'text';
+    });
+
     var body = document.getElementById('boyBody');
     body.addEventListener('input', function(e){
       var el = e.target;
@@ -440,9 +530,37 @@
       }
       if(!el.dataset.c) return;
       guardar(tr.dataset.k, el.dataset.c, el.type==='number' ? (parseInt(el.value,10)||0) : el.value);
-      if(['propietario','estado','estado2'].indexOf(el.dataset.c) !== -1) renderCards();
+      if(el.dataset.c === 'fechaBaja'){
+        var kb = tr.dataset.k, updb = {}, bb = datos[kb]||{};
+        clearTimeout(saveTimer[kb+'fechaBaja']);
+        updb[kb+'/fechaBaja'] = el.value; bb.fechaBaja = el.value;
+        if(el.value && bb.estado !== 'Dada de baja'){          // poner fecha de baja = dar de baja
+          updb[kb+'/estado'] = 'Dada de baja'; bb.estado = 'Dada de baja';
+          normalizar(kb, updb, true);                           // quita ACTIVA / A BORDO
+        }
+        ref.update(updb).then(function(){ msg('Guardado'); });
+        isTyping = false; render();
+        return;
+      }
+      if(el.dataset.c === 'estado' || el.dataset.c === 'estado2'){
+        var kk = tr.dataset.k, upd2 = {};
+        clearTimeout(saveTimer[kk+el.dataset.c]);          // se guarda ya, junto con la corrección
+        upd2[kk+'/'+el.dataset.c] = el.value;
+        normalizar(kk, upd2, el.dataset.c === 'estado' && el.value === 'Dada de baja');
+        ref.update(upd2).then(function(){ msg('Guardado'); });
+        isTyping = false; render();   // refresca la fila (habilita / bloquea Fecha Baja)
+        return;
+      }
+      if(el.dataset.c === 'propietario') renderCards();
     });
     body.addEventListener('click', function(e){
+      var ck = e.target.getAttribute && e.target.getAttribute('data-clr');
+      if(ck){
+        clearTimeout(saveTimer[ck+'fechaBaja']);
+        if(datos[ck]) datos[ck].fechaBaja = '';
+        ref.child(ck).child('fechaBaja').set('').then(function(){ msg('Fecha de baja quitada'); });
+        isTyping = false; render(); return;
+      }
       var hk = e.target.getAttribute && e.target.getAttribute('data-hist');
       if(hk){ abrirHist(hk); return; }
       var k = e.target.getAttribute && e.target.getAttribute('data-del'); if(!k) return;
@@ -463,7 +581,6 @@
 
     document.getElementById('boyListaProp').innerHTML    = opts(PROPIETARIOS,'');
     document.getElementById('boyListaEstado2').innerHTML = opts(ESTADOS2,'');
-    document.getElementById('boyListaFecha').value = hoy();
 
     document.getElementById('boyBtnLista').addEventListener('click', function(){
       if(!puedeEditar()){ alert('Sin permisos para editar boyas.'); return; }
@@ -540,7 +657,7 @@
       filtrar().forEach(function(k){
         var b = datos[k];
         var hl = hist(b).map(function(r){ return (r.fecha||'')+' '+(r.lugar||''); }).join(' | ');
-        rows.push([b.numero,b.isn,b.propietario,b.estado,b.fechaAlta,b.fechaBaja,b.estado2,b.origen,nRec(b),ultimoLugar(b),hl]);
+        rows.push([b.numero,b.isn,b.propietario,b.estado,b.fechaAlta,(b.estado==='Dada de baja'?b.fechaBaja:''),b.estado2,b.origen,nRec(b),ultimoLugar(b),hl]);
       });
       var r = calcular();
       rows.push([], ['RESUMEN'], ['Viaje María Fátima',r.fatima], ['Viaje María de Gracia',r.gracia],
