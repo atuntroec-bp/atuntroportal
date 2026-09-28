@@ -7407,6 +7407,7 @@ function calcEstadoCable(c){
 }
 function diasUso(dateStr){
   if(!dateStr) return null;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(dateStr))) return null;
   const d = new Date(dateStr+'T00:00:00');
   if(isNaN(d.getTime())) return null;
   return Math.floor((Date.now()-d.getTime())/86400000);
@@ -7769,19 +7770,24 @@ function fechaValida(iso){
 function repararFecha(val){
   const s = String(val||'').trim();
   if(!s) return s;
-  let m = s.match(/^(\d{5,6})-(\d{2})-(\d{2})$/);          // formato aaaa-mm-dd
+  let m = s.match(/^\+?(\d{5,6})-(\d{2})-(\d{2})$/);          // formato aaaa-mm-dd
   if(m){ const y = arreglarAnio(m[1]); if(y){ _fechasReparadas++; return y+'-'+m[2]+'-'+m[3]; } return s; }
   m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{5,6})$/);           // formato dd/mm/aaaa
   if(m){ const y = arreglarAnio(m[3]); if(y){ _fechasReparadas++; return m[1]+'/'+m[2]+'/'+y; } return s; }
   return s;
 }
+// Año de 5-6 dígitos: se prueban quitando 1 o 2 dígitos sobrantes (20025, 92025, 202025...)
+// y se elige el año válido (2000-2099) más cercano al año actual.
 function arreglarAnio(y){
-  for(let i=0;i<y.length;i++){
-    if(y[i] !== '0') continue;
-    const c = y.slice(0,i)+y.slice(i+1);
-    if(c.length===4 && +c>=2000 && +c<=2099) return c;
-  }
-  return null;
+  const cands = new Set();
+  const quitar = (str, n)=>{
+    if(n===0){ if(str.length===4 && +str>=2000 && +str<=2099) cands.add(str); return; }
+    for(let i=0;i<str.length;i++) quitar(str.slice(0,i)+str.slice(i+1), n-1);
+  };
+  quitar(y, y.length-4);
+  if(!cands.size) return null;
+  const hoyY = new Date().getFullYear();
+  return [...cands].sort((a,b)=>Math.abs(+a-hoyY)-Math.abs(+b-hoyY))[0];
 }
 document.addEventListener('focusin', function(e){
   const el = e.target;
