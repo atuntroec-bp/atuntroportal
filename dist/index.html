@@ -7349,7 +7349,7 @@ state.gracia=loadSt('gracia');
 
   <div id="eq-content"></div>
 
-  <div class="footer">ATUNTRO S.A. &mdash; Uso interno &mdash; Control de Equipos v1.0 &mdash; Generado con Claude</div>
+  <div class="footer">ATUNTRO S.A. &mdash; Uso interno &mdash; Control de Equipos <b>v12 · 28-09-2026</b> &mdash; Generado con Claude</div>
 </div></div>
 </div>
 
@@ -11016,6 +11016,159 @@ let sortKey='dias', sortDir=1;
 let estadoFiltro = new Set();
 let nuevosIds = new Set();
 
+/* ── PDF adjuntos ──
+   Los archivos viven en un nodo aparte (atuntro_documentos/pdfs/{id}) para que
+   la lista de documentos siga liviana; en cada fila solo se guarda {name,size,at}. */
+const PDF_PATH = 'atuntro_documentos/pdfs';
+const PDF_MAX_MB = 8;
+let pdfOcupado = new Set();
+let zipEnCurso = false;
+
+function _pdfCSS(){
+  if(document.getElementById('docs-pdf-css')) return;
+  const s=document.createElement('style'); s.id='docs-pdf-css';
+  s.textContent=`
+    .docs-pdf{display:flex;gap:4px;align-items:center;white-space:nowrap}
+    .docs-pdf button{border:1px solid #d0d0cc;background:#fff;border-radius:6px;padding:3px 7px;font-size:12px;cursor:pointer;line-height:1.2}
+    .docs-pdf button:hover{background:#f2f2ef}
+    .docs-pdf .pdf-up{color:#185FA5;border-style:dashed}
+    .docs-pdf .pdf-ok{color:#1D9E75;border-color:#1D9E75}
+    .docs-pdf .pdf-x{color:#C0392B}
+    .docs-pdf .pdf-busy{font-size:12px;color:#7B7B78}`;
+  document.head.appendChild(s);
+}
+function _kb(n){ n=+n||0; return n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB'; }
+function _limpio(s){ return String(s||'').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim(); }
+function _nombrePdf(r){
+  return _limpio([r.barco,r.nom,(r.num&&r.num!=='FALTA')?r.num:''].filter(Boolean).join(' - ')).slice(0,150)+'.pdf';
+}
+
+function celdaPdf(r){
+  if(pdfOcupado.has(r.id)) return `<div class="docs-pdf"><span class="pdf-busy">Procesando…</span></div>`;
+  if(!r.pdf) return `<div class="docs-pdf"><button class="pdf-up" title="Subir PDF" onclick="DOCS.subirPdf('${r.id}')">⬆ Subir</button></div>`;
+  return `<div class="docs-pdf">
+    <button class="pdf-ok" title="Ver ${att(r.pdf.name)} (${_kb(r.pdf.size)})" onclick="DOCS.verPdf('${r.id}')">👁</button>
+    <button title="Descargar" onclick="DOCS.descargarPdf('${r.id}')">⬇</button>
+    <button title="Reemplazar PDF" onclick="DOCS.subirPdf('${r.id}')">⟳</button>
+    <button class="pdf-x" title="Quitar PDF" onclick="DOCS.quitarPdf('${r.id}')">✕</button></div>`;
+}
+
+function subirPdf(id){
+  const r=rows.find(x=>x.id===id); if(!r) return;
+  const db=_getDb();
+  if(!db){ alert('Sin conexión a Firebase: no se puede subir el PDF en este momento.'); return; }
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='application/pdf,.pdf';
+  inp.onchange=()=>{
+    const f=inp.files[0]; if(!f) return;
+    if(f.type!=='application/pdf' && !/\.pdf$/i.test(f.name)){ alert('Solo se aceptan archivos PDF.'); return; }
+    if(f.size>PDF_MAX_MB*1048576){
+      alert('El PDF pesa '+_kb(f.size)+'. El máximo es '+PDF_MAX_MB+' MB.\nComprímalo (o escanee en menor resolución) y vuelva a intentarlo.'); return;
+    }
+    if(r.pdf && !confirm('Este documento ya tiene "'+r.pdf.name+'".\n¿Reemplazarlo por "'+f.name+'"?')) return;
+    const rd=new FileReader();
+    rd.onload=()=>{
+      const b64=String(rd.result).split(',')[1]||'';
+      const meta={name:f.name, size:f.size, at:Date.now()};
+      pdfOcupado.add(id); render();
+      db.ref(PDF_PATH+'/'+id).set(Object.assign({data:b64},meta))
+        .then(()=>{ const rr=rows.find(x=>x.id===id); if(rr){ rr.pdf=meta; guardar(); } })
+        .catch(e=>alert('No se pudo subir el PDF: '+((e&&e.message)||e)))
+        .finally(()=>{ pdfOcupado.delete(id); render(); });
+    };
+    rd.onerror=()=>alert('No se pudo leer el archivo seleccionado.');
+    rd.readAsDataURL(f);
+  };
+  inp.click();
+}
+
+function _traerPdf(id){
+  const db=_getDb();
+  if(!db) return Promise.reject(new Error('Sin conexión a Firebase'));
+  return db.ref(PDF_PATH+'/'+id).once('value').then(s=>{
+    const d=s.val();
+    if(!d||!d.data) throw new Error('El archivo no se encontró en el servidor');
+    const bin=atob(d.data), u=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+    return new Blob([u],{type:'application/pdf'});
+  });
+}
+function _bajarBlob(blob,nombre){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=nombre;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),60000);
+}
+
+function descargarPdf(id){
+  const r=rows.find(x=>x.id===id); if(!r||!r.pdf) return;
+  pdfOcupado.add(id); render();
+  _traerPdf(id).then(b=>_bajarBlob(b,_nombrePdf(r)))
+    .catch(e=>alert('No se pudo descargar: '+((e&&e.message)||e)))
+    .finally(()=>{ pdfOcupado.delete(id); render(); });
+}
+
+function verPdf(id){
+  const r=rows.find(x=>x.id===id); if(!r||!r.pdf) return;
+  const w=window.open('','_blank'); // se abre ya, para que no lo bloquee el navegador
+  if(w){ try{ w.document.write('<p style="font-family:sans-serif;padding:20px">Cargando PDF…</p>'); }catch(e){} }
+  pdfOcupado.add(id); render();
+  _traerPdf(id).then(b=>{
+      const url=URL.createObjectURL(b);
+      if(w) w.location.href=url; else window.open(url,'_blank');
+    })
+    .catch(e=>{ if(w) w.close(); alert('No se pudo abrir: '+((e&&e.message)||e)); })
+    .finally(()=>{ pdfOcupado.delete(id); render(); });
+}
+
+function quitarPdf(id){
+  const r=rows.find(x=>x.id===id); if(!r||!r.pdf) return;
+  if(!confirm('¿Quitar el PDF "'+r.pdf.name+'" de '+(r.nom||'este documento')+'?\nEl documento se mantiene; solo se elimina el archivo.')) return;
+  const db=_getDb();
+  if(!db){ alert('Sin conexión a Firebase: no se puede quitar el PDF ahora.'); return; }
+  pdfOcupado.add(id); render();
+  db.ref(PDF_PATH+'/'+id).remove()
+    .then(()=>{ const rr=rows.find(x=>x.id===id); if(rr){ delete rr.pdf; guardar(); } })
+    .catch(e=>alert('No se pudo quitar el PDF: '+((e&&e.message)||e)))
+    .finally(()=>{ pdfOcupado.delete(id); render(); });
+}
+
+function _jszip(){
+  if(window.JSZip) return Promise.resolve(window.JSZip);
+  return new Promise((ok,ko)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+    s.onload=()=>ok(window.JSZip);
+    s.onerror=()=>ko(new Error('No se pudo cargar el compresor ZIP'));
+    document.head.appendChild(s);
+  });
+}
+
+// Descarga en un ZIP los PDFs de la vista actual (respeta filtros), en carpetas por embarcación
+function descargarTodosPdf(){
+  if(zipEnCurso) return;
+  const list=filtrarTodo(enriquecer()).filter(r=>r.pdf);
+  if(!list.length){ alert('No hay PDFs adjuntos en la vista actual.'); return; }
+  const total=list.reduce((s,r)=>s+(+r.pdf.size||0),0);
+  if(!confirm('Se descargarán '+list.length+' PDF(s) ('+_kb(total)+') de la vista actual en un archivo ZIP.\n¿Continuar?')) return;
+  zipEnCurso=true; render();
+  const fallos=[];
+  _jszip().then(JSZip=>{
+    const z=new JSZip(), usados={};
+    return list.reduce((p,r)=>p.then(()=>_traerPdf(r.id).then(b=>{
+        const carpeta=_limpio(r.barco)||'Sin embarcacion';
+        let n=_nombrePdf(r), k=carpeta+'/'+n;
+        if(usados[k]){ usados[k]++; n=n.replace(/\.pdf$/,' ('+usados[k]+').pdf'); } else usados[k]=1;
+        z.folder(carpeta).file(n,b);
+      }).catch(()=>fallos.push((r.nom||'sin nombre')+' — '+r.barco))
+    ), Promise.resolve()).then(()=>z.generateAsync({type:'blob'}));
+  }).then(zip=>{
+    _bajarBlob(zip,'PDFs_documentos_atuntro_'+new Date().toISOString().slice(0,10)+'.zip');
+    if(fallos.length) alert('No se pudieron incluir '+fallos.length+' archivo(s):\n\n'+fallos.join('\n'));
+  }).catch(e=>alert('No se pudo generar el ZIP: '+((e&&e.message)||e)))
+    .finally(()=>{ zipEnCurso=false; render(); });
+}
+
 function uid(){ return 'd'+Date.now()+Math.floor(Math.random()*1000); }
 
 // ── Firebase ──
@@ -11132,9 +11285,11 @@ function renderKPIs(rs){
        <div class="kpi-num">${cnt[k]}</div><div class="kpi-lab">${EST[k].lab}</div></div>`).join('');
   document.getElementById('chipRow').innerHTML=order.map(k=>
     `<button class="chip${estadoFiltro.has(k)?' on':''}" onclick="DOCS.toggleEstado('${k}')">${EST[k].lab}</button>`).join('')+
-    `<button class="chip" onclick="DOCS.limpiarEstado()">Todos</button>`;
+    `<button class="chip" onclick="DOCS.limpiarEstado()">Todos</button>`+
+    `<button class="chip" onclick="DOCS.descargarTodosPdf()" title="Descarga en ZIP los PDF de la vista actual">${zipEnCurso?'Preparando ZIP…':'⬇ PDFs (ZIP)'}</button>`;
+  const sinPdf=base.filter(r=>!r.pdf).length;
   document.getElementById('subHeader').textContent =
-    base.length+' documentos · '+cnt.venc+' vencidos · '+cnt.pv+' por vencer en 30 días';
+    base.length+' documentos · '+cnt.venc+' vencidos · '+cnt.pv+' por vencer en 30 días · '+sinPdf+' sin PDF';
 }
 function toggleEstado(k){ estadoFiltro.has(k)?estadoFiltro.delete(k):estadoFiltro.add(k); render(); }
 function limpiarEstado(){ estadoFiltro.clear(); render(); }
@@ -11171,7 +11326,7 @@ function renderMonths(rs){
 const COLS=[
   {k:'nom',t:'Documento'},{k:'barco',t:'Embarcación'},{k:'num',t:'N° / Código'},
   {k:'emi',t:'Emisión'},{k:'ven',t:'Vencimiento'},{k:'dias',t:'Días'},
-  {k:'st',t:'Estado'},{k:'val',t:'Valor'},{k:'__',t:'',nosort:true}
+  {k:'st',t:'Estado'},{k:'val',t:'Valor'},{k:'pdf',t:'PDF',nosort:true},{k:'__',t:'',nosort:true}
 ];
 
 function renderTabla(rs){
@@ -11184,7 +11339,7 @@ function renderTabla(rs){
   document.getElementById('thRow').innerHTML=COLS.map(c=>
     `<th class="${c.nosort?'nosort':''}" ${c.nosort?'':`onclick="DOCS.setSort('${c.k}')"`}>${c.t}${sortKey===c.k?(sortDir>0?' ▲':' ▼'):''}</th>`).join('');
   document.getElementById('tblSub').textContent=list.length+' fila(s)';
-  if(!list.length){ document.getElementById('tbody').innerHTML='<tr><td colspan="9" class="empty">Sin resultados con los filtros actuales.</td></tr>'; return; }
+  if(!list.length){ document.getElementById('tbody').innerHTML='<tr><td colspan="10" class="empty">Sin resultados con los filtros actuales.</td></tr>'; return; }
   const opts=listaBarcos();
   document.getElementById('tbody').innerHTML=list.map(r=>`<tr class="${nuevosIds.has(r.id)?'nueva':''}">
     <td class="accent" style="border-left-color:${EST[r.st].color}"><input class="cell-in${r.nom?'':' vacio'}" value="${att(r.nom)}" placeholder="Nombre del documento" onchange="DOCS.setCampo('${r.id}','nom',this.value)"></td>
@@ -11197,6 +11352,7 @@ function renderTabla(rs){
     <td class="dias-cell" style="color:${EST[r.st].color}">${r.dias===null?'—':r.dias}</td>
     <td><span class="pill ${EST[r.st].cls}">${EST[r.st].lab}</span></td>
     <td><input class="cell-in" value="${att(r.val)}" placeholder="—" style="min-width:70px" onchange="DOCS.setCampo('${r.id}','val',this.value)"></td>
+    <td>${celdaPdf(r)}</td>
     <td><button class="del-btn" title="Eliminar documento" onclick="DOCS.eliminar('${r.id}')">✕</button></td>
   </tr>`).join('');
 }
@@ -11214,6 +11370,7 @@ function eliminar(id){
   const r=rows.find(x=>x.id===id); if(!r) return;
   if(!confirm('¿Eliminar el documento "'+(r.nom||'sin nombre')+'" de '+r.barco+'?')) return;
   if(!confirm('Esta acción no se puede deshacer. ¿Confirmar eliminación?')) return;
+  if(r.pdf){ const db=_getDb(); if(db) db.ref(PDF_PATH+'/'+id).remove().catch(()=>{}); }
   rows=rows.filter(x=>x.id!==id);
   nuevosIds.delete(id);
   guardar(); render();
@@ -11252,8 +11409,9 @@ document.addEventListener('keydown',e=>{
 
 /* Datos */
 function restaurarBase(){
-  if(!confirm('¿Restaurar la lista original del Excel?\n\nSe perderán los documentos agregados y las ediciones hechas aquí.')) return;
+  if(!confirm('¿Restaurar la lista original del Excel?\n\nSe perderán los documentos agregados, las ediciones hechas aquí y TODOS los PDF adjuntos.')) return;
   if(!confirm('Esta acción no se puede deshacer. ¿Confirmar?')) return;
+  const db=_getDb(); if(db) db.ref(PDF_PATH).remove().catch(()=>{});
   nuevosIds.clear();
   rows=_seed();
   guardar(); render();
@@ -11275,7 +11433,7 @@ function cargarRespaldo(input){
       const data=JSON.parse(rd.result);
       if(!Array.isArray(data)) throw 0;
       if(!confirm('Se reemplazará la lista actual por '+data.length+' documentos del respaldo. ¿Continuar?')) return;
-      rows=data.map(d=>({id:d.id||uid(),nom:d.nom||'',barco:d.barco||BARCOS_FIJOS[0],num:d.num||'',emi:d.emi||'',ven:d.ven||'',val:d.val||''}));
+      rows=data.map(d=>({id:d.id||uid(),nom:d.nom||'',barco:d.barco||BARCOS_FIJOS[0],num:d.num||'',emi:d.emi||'',ven:d.ven||'',val:d.val||'',...(d.pdf?{pdf:d.pdf}:{})}));
       guardar(); render();
     }catch(e){ alert('El archivo no tiene el formato de respaldo esperado.'); }
     input.value='';
@@ -11285,9 +11443,9 @@ function cargarRespaldo(input){
 
 function exportCSV(){
   const list=filtrarTodo(enriquecer());
-  const head=['Documento','Embarcacion','Numero','Emision','Vencimiento','Dias restantes','Estado','Valor'];
+  const head=['Documento','Embarcacion','Numero','Emision','Vencimiento','Dias restantes','Estado','Valor','PDF adjunto'];
   const lines=[head.join(';')].concat(list.map(r=>[
-    r.nom,r.barco,r.num,r.emi,r.ven,r.dias===null?'':r.dias,EST[r.st].lab,r.val
+    r.nom,r.barco,r.num,r.emi,r.ven,r.dias===null?'':r.dias,EST[r.st].lab,r.val,r.pdf?r.pdf.name:'NO'
   ].map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(';')));
   const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
   const a=document.createElement('a');
@@ -11311,9 +11469,9 @@ function render(){
 
 
 
-function init(){ cargar(); render(); }
+function init(){ _pdfCSS(); cargar(); render(); }
 
-return { abrirModal, cerrarModal, guardarNuevo, exportCSV, respaldar, cargarRespaldo, restaurarBase, render, toggleEstado, limpiarEstado, setSort, setCampo, eliminar, init };
+return { subirPdf, verPdf, descargarPdf, quitarPdf, descargarTodosPdf, abrirModal, cerrarModal, guardarNuevo, exportCSV, respaldar, cargarRespaldo, restaurarBase, render, toggleEstado, limpiarEstado, setSort, setCampo, eliminar, init };
 })();
 
 </script>
