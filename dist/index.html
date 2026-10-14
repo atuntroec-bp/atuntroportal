@@ -11324,9 +11324,9 @@ function renderMonths(rs){
 }
 
 const COLS=[
-  {k:'nom',t:'Documento'},{k:'barco',t:'Embarcación'},{k:'num',t:'N° / Código'},
+  {k:'nom',t:'Documento'},{k:'pdf',t:'PDF',nosort:true},{k:'barco',t:'Embarcación'},{k:'num',t:'N° / Código'},
   {k:'emi',t:'Emisión'},{k:'ven',t:'Vencimiento'},{k:'dias',t:'Días'},
-  {k:'st',t:'Estado'},{k:'val',t:'Valor'},{k:'pdf',t:'PDF',nosort:true},{k:'__',t:'',nosort:true}
+  {k:'st',t:'Estado'},{k:'val',t:'Valor'},{k:'__',t:'',nosort:true}
 ];
 
 function renderTabla(rs){
@@ -11343,6 +11343,7 @@ function renderTabla(rs){
   const opts=listaBarcos();
   document.getElementById('tbody').innerHTML=list.map(r=>`<tr class="${nuevosIds.has(r.id)?'nueva':''}">
     <td class="accent" style="border-left-color:${EST[r.st].color}"><input class="cell-in${r.nom?'':' vacio'}" value="${att(r.nom)}" placeholder="Nombre del documento" onchange="DOCS.setCampo('${r.id}','nom',this.value)"></td>
+    <td>${celdaPdf(r)}</td>
     <td><select class="cell-in" onchange="DOCS.setCampo('${r.id}','barco',this.value)">
         ${opts.map(b=>`<option value="${att(b)}"${b===r.barco?' selected':''}>${esc(b)}</option>`).join('')}
       </select></td>
@@ -11352,7 +11353,6 @@ function renderTabla(rs){
     <td class="dias-cell" style="color:${EST[r.st].color}">${r.dias===null?'—':r.dias}</td>
     <td><span class="pill ${EST[r.st].cls}">${EST[r.st].lab}</span></td>
     <td><input class="cell-in" value="${att(r.val)}" placeholder="—" style="min-width:70px" onchange="DOCS.setCampo('${r.id}','val',this.value)"></td>
-    <td>${celdaPdf(r)}</td>
     <td><button class="del-btn" title="Eliminar documento" onclick="DOCS.eliminar('${r.id}')">✕</button></td>
   </tr>`).join('');
 }
