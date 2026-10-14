@@ -535,6 +535,7 @@
   // Departamentos visibles según el rol logueado (misma lógica que el Gestor).
   var PENDING_ROLE_DEPTS = {
     operaciones:  ['Operativo'],
+    operaciones_master: ['Operativo'],
     contabilidad: ['Contabilidad'],
     admin:        ['Administrativo','Operativo','Contabilidad'],
     master:       ['Administrativo','Operativo','Contabilidad'],

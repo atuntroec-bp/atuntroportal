@@ -456,7 +456,7 @@ function net()      { return NETS[currentVessel]; }
 function sections() { return net().sections; }
 function bucket()   { return data[currentVessel]; }
 function lsKey(v)   { return 'atuntro_plano_red_v1_' + v; }
-function canReset() { return !!activeUser && (activeUser.role === 'master' || activeUser.role === 'admin'); }
+function canReset() { return !!activeUser && (activeUser.role === 'master' || activeUser.role === 'admin' || activeUser.role === 'operaciones_master'); }
 function cellId(secId, pIdx, colOff) { return secId + '_p' + (pIdx + 1) + '_c' + colOff; }
 function statusClass(s) { return STATUS_CLASSES[s] || 'pr-s-sin'; }
 function getEstado(id) {
