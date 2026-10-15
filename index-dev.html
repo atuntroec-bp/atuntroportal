@@ -4947,6 +4947,114 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 <!-- =============== FIN MÓDULO PROYECTOS E INVERSIONES =============== -->
 </div>
 
+<div id="screen-contable" class="screen">
+<!-- ================= MÓDULO DASHBOARD CONTABLE TUCÁN (CONT) v1 ================= -->
+<style>
+#screen-contable.screen.active{display:block;padding:0;min-height:100vh;background:#F0F4F8;overflow-y:auto}
+.cont-wrap{font-family:Arial,Helvetica,sans-serif;color:#1a1a18;max-width:1100px;margin:0 auto;padding:0 0 60px}
+.cont-header{background:linear-gradient(135deg,#1F4E79,#2E75B6);color:#fff;padding:14px 18px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.cont-header-left{display:flex;flex-direction:column;gap:3px}
+.cont-header h2{margin:0;font-size:19px;font-weight:700;letter-spacing:.3px}
+.cont-vessel-sub{font-size:11px;opacity:.8}
+.cont-header-mid{flex:1;display:flex;justify-content:center}
+.cont-vessel-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.cont-vessel-tabs .vtab{padding:6px 15px;border-radius:20px;border:1.5px solid rgba(255,255,255,.35);background:transparent;color:rgba(255,255,255,.8);font-size:12px;font-weight:500;cursor:pointer;transition:.2s;font-family:inherit}
+.cont-vessel-tabs .vtab.active{background:#fff;color:#1F4E79;border-color:#fff;font-weight:700}
+.cont-vessel-tabs .vtab:hover:not(.active){background:rgba(255,255,255,.15)}
+.cont-header-right{display:flex;align-items:center;gap:10px}
+.cont-sync{display:flex;align-items:center;gap:5px;font-size:11px;opacity:.85}
+.cont-sync .sync-dot{width:7px;height:7px;border-radius:50%;background:#999;display:inline-block}
+.cont-sync .sync-dot.ok{background:#4AE3A8}.cont-sync .sync-dot.local{background:#F5B942}.cont-sync .sync-dot.saving{background:#4AE3A8;opacity:.6}
+.cont-back-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:7px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.cont-back-btn:hover{background:rgba(255,255,255,.25)}
+.cont-cortebar{background:#1F4E79;color:#fff;padding:8px 20px;font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;opacity:.95}
+.cont-banner{margin:12px 12px 0;background:#FFF3CD;color:#856404;border:1px solid #ffe69c;border-radius:8px;padding:9px 14px;font-size:12px}
+.cont-link{background:none;border:none;color:#1F4E79;text-decoration:underline;cursor:pointer;font-size:12px;font-family:inherit;padding:0 0 0 6px}
+.cont-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 12px 0}
+.cont-kpis.cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.cont-kpis.cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}.cont-kpi.k-wide{grid-column:span 2}.cont-kpi.no-click{cursor:default}.cont-small{font-size:11px;color:#6b7f93;line-height:1.45}.cont-curso-txt{font-size:11px;color:#8a5700}.cont-pend{color:#8a5700;font-size:18px}.cont-pill.curso{background:#FFF3CD;color:#856404}.cont-row-curso td{background:#FFFCF2}.cont-row-paid td{color:#6c8c6c}.cont-kpis.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cont-kpi{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:12px 14px;cursor:pointer;border-top:3px solid #2E75B6;transition:.15s}
+.cont-kpi:hover{box-shadow:0 2px 10px rgba(31,78,121,.18)}
+.cont-kpi-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#5a7a99}
+.cont-kpi-val{font-size:22px;font-weight:800;color:#1F4E79;font-variant-numeric:tabular-nums;margin:4px 0 2px}
+.cont-kpi-sub{font-size:12px;color:#666}
+.cont-kpi-sub .neg{color:#c00;font-weight:600}.cont-kpi-sub .pos{color:#2e7d32;font-weight:600}.cont-kpi-sub .warn{color:#8a5700;font-weight:600}
+.cont-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 12px 0}
+.cont-card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden}
+.cont-card-h{background:#EAF1F8;padding:10px 16px;font-size:14px;font-weight:700;color:#1F4E79;border-bottom:1px solid #d0dce8}
+.cont-chart{position:relative;height:220px;padding:10px 12px}
+.cont-det{margin:14px 12px 0;scroll-margin-top:80px}
+.cont-det-bar{background:#EAF1F8;padding:10px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;border-bottom:1px solid #d0dce8}
+.cont-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.cont-tab{padding:6px 14px;border-radius:20px;border:1.5px solid #c5d5e6;background:#fff;color:#1F4E79;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s}
+.cont-tab.active{background:#1F4E79;color:#fff;border-color:#1F4E79}
+.cont-det-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.cont-chk{font-size:12px;color:#1F4E79;display:flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap}
+.cont-search{border:1px solid #d0dce8;border-radius:6px;padding:6px 9px;font-size:12px;font-family:inherit;min-width:230px;background:#fff}
+.cont-search:focus{outline:none;border-color:#2E75B6;box-shadow:0 0 0 2px rgba(46,117,182,.12)}
+.cont-tbl-wrap{overflow-x:auto}
+.cont-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.cont-tbl thead tr{background:#F8FAFD}
+.cont-tbl th{padding:8px 10px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#5a7a99;border-bottom:2px solid #d0dce8;white-space:nowrap}
+.cont-tbl td{padding:7px 10px;border-bottom:1px solid #eef2f6;vertical-align:middle;white-space:nowrap}
+.cont-tbl .r{text-align:right;font-variant-numeric:tabular-nums}
+.cont-tbl .strong{font-weight:600}
+.cont-tbl tbody tr:hover td{background:#F8FAFD}
+.cont-tbl tfoot tr{background:#F8FAFD}
+.cont-sub-lbl{font-size:12px;font-weight:700;color:#5a7a99;text-transform:uppercase;letter-spacing:.3px;padding:8px 10px}
+.cont-sub-val{font-size:14px;font-weight:800;color:#1F4E79;padding:8px 10px}
+.cont-pill{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;white-space:nowrap}
+.cont-pill.sri{background:#E6F1FB;color:#0C447C}.cont-pill.iess{background:#E1F5EE;color:#085041}.cont-pill.trip{background:#EAF1F8;color:#1F4E79}.cont-pill.adm{background:#F1EFE8;color:#444441}
+.cont-kpi-val .neg,.cont-tbl .neg{color:#c00}.cont-tbl .pos{color:#2e7d32}
+.cont-chips{display:flex;gap:4px}.cont-chip{padding:4px 11px;border-radius:14px;border:1px solid #c5d5e6;background:#fff;color:#5a7a99;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}.cont-chip.active{background:#EAF1F8;color:#1F4E79;border-color:#2E75B6}
+.cont-pill.ok{background:#d1e7dd;color:#155724}.cont-pill.prox{background:#fff3cd;color:#856404}.cont-pill.venc{background:#fff0f0;color:#c00}
+.cont-no-rows{font-size:12px;color:#aaa;padding:14px 16px;margin:0}
+.cont-empty{text-align:center;padding:50px 20px;color:#5a7a99;background:#fff;border-radius:10px;margin:14px 12px 0;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.cont-empty-ico{font-size:36px}
+.cont-empty h3{color:#1F4E79;margin:8px 0 6px;font-size:17px}
+.cont-empty p{font-size:13px;max-width:460px;margin:0 auto 16px;line-height:1.5}
+.cont-btn{padding:9px 22px;border:2px dashed #2E75B6;background:transparent;border-radius:7px;color:#2E75B6;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.cont-btn:hover{background:#EAF1F8}
+@media(max-width:900px){.cont-kpis,.cont-kpis.cols-4,.cont-kpis.cols-5,.cont-kpis.cols-3{grid-template-columns:repeat(2,minmax(0,1fr))}.cont-charts{grid-template-columns:1fr}}
+@media(max-width:640px){
+  .cont-header{flex-direction:column;align-items:flex-start}
+  .cont-header-mid{width:100%;justify-content:flex-start}
+  .cont-kpis{margin:10px 6px 0;gap:8px}.cont-kpi-val{font-size:18px}
+  .cont-charts,.cont-det{margin:10px 6px 0}
+  .cont-search{min-width:0;width:100%}.cont-det-tools{width:100%}
+}
+</style>
+
+<div class="cont-wrap">
+  <div class="cont-header">
+    <div class="cont-header-left">
+      <h2>📊 Dashboard Contable</h2>
+      <span class="cont-vessel-sub" id="cont-vessel-sub">Ambas embarcaciones</span>
+    </div>
+    <div class="cont-header-mid">
+      <div class="cont-vessel-tabs" id="cont-vessel-tabs">
+        <button class="vtab active" onclick="CONT.switchVessel('todos',this)">Ambos</button>
+        <button class="vtab" onclick="CONT.switchVessel('MF',this)">María Fátima</button>
+        <button class="vtab" onclick="CONT.switchVessel('MG',this)">María de Gracia</button>
+      </div>
+    </div>
+    <div class="cont-header-right">
+      <div class="cont-sync">
+        <span class="sync-dot ok" id="cont-syncDot"></span>
+        <span id="cont-syncLbl">Sincronizado</span>
+      </div>
+      <button class="cont-back-btn" onclick="goBackFromContable()">← Volver</button>
+    </div>
+  </div>
+  <div class="cont-cortebar"><span id="cont-corte">Sin corte</span><span>Fuente: Tucán · Solo lectura</span></div>
+
+  <!-- content rendered by CONT.render() -->
+  <div id="cont-content"></div>
+</div>
+
+<script src="js/contable.js"></script>
+<!-- =============== FIN MÓDULO DASHBOARD CONTABLE =============== -->
+</div>
+
 <div id="screen-boyas" class="screen">
 <!-- ================= MÓDULO CONTROL DE BOYAS (BOY) v2 ================= -->
 <style>
