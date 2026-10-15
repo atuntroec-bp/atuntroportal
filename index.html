@@ -12399,8 +12399,9 @@ function kpis(){
   var impTxt=function(x){ return x.vence?('<span class="warn">Próx. vence '+fmtFecha(x.vence)+'</span>'):'<span class="pos">Al día</span>'; };
   var out=[];
   var factAnio=porBarco(lista('facturacion')).filter(delAnio);
+  var desc=factAnio.filter(function(r){ return r.tipo==='descuento_salinidad'; });
   out.push(kpi('Facturación '+anio, fmtUSD(suma(factAnio)),
-    escH(factAnio.length+' registros'), "CONT.irA('fact','')", 'k-fact'));
+    (desc.length?'Incluye '+fmtUSD(suma(desc))+' en descuentos por salinidad ('+desc.length+' NC)':escH(factAnio.length+' registros')), "CONT.irA('fact','')", 'k-fact'));
   var pend=rolesPendientes();
   var rentSub='Margen '+fmtPct(r.margen)+' · viajes cerrados'+(pend?' · <b>sin roles (pendiente)</b>':' · fact. − costo − rol trip.')+
     (r.enCurso.length?'<br><span class="cont-curso-txt">Excluye en curso: '+r.enCurso.map(function(v){ return 'V'+escH(v.viaje)+' '+escH(v.barco); }).join(', ')+'</span>':'');
@@ -12453,13 +12454,14 @@ function tabla(){
     rows=porBarco(lista('facturacion')).filter(function(r){ return delAnio(r) && coincide(r,['cliente','documento','centro']); })
       .sort(function(a,b){ return String(b.fecha||'').localeCompare(String(a.fecha||'')); });
     head=['<th>Fecha</th>','<th>Cliente</th>','<th>Documento</th>','<th>Viaje</th>','<th>Detalle</th>','<th class="r">Valor</th>'];
-    var tf=0;
+    var tf=0, td=0;
     rows.forEach(function(r){
-      tf+=num(r.valor);
-      body+='<tr><td>'+fmtFecha(r.fecha)+'</td><td class="strong">'+escH(r.cliente)+'</td><td>'+escH(r.documento)+'</td>'+
-        '<td>'+viajeLbl(r)+'</td><td>'+escH(r.detalle||'')+'</td><td class="r strong">'+fmtUSD(r.valor)+'</td></tr>';
+      tf+=num(r.valor); if(r.tipo==='descuento_salinidad') td+=num(r.valor);
+      body+='<tr><td>'+(r.fecha?fmtFecha(r.fecha):escH(r.periodo||'—'))+'</td><td class="strong">'+escH(r.cliente)+'</td><td>'+escH(r.documento)+'</td>'+
+        '<td>'+viajeLbl(r)+'</td><td>'+(r.tipo==='descuento_salinidad'?pill({cls:'prox',txt:'Descuento por salinidad'}):escH(r.detalle||''))+'</td><td class="r strong'+(num(r.valor)<0?' neg':'')+'">'+fmtUSD(r.valor)+'</td></tr>';
     });
-    foot='<tr><td colspan="5" class="cont-sub-lbl">Total facturado '+anioActual()+' ('+rows.length+' facturas)</td><td class="r cont-sub-val">'+fmtUSD(tf)+'</td></tr>';
+    foot=(td?'<tr><td colspan="5" class="cont-sub-lbl">Descuentos por salinidad</td><td class="r cont-sub-val neg">'+fmtUSD(td)+'</td></tr>':'')+
+      '<tr><td colspan="5" class="cont-sub-lbl">Total facturado neto '+anioActual()+'</td><td class="r cont-sub-val">'+fmtUSD(tf)+'</td></tr>';
 
   } else if(tab==='cv'){
     var agg=costosPorViaje();
