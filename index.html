@@ -12425,12 +12425,12 @@ function impuestosPend(ent){
   return t;
 }
 function convenio(ent){
-  var c={saldo:0,cuotas:0,sig:null,total:0};
+  var c={saldo:0,cuotas:0,sig:null,total:0,nombres:{}};
   lista('convenios').forEach(function(r){
     if(r.entidad!==ent) return;
     c.total+=num(r.valor);
     if(String(r.estado||'').toLowerCase().indexOf('pagad')===0) return;
-    c.saldo+=num(r.valor); c.cuotas++;
+    c.saldo+=num(r.valor); c.cuotas++; c.nombres[r.nombre||r.entidad]=1;
     if(!c.sig||r.vence<c.sig.vence) c.sig=r;
   });
   return c;
@@ -12606,7 +12606,8 @@ function kpis(){
         ((x.venc?'<span class="neg">'+fmtUSD(x.venc)+' vencido</span>':'')+
          (x.vence?(x.venc?' · ':'')+'<span class="warn">'+fmtUSD(x.prox)+' vence '+fmtFecha(x.vence)+'</span>':''));
       var cv=convenio(ent);
-      if(cv.cuotas) t+='<br><span class="cont-small">Convenio: saldo '+fmtUSD(cv.saldo)+' ('+cv.cuotas+' cuotas) · próx. '+fmtFecha(cv.sig.vence)+' '+fmtUSD(cv.sig.valor)+'</span>';
+      var nconv=Object.keys(cv.nombres).length;
+      if(cv.cuotas) t+='<br><span class="cont-small">'+(nconv>1?nconv+' convenios':'Convenio')+': saldo '+fmtUSD(cv.saldo)+' ('+cv.cuotas+' cuotas) · próx. '+fmtFecha(cv.sig.vence)+' '+fmtUSD(cv.sig.valor)+'</span>';
       return t;
     };
     out.push(kpi('Impuestos SRI pendientes', sinImp?'<span class="cont-pend">Pendiente</span>':fmtUSD(sri.valor), sinImp?'Falta leer de Tucán':impTxt(sri,'SRI'), "CONT.irA('imp','SRI')"));
@@ -12720,18 +12721,18 @@ function tabla(){
 
   } else if(sub==='CONV'){
     rows=lista('convenios').filter(function(r){ return coincide(r,['entidad','estado']); })
-      .sort(function(a,b){ return String(a.entidad).localeCompare(b.entidad)||num(a.cuota)-num(b.cuota); });
-    head=['<th>Entidad</th>','<th>Cuota</th>','<th>Fecha máxima de pago</th>','<th class="r">Valor</th>','<th>Estado</th>'];
+      .sort(function(a,b){ return String(a.entidad).localeCompare(b.entidad)||String(a.nombre||'').localeCompare(String(b.nombre||''))||num(a.cuota)-num(b.cuota); });
+    head=['<th>Entidad</th>','<th>Convenio</th>','<th>Cuota</th>','<th>Fecha máxima de pago</th>','<th class="r">Valor</th>','<th>Estado</th>'];
     var cs={};
     rows.forEach(function(r){
       var pag=String(r.estado||'').toLowerCase().indexOf('pagad')===0;
-      cs[r.entidad]=cs[r.entidad]||{p:0,f:0}; cs[r.entidad][pag?'p':'f']+=num(r.valor);
+      var ck=r.nombre||r.entidad; cs[ck]=cs[ck]||{p:0,f:0,e:r.entidad}; cs[ck][pag?'p':'f']+=num(r.valor);
       var e=pag?{cls:'ok',txt:'Pagada'}:(diasVencido(r.vence)>0?{cls:'venc',txt:'Vencida'}:{cls:'curso',txt:'Futura'});
-      body+='<tr'+(pag?' class="cont-row-paid"':'')+'><td>'+pill({cls:r.entidad==='SRI'?'sri':'iess',txt:r.entidad})+'</td><td>'+escH(r.cuota)+' de '+escH(r.de)+'</td>'+
+      body+='<tr'+(pag?' class="cont-row-paid"':'')+'><td>'+pill({cls:r.entidad==='SRI'?'sri':'iess',txt:r.entidad})+'</td><td>'+escH(r.nombre||'')+'</td><td>'+escH(r.cuota)+' de '+escH(r.de)+'</td>'+
         '<td>'+fmtFecha(r.vence)+'</td><td class="r strong">'+fmtUSD(r.valor)+'</td><td>'+pill(e)+'</td></tr>';
     });
     Object.keys(cs).forEach(function(k){
-      foot+='<tr><td colspan="3" class="cont-sub-lbl">Convenio '+k+' · pagado '+fmtUSD(cs[k].p)+' · saldo por pagar</td><td class="r cont-sub-val">'+fmtUSD(cs[k].f)+'</td><td></td></tr>';
+      foot+='<tr><td colspan="4" class="cont-sub-lbl">'+escH(cs[k].e)+' · '+escH(k)+' · pagado '+fmtUSD(cs[k].p)+' · saldo por pagar</td><td class="r cont-sub-val">'+fmtUSD(cs[k].f)+'</td><td></td></tr>';
     });
   } else {
     rows=lista('impuestos').filter(function(r){
