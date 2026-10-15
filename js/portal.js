@@ -227,12 +227,13 @@
     }, 100);
   }
   function logout() {
+    if (sessionStorage.getItem('atuntro_view_as')) { viewAsExit(); return; }
     sessionStorage.removeItem('atuntro_session');
     hideAllScreens();
     document.getElementById('screen-login').classList.add('active');
-    document.getElementById('login-name-sel').value = '';
-    loginResetPin();
+    var lp = document.getElementById('login-pass'); if (lp) lp.value = '';
     document.getElementById('login-error').textContent = '';
+    try { if (firebase.auth().currentUser) firebase.auth().signOut(); } catch(e) {}
     window.scrollTo(0,0);
   }
   function goBack() { logout(); }
@@ -322,7 +323,18 @@
   }
 
   // ══════════════════════════════════════════════════════════════════════
-  //  AUTH — Sistema de autenticación
+  //  AUTH — Sistema de autenticación (correo y contraseña, Firebase Auth)
+  // ══════════════════════════════════════════════════════════════════════
+  //  Cada persona entra con su correo y contraseña. El rol NO vive en el
+  //  código: se guarda en Firebase y lo protegen las reglas de la base.
+  //
+  //  Estructura en la base:
+  //    atuntro_portal_auth_v2/users/<id>   = { name, role, email }
+  //    atuntro_portal_auth_v2/emails/<key> = <id>   (key = correo en minúsculas, '.' → ',')
+  //    atuntro_portal_auth_v2/uids/<uid>   = <id>   (enlace cuenta Firebase → usuario)
+  //
+  //  <id> es la misma clave de siempre (ej. ricardo_baida_t), así que los
+  //  módulos y las asignaciones existentes siguen funcionando igual.
   // ══════════════════════════════════════════════════════════════════════
   var FIREBASE_CONFIG = {
     apiKey: "AIzaSyDT0hq4WYxcAxxKvGNmTlH9Ha2lp6fW3y0",
@@ -333,30 +345,31 @@
     messagingSenderId: "390090673795",
     appId: "1:390090673795:web:e01a5d03e5543c8dc415b6"
   };
-  var AUTH_PATH = 'atuntro_portal_auth_v1';
-  var DEFAULT_USERS = {
-    romulo_perez:      { name: 'Rómulo Pérez',      role: 'operaciones_master', pin: '1810' },
-    david_perez:       { name: 'David Pérez',        role: 'operaciones',  pin: '1091' },
-    fernando_farfan:   { name: 'Fernando Farfán',    role: 'operaciones',  pin: '7780' },
-    ricardo_baida_d:   { name: 'Ricardo Baida D.',   role: 'admin',        pin: '6864' },
-    ruben_vera:        { name: 'Rubén Vera',          role: 'admin',        pin: '8473' },
-    katherine_crespin: { name: 'Katherine Crespín',  role: 'contabilidad', pin: '2731' },
-    stefanny_ormeno:   { name: 'Stefanny Ormeño',    role: 'contabilidad', pin: '2613' },
-    ricardo_mendoza:   { name: 'Ricardo Mendoza',    role: 'contabilidad', pin: '1944' },
-    ricardo_baida_t:   { name: 'Ricardo Baida T.',   role: 'master',       pin: '7599' },
+  var AUTH_PATH = 'atuntro_portal_auth_v2';
+  // Solo nombres y roles iniciales (sin claves). Se usan una sola vez, cuando
+  // el dueño del portal entra por primera vez y la lista aún no existe.
+  var SEED_USERS = {
+    romulo_perez:      { name: 'Rómulo Pérez',      role: 'operaciones_master' },
+    david_perez:       { name: 'David Pérez',        role: 'operaciones' },
+    fernando_farfan:   { name: 'Fernando Farfán',    role: 'operaciones' },
+    ricardo_baida_d:   { name: 'Ricardo Baida D.',   role: 'admin' },
+    ruben_vera:        { name: 'Rubén Vera',          role: 'admin' },
+    katherine_crespin: { name: 'Katherine Crespín',  role: 'contabilidad' },
+    stefanny_ormeno:   { name: 'Stefanny Ormeño',    role: 'contabilidad' },
+    ricardo_mendoza:   { name: 'Ricardo Mendoza',    role: 'contabilidad' },
+    ricardo_baida_t:   { name: 'Ricardo Baida T.',   role: 'master' },
   };
-  var AUTH = { db: null, users: JSON.parse(JSON.stringify(DEFAULT_USERS)), ready: false };
+  var AUTH = { db: null, users: {}, ready: false, uid: null };
 
-  // Inicia sesión anónima con Firebase lo antes posible (antes de que cualquier
-  // módulo intente leer/escribir en la base). Las reglas de la base exigen
-  // "auth != null" — esto abre esa puerta de forma automática e invisible,
-  // sin pedir nada a la persona que usa el portal.
-  var _fbAuthReady = (function ensureFirebaseAuth() {
+  function emailKey(email) { return String(email || '').trim().toLowerCase().replace(/\./g, ','); }
+
+  var _fbAuthReady = (function initFirebase() {
     try {
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-      return firebase.auth().signInAnonymously()
+      // La sesión dura lo que dure la pestaña (igual que el login anterior).
+      return firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)
         .then(function(){ return true; })
-        .catch(function(e){ console.warn('Firebase anon auth falló:', e && e.message); return false; });
+        .catch(function(){ return true; });
     } catch(e) {
       return Promise.resolve(false);
     }
@@ -366,22 +379,97 @@
     _fbAuthReady.then(function() {
       try {
         AUTH.db = firebase.database();
-        AUTH.db.ref(AUTH_PATH + '/users').once('value').then(function(snap) {
-          if (snap.exists()) { AUTH.users = snap.val(); }
-          else { AUTH.db.ref(AUTH_PATH + '/users').set(DEFAULT_USERS); }
-          AUTH.ready = true;
-          authCheckSession();
-        }).catch(function() { AUTH.ready = true; authCheckSession(); });
-      } catch(e) { AUTH.ready = true; authCheckSession(); }
+        firebase.auth().onAuthStateChanged(function(user) {
+          if (user) { authResolveUser(user); }
+          else { AUTH.ready = true; AUTH.uid = null; authShowLogin(); }
+        });
+      } catch(e) { AUTH.ready = true; authShowLogin(); }
     });
   }
 
+  // Compatibilidad: algunos módulos llaman esto para reingresar al dashboard.
   function authCheckSession() {
     var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
     if (sess && AUTH.users[sess.id]) {
       authSetDashboard(sess.id, AUTH.users[sess.id]);
       enterDashboard(AUTH.users[sess.id].role);
     }
+  }
+
+  function authShowLogin() {
+    sessionStorage.removeItem('atuntro_session');
+    hideAllScreens();
+    document.getElementById('screen-login').classList.add('active');
+    loginSetBusy(false);
+  }
+
+  // Busca a qué usuario del portal corresponde la cuenta que acaba de entrar.
+  function authResolveUser(user) {
+    loginSetBusy(true);
+    if (!user.emailVerified) {
+      user.sendEmailVerification().catch(function(){});
+      firebase.auth().signOut();
+      showLoginError('Te enviamos un correo para verificar tu cuenta. Ábrelo y vuelve a entrar.');
+      return;
+    }
+    var db = AUTH.db;
+    db.ref(AUTH_PATH + '/uids/' + user.uid).once('value').then(function(snap) {
+      if (snap.exists()) return snap.val();
+      // Primer ingreso: enlazar por correo.
+      return db.ref(AUTH_PATH + '/emails/' + emailKey(user.email)).once('value').then(function(es) {
+        if (es.exists()) {
+          var id = es.val();
+          return db.ref(AUTH_PATH + '/uids/' + user.uid).set(id).then(function(){ return id; });
+        }
+        return authTrySeed(user);
+      });
+    }).then(function(id) {
+      if (!id) throw { code: 'no-autorizado' };
+      AUTH.uid = user.uid;
+      return db.ref(AUTH_PATH + '/users').once('value').then(function(us) {
+        AUTH.users = us.val() || {};
+        if (!AUTH.users[id]) throw { code: 'no-autorizado' };
+        return id;
+      });
+    }).then(function(id) {
+      AUTH.ready = true;
+      AUTH.realId = id;
+      // Modo "Ver como": solo un master puede ver el portal con el rol de otra persona.
+      var viewAs = sessionStorage.getItem('atuntro_view_as');
+      if (viewAs && viewAs !== id && AUTH.users[id].role === 'master' && AUTH.users[viewAs]) {
+        id = viewAs;
+        viewAsActivate(AUTH.users[viewAs]);
+      } else if (viewAs) {
+        viewAsClearStorage();
+      }
+      sessionStorage.setItem('atuntro_session', JSON.stringify({ id: id }));
+      var u = AUTH.users[id];
+      authSetDashboard(id, u);
+      enterDashboard(u.role);
+      startPendingLiveSync();
+      db.ref(AUTH_PATH + '/users').on('value', function(s){ if (s.val()) AUTH.users = s.val(); });
+    }).catch(function(e) {
+      firebase.auth().signOut();
+      if (e && e.code === 'no-autorizado') showLoginError('Este correo no tiene acceso al portal. Pide al administrador que te agregue.');
+      else showLoginError('No se pudo verificar tu acceso. Revisa tu conexión e intenta de nuevo.');
+    });
+  }
+
+  // Solo el dueño del portal (definido en las reglas de Firebase) puede crear la
+  // lista inicial de usuarios. Para cualquier otra cuenta esto falla y se rechaza.
+  function authTrySeed(user) {
+    var db = AUTH.db;
+    return db.ref(AUTH_PATH + '/users').once('value').then(function(us) {
+      if (us.exists()) return null;
+      var masterId = Object.keys(SEED_USERS).filter(function(k){ return SEED_USERS[k].role === 'master'; })[0];
+      var seed = JSON.parse(JSON.stringify(SEED_USERS));
+      seed[masterId].email = String(user.email).toLowerCase();
+      var upd = {};
+      upd['users'] = seed;
+      upd['emails/' + emailKey(user.email)] = masterId;
+      upd['uids/' + user.uid] = masterId;
+      return db.ref(AUTH_PATH).update(upd).then(function(){ return masterId; });
+    }).catch(function(){ return null; });
   }
 
   function authSetDashboard(userId, user) {
@@ -396,44 +484,53 @@
     if (adminBtn) adminBtn.style.display = user.role === 'master' ? 'inline-flex' : 'none';
   }
 
-  // ── PIN login ────────────────────────────────────────────────────────────────
-  var _loginPin = '';
-  function loginResetPin() {
-    _loginPin = '';
-    loginUpdateDots();
-    document.getElementById('login-error').textContent = '';
-  }
-  function loginPinKey(d) {
-    if (_loginPin.length >= 4) return;
-    _loginPin += d;
-    loginUpdateDots();
-    if (_loginPin.length === 4) setTimeout(loginSubmit, 120);
-  }
-  function loginPinDel() { _loginPin = _loginPin.slice(0,-1); loginUpdateDots(); }
-  function loginUpdateDots() {
-    for (var i=0;i<4;i++) document.getElementById('pd'+i).classList.toggle('filled', i < _loginPin.length);
+  // ── Login con correo y contraseña ───────────────────────────────────────────
+  function loginSetBusy(b) {
+    var btn = document.getElementById('login-btn');
+    if (btn) { btn.disabled = b; btn.textContent = b ? 'Entrando…' : 'Entrar'; }
   }
   function loginSubmit() {
-    var userId = document.getElementById('login-name-sel').value;
-    if (!userId) { showLoginError('Selecciona tu nombre primero.'); return; }
-    if (_loginPin.length < 4) { showLoginError('Ingresa tu PIN de 4 dígitos.'); return; }
-    var user = AUTH.users[userId];
-    if (!user) { showLoginError('Usuario no encontrado.'); loginResetPin(); return; }
-    if (_loginPin !== user.pin) { showLoginError('PIN incorrecto. Intenta de nuevo.'); shakePin(); loginResetPin(); return; }
-    sessionStorage.setItem('atuntro_session', JSON.stringify({ id: userId }));
-    authSetDashboard(userId, user);
-    enterDashboard(user.role);
+    var email = (document.getElementById('login-email').value || '').trim();
+    var pass = document.getElementById('login-pass').value || '';
+    if (!email) { showLoginError('Ingresa tu correo.'); return; }
+    if (!pass) { showLoginError('Ingresa tu contraseña.'); return; }
+    showLoginError('');
+    loginSetBusy(true);
+    firebase.auth().signInWithEmailAndPassword(email, pass).catch(function(e) {
+      loginSetBusy(false);
+      var c = e && e.code;
+      if (c === 'auth/invalid-email') showLoginError('El correo no es válido.');
+      else if (c === 'auth/too-many-requests') showLoginError('Demasiados intentos. Espera unos minutos o restablece tu contraseña.');
+      else if (c === 'auth/network-request-failed') showLoginError('Sin conexión. Revisa tu internet.');
+      else showLoginError('Correo o contraseña incorrectos.');
+      shakePin();
+    });
   }
+  function loginForgot() {
+    var email = (document.getElementById('login-email').value || '').trim();
+    if (!email) { showLoginError('Escribe tu correo y vuelve a tocar "¿Olvidaste tu contraseña?".'); return; }
+    firebase.auth().sendPasswordResetEmail(email).then(function() {
+      showLoginError('');
+      var el = document.getElementById('login-error');
+      el.innerHTML = '<span style="color:#4CAF50">Si el correo tiene cuenta, te llegará un enlace para crear una contraseña nueva.</span>';
+    }).catch(function(e) {
+      if (e && e.code === 'auth/invalid-email') showLoginError('El correo no es válido.');
+      else showLoginError('Si el correo tiene cuenta, te llegará un enlace para crear una contraseña nueva.');
+    });
+  }
+  function loginKey(ev) { if (ev && ev.key === 'Enter') loginSubmit(); }
   function showLoginError(msg) { document.getElementById('login-error').textContent = msg; }
   function shakePin() {
-    var d = document.querySelector('.pin-display');
+    var d = document.querySelector('.login-form');
+    if (!d) return;
     d.classList.remove('login-shake'); void d.offsetWidth; d.classList.add('login-shake');
     setTimeout(function(){ d.classList.remove('login-shake'); }, 400);
   }
 
-  // ── Admin panel ──────────────────────────────────────────────────────────────
+  // ── Admin panel (solo master) ──────────────────────────────────────────────
   function openAdminPanel() { renderAdminUsers(); document.getElementById('admin-overlay').classList.add('show'); }
   function closeAdminPanel() { document.getElementById('admin-overlay').classList.remove('show'); }
+  function escAttr(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
   function renderAdminUsers() {
     var container = document.getElementById('admin-users-list');
     var roleOptions = ['operaciones','operaciones_master','admin','contabilidad','master'];
@@ -441,92 +538,163 @@
     Object.entries(AUTH.users).forEach(function(entry) {
       var uid = entry[0], u = entry[1];
       html += '<div class="user-row" id="urow-' + uid + '">' +
-        '<span class="user-row-name">' + u.name + '</span>' +
+        '<span class="user-row-name">' + escAttr(u.name) + '</span>' +
         '<select class="user-role-sel" data-uid="' + uid + '" onchange="adminChangeRoleEl(this)">' +
           roleOptions.map(function(r){ return '<option value="' + r + '"' + (r===u.role?' selected':'') + '>' + (ROLE_LABELS[r]||r) + '</option>'; }).join('') +
         '</select>' +
-        '<span class="user-pin-badge" id="pin-badge-' + uid + '">' + u.pin + '</span>' +
-        '<button class="btn-reset-pin" data-uid="' + uid + '" onclick="adminResetPinEl(this)">&#x1F504; Reset</button>' +
+        '<input class="admin-input user-email-in" type="email" placeholder="correo@empresa.com" data-uid="' + uid + '" value="' + escAttr(u.email) + '" onchange="adminSetEmailEl(this)">' +
+        '<button class="btn-reset-pin" data-uid="' + uid + '" onclick="adminInviteEl(this)" title="Crea la cuenta si no existe y envía el enlace para poner contraseña">&#x2709; Enviar acceso</button>' +
+        (uid !== AUTH.realId ? '<button class="btn-reset-pin" data-uid="' + uid + '" onclick="viewAsStart(this.getAttribute(\'data-uid\'))" title="Ver el portal como esta persona (solo lectura)">&#x1F441; Ver como</button>' : '') +
         '</div>';
     });
     container.innerHTML = html;
   }
   function adminChangeRoleEl(sel) { adminChangeRole(sel.getAttribute('data-uid'), sel.value); }
-  function adminResetPinEl(btn) { adminResetPin(btn.getAttribute('data-uid')); }
+  function adminSetEmailEl(inp) { adminSetEmail(inp.getAttribute('data-uid'), inp.value); }
+  function adminInviteEl(btn) { adminInvite(btn.getAttribute('data-uid')); }
   function adminChangeRole(uid, newRole) {
     AUTH.users[uid].role = newRole;
-    if (AUTH.db) AUTH.db.ref(AUTH_PATH+'/users/'+uid+'/role').set(newRole);
-    showAdminMsg('✓ Rol actualizado', true);
+    if (AUTH.db) AUTH.db.ref(AUTH_PATH+'/users/'+uid+'/role').set(newRole)
+      .then(function(){ showAdminMsg('✓ Rol actualizado', true); })
+      .catch(function(){ showAdminMsg('⚠ No se pudo guardar el rol.', false); });
   }
-  function adminResetPin(uid) {
-    var newPin = String(Math.floor(1000 + Math.random() * 9000));
-    AUTH.users[uid].pin = newPin;
-    if (AUTH.db) AUTH.db.ref(AUTH_PATH+'/users/'+uid+'/pin').set(newPin);
-    var badge = document.getElementById('pin-badge-' + uid);
-    if (badge) { badge.textContent = newPin; badge.style.color = '#4CAF50'; setTimeout(function(){ badge.style.color=''; }, 2000); }
-    showAdminMsg('✓ PIN reseteado: ' + newPin, true);
+  // Cambiar o borrar el correo también corta el acceso de la cuenta anterior.
+  function adminSetEmail(uid, email) {
+    email = String(email || '').trim().toLowerCase();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAdminMsg('⚠ Correo no válido.', false); return Promise.resolve(false); }
+    var db = AUTH.db, oldEmail = (AUTH.users[uid] && AUTH.users[uid].email) || '';
+    if (email === oldEmail) return Promise.resolve(true);
+    if (email) {
+      var owner = Object.keys(AUTH.users).filter(function(k){ return k !== uid && AUTH.users[k].email === email; })[0];
+      if (owner) { showAdminMsg('⚠ Ese correo ya lo usa ' + AUTH.users[owner].name + '.', false); return Promise.resolve(false); }
+    }
+    return db.ref(AUTH_PATH + '/uids').once('value').then(function(snap) {
+      var upd = {};
+      upd['users/' + uid + '/email'] = email || null;
+      if (oldEmail) upd['emails/' + emailKey(oldEmail)] = null;
+      if (email) upd['emails/' + emailKey(email)] = uid;
+      var me = AUTH.uid;
+      snap.forEach(function(c){ if (c.val() === uid && c.key !== me) upd['uids/' + c.key] = null; });
+      return db.ref(AUTH_PATH).update(upd);
+    }).then(function() {
+      AUTH.users[uid].email = email || undefined;
+      showAdminMsg(email ? '✓ Correo guardado. Toca "Enviar acceso" para invitarlo.' : '✓ Correo quitado: ya no podrá entrar.', true);
+      return true;
+    }).catch(function() { showAdminMsg('⚠ No se pudo guardar el correo.', false); return false; });
+  }
+  // Crea la cuenta (con una clave aleatoria que nadie ve) y envía el enlace
+  // para que la persona defina su propia contraseña.
+  function adminInvite(uid) {
+    var u = AUTH.users[uid];
+    if (!u || !u.email) { showAdminMsg('⚠ Primero escribe el correo de ' + (u ? u.name : 'este usuario') + '.', false); return; }
+    var email = u.email;
+    var tmp = Array.from(crypto.getRandomValues(new Uint32Array(4))).map(function(n){ return n.toString(36); }).join('') + 'Aa1!';
+    var sec;
+    try { sec = firebase.app('atuntro-invite'); } catch(e) { sec = firebase.initializeApp(FIREBASE_CONFIG, 'atuntro-invite'); }
+    sec.auth().createUserWithEmailAndPassword(email, tmp).then(function(){
+      return sec.auth().signOut();
+    }).catch(function(e){
+      if (!(e && e.code === 'auth/email-already-in-use')) throw e;
+    }).then(function(){
+      return firebase.auth().sendPasswordResetEmail(email);
+    }).then(function(){
+      showAdminMsg('✓ Enlace enviado a ' + email, true);
+    }).catch(function(e){
+      showAdminMsg('⚠ No se pudo enviar: ' + ((e && e.code) || 'error'), false);
+    });
   }
   function adminAddUser() {
     var nameEl = document.getElementById('admin-new-name');
     var roleEl = document.getElementById('admin-new-role');
-    var name = nameEl.value.trim(), role = roleEl.value;
+    var emailEl = document.getElementById('admin-new-email');
+    var name = nameEl.value.trim(), role = roleEl.value, email = emailEl ? emailEl.value.trim().toLowerCase() : '';
     if (!name) { showAdminMsg('⚠ Ingresa el nombre del usuario.', false); return; }
-    var uid = name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/_+$/,'');
+    if (!email) { showAdminMsg('⚠ Ingresa el correo del usuario.', false); return; }
+    var uid = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
     if (AUTH.users[uid]) { showAdminMsg('⚠ Ya existe un usuario con ese nombre.', false); return; }
-    var pin = String(Math.floor(1000 + Math.random() * 9000));
-    var newUser = { name:name, role:role, pin:pin };
+    var newUser = { name:name, role:role };
     AUTH.users[uid] = newUser;
-    if (AUTH.db) AUTH.db.ref(AUTH_PATH+'/users/'+uid).set(newUser);
-    var sel = document.getElementById('login-name-sel');
-    var opt = document.createElement('option'); opt.value = uid; opt.textContent = name; sel.appendChild(opt);
-    nameEl.value = '';
-    renderAdminUsers();
-    showAdminMsg('✓ ' + name + ' agregado — PIN: ' + pin, true);
+    AUTH.db.ref(AUTH_PATH+'/users/'+uid).set(newUser).then(function(){
+      return adminSetEmail(uid, email);
+    }).then(function(ok){
+      nameEl.value = ''; if (emailEl) emailEl.value = '';
+      renderAdminUsers();
+      if (ok) adminInvite(uid);
+    }).catch(function(){ showAdminMsg('⚠ No se pudo agregar.', false); });
   }
   function showAdminMsg(msg, ok) {
     var el = document.getElementById('admin-msg'); if (!el) return;
     el.textContent = msg; el.className = 'admin-msg ' + (ok ? 'ok' : 'err');
-    setTimeout(function(){ el.textContent=''; el.className='admin-msg'; }, 3500);
+    setTimeout(function(){ el.textContent=''; el.className='admin-msg'; }, 4500);
   }
 
-  // ── Change PIN ────────────────────────────────────────────────────────────────
-  var _chpinStep = 'first', _chpinFirst = '', _chpinCurrent = '';
-  function openChangePinModal() {
-    _chpinStep='first'; _chpinFirst=''; _chpinCurrent='';
-    updateChpinDots();
-    document.getElementById('chpin-sub').textContent = 'Ingresa tu nuevo PIN (4 dígitos)';
-    document.getElementById('chpin-msg').textContent = '';
-    document.getElementById('chpin-overlay').classList.add('show');
+  // ── Ver como (solo master) ─────────────────────────────────────────────────
+  //  Recarga el portal mostrando lo que ve otra persona según su rol.
+  //  Es de SOLO LECTURA: se bloquea toda escritura a Firebase y, al salir, se
+  //  restaura el caché local del navegador tal como estaba.
+  var VIEW_KEY = 'atuntro_view_as', VIEW_LS_BACKUP = 'atuntro_view_ls_backup';
+  function viewAsStart(uid) {
+    if (!AUTH.users[uid]) return;
+    if (!AUTH.realId || AUTH.users[AUTH.realId].role !== 'master') return;
+    try {
+      var bk = {};
+      for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); bk[k] = localStorage.getItem(k); }
+      sessionStorage.setItem(VIEW_LS_BACKUP, JSON.stringify(bk));
+    } catch(e) {}
+    sessionStorage.setItem(VIEW_KEY, uid);
+    location.reload();
   }
-  function closeChangePinModal() { document.getElementById('chpin-overlay').classList.remove('show'); }
-  function chpinKey(d) {
-    if (_chpinCurrent.length >= 4) return;
-    _chpinCurrent += d; updateChpinDots();
-    if (_chpinCurrent.length === 4) setTimeout(chpinNext, 120);
-  }
-  function chpinDel() { _chpinCurrent = _chpinCurrent.slice(0,-1); updateChpinDots(); }
-  function updateChpinDots() {
-    document.querySelectorAll('.chpin-dot').forEach(function(d,i){ d.classList.toggle('filled', i < _chpinCurrent.length); });
-  }
-  function chpinNext() {
-    if (_chpinStep === 'first') {
-      _chpinFirst = _chpinCurrent; _chpinCurrent = ''; _chpinStep = 'confirm';
-      updateChpinDots();
-      document.getElementById('chpin-sub').textContent = 'Confirma tu nuevo PIN';
-    } else {
-      if (_chpinCurrent !== _chpinFirst) {
-        document.getElementById('chpin-msg').innerHTML = '<span class="chpin-err">⚠ Los PINs no coinciden. Intenta de nuevo.</span>';
-        _chpinStep='first'; _chpinFirst=''; _chpinCurrent=''; updateChpinDots();
-        document.getElementById('chpin-sub').textContent = 'Ingresa tu nuevo PIN (4 dígitos)';
-        return;
+  function viewAsClearStorage() {
+    sessionStorage.removeItem(VIEW_KEY);
+    try {
+      var bk = JSON.parse(sessionStorage.getItem(VIEW_LS_BACKUP) || 'null');
+      if (bk) {
+        localStorage.clear();
+        Object.keys(bk).forEach(function(k){ localStorage.setItem(k, bk[k]); });
       }
-      var sess = JSON.parse(sessionStorage.getItem('atuntro_session')||'null');
-      if (!sess) { closeChangePinModal(); return; }
-      AUTH.users[sess.id].pin = _chpinFirst;
-      if (AUTH.db) AUTH.db.ref(AUTH_PATH+'/users/'+sess.id+'/pin').set(_chpinFirst);
-      document.getElementById('chpin-msg').innerHTML = '<span class="chpin-ok">✓ PIN cambiado exitosamente.</span>';
-      setTimeout(closeChangePinModal, 1500);
-    }
+    } catch(e) {}
+    sessionStorage.removeItem(VIEW_LS_BACKUP);
+  }
+  function viewAsExit() {
+    viewAsClearStorage();
+    location.reload();
+  }
+  var _viewToastAt = 0;
+  function viewAsToast() {
+    if (Date.now() - _viewToastAt < 4000) return;
+    _viewToastAt = Date.now();
+    var t = document.createElement('div');
+    t.textContent = '👁 Modo vista: los cambios no se guardan.';
+    t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#E8A33D;color:#1a1a1a;padding:10px 16px;border-radius:10px;font-weight:700;font-size:13px;z-index:100000;box-shadow:0 4px 14px rgba(0,0,0,.3)';
+    document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 3000);
+  }
+  function viewAsActivate(target) {
+    // Bloquear escrituras a la base mientras se está en modo vista.
+    try {
+      var R = firebase.database.Reference.prototype;
+      ['set','update','remove','push','transaction','setWithPriority','setPriority'].forEach(function(m) {
+        if (typeof R[m] !== 'function') return;
+        R[m] = function() { viewAsToast(); return Promise.reject(new Error('Modo vista: solo lectura')); };
+      });
+    } catch(e) {}
+    var bar = document.createElement('div');
+    bar.id = 'view-as-bar';
+    bar.innerHTML = '👁 Viendo como <b>' + escAttr(target.name) + '</b> (' + escAttr(ROLE_LABELS[target.role] || target.role) +
+      ') · solo lectura <button onclick="viewAsExit()" style="margin-left:12px;background:#1a1a1a;color:#fff;border:0;border-radius:6px;padding:5px 12px;font-weight:700;cursor:pointer">Salir</button>';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#E8A33D;color:#1a1a1a;text-align:center;padding:8px 12px;font-size:13px;z-index:99999;box-shadow:0 2px 10px rgba(0,0,0,.25)';
+    document.body.appendChild(bar);
+    document.body.style.paddingTop = '40px';
+  }
+
+  // ── Cambiar contraseña (envía enlace al correo del usuario) ─────────────────
+  function openChangePinModal() {
+    var u = firebase.auth().currentUser;
+    if (!u || !u.email) return;
+    if (!confirm('Te enviaremos a ' + u.email + ' un enlace para cambiar tu contraseña. ¿Continuar?')) return;
+    firebase.auth().sendPasswordResetEmail(u.email)
+      .then(function(){ alert('Listo. Revisa tu correo.'); })
+      .catch(function(){ alert('No se pudo enviar el correo. Intenta de nuevo.'); });
   }
 
   // ══ WIDGET TAREAS PENDIENTES ═══════════════════════════════════════════════
@@ -667,9 +835,12 @@
 
   // Refresco en vivo de la campana y el widget cuando cambian las tareas en Firebase,
   // aunque no se haya abierto el Gestor.
+  var _pendingSyncOn = false;
   function startPendingLiveSync() {
+    if (_pendingSyncOn) return;
     try {
       if (typeof firebase === 'undefined' || !firebase.apps.length) { setTimeout(startPendingLiveSync, 1500); return; }
+      _pendingSyncOn = true;
       firebase.database().ref('atuntro_gestor/data').on('value', function(){
         // solo re-render si el dashboard está visible
         var dash = document.getElementById('screen-dashboard');
@@ -677,6 +848,6 @@
       });
     } catch(e) { setTimeout(startPendingLiveSync, 1500); }
   }
-  startPendingLiveSync();
+  // startPendingLiveSync() se inicia al completar el login (authResolveUser).
 
   document.addEventListener('DOMContentLoaded', authInit);

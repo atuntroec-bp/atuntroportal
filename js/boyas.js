@@ -133,6 +133,14 @@
   BOY.init = function(){
     if(ref) return;
     var d = db(); if(!d){ setTimeout(BOY.init, 800); return; }
+    // Las reglas exigen sesión iniciada: esperar al login antes de escuchar.
+    if(!autenticado()){
+      if(!BOY._esperaAuth){
+        BOY._esperaAuth = true;
+        try{ firebase.auth().onAuthStateChanged(function(u){ if(u && !ref){ setTimeout(BOY.init, 1500); } }); }catch(e){ setTimeout(BOY.init, 1500); }
+      }
+      return;
+    }
     ref = d.ref('atuntro_boyas/data');
     ref.on('value', function(snap){
       var v = snap.val();
@@ -140,6 +148,9 @@
       datos = v;
       limpiezaInicial();
       if(!isTyping) render();
+    }, function(){
+      // Permiso rechazado (p.ej. el acceso aún se está enlazando): reintentar.
+      ref = null; setTimeout(BOY.init, 3000);
     });
   };
   function sembrar(){

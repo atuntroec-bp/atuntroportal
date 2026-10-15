@@ -683,6 +683,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)}
     }
     .login-shake { animation: login-shake .35s ease; }
+    .login-form .login-select { text-align: left; cursor: text; margin-bottom: 10px; }
+    .login-btn { width: 100%; padding: 12px; font-size: 14px; font-weight: 700; margin: 4px 0 8px; }
+    .login-btn:disabled { opacity: .6; cursor: wait; }
+    .login-forgot { background: none; border: 0; color: var(--blue-light); font-size: 12px; cursor: pointer; margin-bottom: 10px; text-decoration: underline; }
+    .user-email-in { min-width: 180px; flex: 1; }
 
     /* ─── DASHBOARD HEADER USER INFO ────────────────────────────── */
     .user-pill {
@@ -883,6 +888,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)}
     }
     .login-shake { animation: login-shake .35s ease; }
+    .login-form .login-select { text-align: left; cursor: text; margin-bottom: 10px; }
+    .login-btn { width: 100%; padding: 12px; font-size: 14px; font-weight: 700; margin: 4px 0 8px; }
+    .login-btn:disabled { opacity: .6; cursor: wait; }
+    .login-forgot { background: none; border: 0; color: var(--blue-light); font-size: 12px; cursor: pointer; margin-bottom: 10px; text-decoration: underline; }
+    .user-email-in { min-width: 180px; flex: 1; }
 
     /* ─── DASHBOARD HEADER USER INFO ────────────────────────────── */
     .user-pill {
@@ -2999,40 +3009,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     <div class="login-brand">ATÚN TROPICAL</div>
     <div class="login-sub">Portal Operativo</div>
 
-    <select class="login-select" id="login-name-sel" onchange="loginResetPin()">
-      <option value="">— Selecciona tu nombre —</option>
-      <option value="romulo_perez">Rómulo Pérez</option>
-      <option value="david_perez">David Pérez</option>
-      <option value="fernando_farfan">Fernando Farfán</option>
-      <option value="ricardo_baida_d">Ricardo Baida D.</option>
-      <option value="ruben_vera">Rubén Vera</option>
-      <option value="katherine_crespin">Katherine Crespín</option>
-      <option value="stefanny_ormeno">Stefanny Ormeño</option>
-      <option value="ricardo_mendoza">Ricardo Mendoza</option>
-      <option value="ricardo_baida_t">Ricardo Baida T.</option>
-    </select>
-
-    <div class="pin-label">Ingresa tu PIN</div>
-    <div class="pin-display">
-      <div class="pin-dot" id="pd0"></div>
-      <div class="pin-dot" id="pd1"></div>
-      <div class="pin-dot" id="pd2"></div>
-      <div class="pin-dot" id="pd3"></div>
-    </div>
-
-    <div class="pin-pad">
-      <button class="pin-key" onclick="loginPinKey('1')">1</button>
-      <button class="pin-key" onclick="loginPinKey('2')">2</button>
-      <button class="pin-key" onclick="loginPinKey('3')">3</button>
-      <button class="pin-key" onclick="loginPinKey('4')">4</button>
-      <button class="pin-key" onclick="loginPinKey('5')">5</button>
-      <button class="pin-key" onclick="loginPinKey('6')">6</button>
-      <button class="pin-key" onclick="loginPinKey('7')">7</button>
-      <button class="pin-key" onclick="loginPinKey('8')">8</button>
-      <button class="pin-key" onclick="loginPinKey('9')">9</button>
-      <button class="pin-key pin-del" onclick="loginPinDel()">⌫</button>
-      <button class="pin-key" onclick="loginPinKey('0')">0</button>
-      <button class="pin-key pin-enter" onclick="loginSubmit()">↵</button>
+    <div class="login-form">
+      <input class="login-select" id="login-email" type="email" autocomplete="username" placeholder="Correo" onkeydown="loginKey(event)">
+      <input class="login-select" id="login-pass" type="password" autocomplete="current-password" placeholder="Contraseña" onkeydown="loginKey(event)">
+      <button class="pin-key pin-enter login-btn" id="login-btn" onclick="loginSubmit()">Entrar</button>
+      <button class="login-forgot" type="button" onclick="loginForgot()">¿Olvidaste tu contraseña?</button>
     </div>
 
     <div class="login-error" id="login-error"></div>
@@ -3078,7 +3059,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
           <span class="user-pill-name" id="user-pill-name">—</span>
         </div>
         <button class="btn-admin-users" id="btn-admin-users" onclick="openAdminPanel()" style="display:none" title="Gestionar usuarios">👥 Usuarios</button>
-        <button class="btn-logout" onclick="openChangePinModal()" title="Cambiar PIN" style="font-size:13px; padding:7px 10px">🔐</button>
+        <button class="btn-logout" onclick="openChangePinModal()" title="Cambiar contraseña" style="font-size:13px; padding:7px 10px">🔐</button>
         <button class="btn-logout" onclick="logout()" title="Cerrar sesión">Salir ↩</button>
       </div>
     </div>
@@ -3126,7 +3107,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
   <div class="gestor-nav-bar">
     <div style="display:flex;align-items:center;gap:8px">
       <button class="btn-back" onclick="goBackFromGestor()">&#8592; Volver</button>
-      <button class="btn-back" onclick="openChangePinModal()" title="Cambiar PIN" style="padding:7px 10px">🔐</button>
+      <button class="btn-back" onclick="openChangePinModal()" title="Cambiar contraseña" style="padding:7px 10px">🔐</button>
     </div>
     <span class="nav-title">Portal Operativo &#183; Gestor de Tareas</span>
   </div>
@@ -3468,8 +3449,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
         <div class="admin-section-title">Agregar nuevo usuario</div>
         <div class="admin-add-row">
           <input class="admin-input" id="admin-new-name" placeholder="Nombre completo" type="text">
+          <input class="admin-input" id="admin-new-email" placeholder="Correo" type="email">
           <select class="admin-role-sel" id="admin-new-role">
             <option value="operaciones">Operaciones</option>
+            <option value="operaciones_master">Operaciones Master</option>
             <option value="admin">Administración</option>
             <option value="contabilidad">Contabilidad</option>
             <option value="master">Master</option>
@@ -3479,36 +3462,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
         <div class="admin-msg" id="admin-msg"></div>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- ══════════ CHANGE PIN MODAL ══════════ -->
-<div class="chpin-overlay" id="chpin-overlay" onclick="if(event.target===this)closeChangePinModal()">
-  <div class="chpin-card">
-    <div class="chpin-title">🔐 Cambiar PIN</div>
-    <div class="chpin-sub" id="chpin-sub">Ingresa tu nuevo PIN (4 dígitos)</div>
-    <div class="chpin-dots">
-      <div class="pin-dot chpin-dot" id="cp0"></div>
-      <div class="pin-dot chpin-dot" id="cp1"></div>
-      <div class="pin-dot chpin-dot" id="cp2"></div>
-      <div class="pin-dot chpin-dot" id="cp3"></div>
-    </div>
-    <div class="chpin-pad">
-      <button class="pin-key" onclick="chpinKey('1')">1</button>
-      <button class="pin-key" onclick="chpinKey('2')">2</button>
-      <button class="pin-key" onclick="chpinKey('3')">3</button>
-      <button class="pin-key" onclick="chpinKey('4')">4</button>
-      <button class="pin-key" onclick="chpinKey('5')">5</button>
-      <button class="pin-key" onclick="chpinKey('6')">6</button>
-      <button class="pin-key" onclick="chpinKey('7')">7</button>
-      <button class="pin-key" onclick="chpinKey('8')">8</button>
-      <button class="pin-key" onclick="chpinKey('9')">9</button>
-      <button class="pin-key pin-del" onclick="chpinDel()">⌫</button>
-      <button class="pin-key" onclick="chpinKey('0')">0</button>
-      <button class="pin-key pin-enter" onclick="chpinNext()">↵</button>
-    </div>
-    <div class="chpin-msg" id="chpin-msg"></div>
-    <button class="chpin-close" onclick="closeChangePinModal()">Cancelar</button>
   </div>
 </div>
 
