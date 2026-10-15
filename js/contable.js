@@ -167,9 +167,9 @@ function initFirebase(){
 /* CxP y CxC: en la vista global todo; en cada barco, solo las facturas con centro de costo de ese barco */
 function totalesSaldo(){
   var t={cxp:0,cxpVenc:0,cxc:0,cxcVenc:0,cxpN:0,cxcN:0,cxpEmp:0};
-  porBarco(lista('cxp')).forEach(function(r){ var s=num(r.saldo); t.cxp+=s; t.cxpN+=num(r.facturas||1); if(atrasado(r)) t.cxpVenc+=s; if(!r.barco) t.cxpEmp+=s; });
+  lista('cxp').forEach(function(r){ var s=num(r.saldo); t.cxp+=s; t.cxpN+=num(r.facturas||1); if(atrasado(r)) t.cxpVenc+=s; });
   porBarco(lista('cxc')).forEach(function(r){ var s=num(r.saldo); t.cxc+=s; t.cxcN+=num(r.facturas||1); if(atrasado(r)) t.cxcVenc+=s; });
-  t.cxpMas1=antiguedad('cxp')[3];
+  var sv=barco; barco='todos'; t.cxpMas1=antiguedad('cxp')[3]; barco=sv;
   return t;
 }
 function impuestosPend(ent){
@@ -287,16 +287,16 @@ function render(){
     html+='<div class="cont-banner">Datos de muestra (ficticios). Se reemplazan solos al cargar el primer corte real de Tucán. '+
       '<button class="cont-link" onclick="CONT.salirMuestra()">Quitar muestra</button></div>';
   }
-  html+='<div class="cont-kpis '+'cols-4'+'">'+kpis()+'</div>';
+  html+='<div class="cont-kpis '+(barco==='todos'?'cols-4':'cols-5')+'">'+kpis()+'</div>';
 
   html+='<div class="cont-charts">'+
     '<div class="cont-card"><div class="cont-card-h">Costo por viaje</div><div class="cont-chart"><canvas id="cont-ch-viajes" role="img" aria-label="Costo total por viaje"></canvas></div></div>'+
-    '<div class="cont-card"><div class="cont-card-h">Antigüedad de saldos <span class="cont-small">(desde la emisión'+(barco==='todos'?' · empresa':' · '+escH(BARCO_LABEL[barco]))+')</span></div><div class="cont-chart"><canvas id="cont-ch-aging" role="img" aria-label="Antigüedad de saldos por pagar y por cobrar"></canvas></div></div>'+
+    '<div class="cont-card"><div class="cont-card-h">Antigüedad de saldos <span class="cont-small">(desde la emisión'+(barco==='todos'?' · empresa':' · por cobrar '+escH(BARCO_LABEL[barco]))+')</span></div><div class="cont-chart"><canvas id="cont-ch-aging" role="img" aria-label="Antigüedad de saldos por pagar y por cobrar"></canvas></div></div>'+
   '</div>';
 
   html+='<div class="cont-card cont-det">'+
     '<div class="cont-det-bar">'+
-      '<div class="cont-tabs">'+TABS.filter(function(x){ return !(x.id==='imp'&&barco!=='todos'); }).map(function(x){
+      '<div class="cont-tabs">'+TABS.filter(function(x){ return barco==='todos' || (x.id!=='imp'&&x.id!=='cxp'); }).map(function(x){
         return '<button class="cont-tab'+(x.id===tab?' active':'')+'" onclick="CONT.setTab(\''+x.id+'\')">'+x.label+'</button>';
       }).join('')+'</div>'+
       '<div class="cont-det-tools">'+
@@ -357,9 +357,8 @@ function kpis(){
     out.push(kpiUltimo(barco,'Costo último viaje'));
     out.push(kpi('Rol tripulación '+anio, rolVal(rt), rolSub('Ver detalle por viaje →'), "CONT.irA('rol','tripulacion')", 'k-rol'));
   }
-  out.push(kpi('Cuentas por pagar', fmtUSD(t.cxp),
-    escH(t.cxpN+' facturas')+(t.cxpMas1?' · <span class="neg">'+fmtUSD(t.cxpMas1)+' con más de 1 año</span>':(t.cxpVenc?' · <span class="neg">'+fmtUSD(t.cxpVenc)+' +30 días</span>':''))+
-    (barco==='todos'&&t.cxpEmp?'<br><span class="cont-small">'+fmtUSD(t.cxpEmp)+' sin barco (administrativo, viajes anteriores, por asignar, activos)</span>':''), "CONT.irA('cxp','')"));
+  if(barco==='todos') out.push(kpi('Cuentas por pagar', fmtUSD(t.cxp),
+    escH(t.cxpN+' facturas')+(t.cxpMas1?' · <span class="neg">'+fmtUSD(t.cxpMas1)+' con más de 1 año</span>':(t.cxpVenc?' · <span class="neg">'+fmtUSD(t.cxpVenc)+' +30 días</span>':'')), "CONT.irA('cxp','')"));
   out.push(kpi('Cuentas por cobrar', fmtUSD(t.cxc),
     escH(t.cxcN+' facturas')+(t.cxc<=0.005?'':(t.cxcVenc?' · <span class="neg">'+fmtUSD(t.cxcVenc)+' +30 días</span>':' · <span class="pos">ninguna con más de 30 días</span>')), "CONT.irA('cxc','')"));
   if(barco==='todos'){
@@ -569,7 +568,7 @@ function drawCharts(){
     charts.a=new Chart(c2,{ type:'bar', data:{ labels:['Hasta 30 días','31-90 días','91-365 días','Más de 1 año'], datasets:[
       { label:'Por pagar', data:antiguedad('cxp').map(Math.round), backgroundColor:'#D85A30', borderRadius:4 },
       { label:'Por cobrar', data:antiguedad('cxc').map(Math.round), backgroundColor:'#7F77DD', borderRadius:4 },
-    ] }, options:opt() });
+    ].filter(function(d){ return barco==='todos' || d.label==='Por cobrar'; }) }, options:opt() });
   }
 }
 
@@ -633,7 +632,7 @@ function init(user){
 }
 function switchVessel(b,btn){
   barco=b;
-  if(b!=='todos'&&tab==='imp'){ tab='fact'; sub=''; }
+  if(b!=='todos'&&(tab==='imp'||tab==='cxp')){ tab='fact'; sub=''; soloVencido=false; }
   document.querySelectorAll('#cont-vessel-tabs .vtab').forEach(function(x){ x.classList.remove('active'); });
   if(btn) btn.classList.add('active');
   render();
