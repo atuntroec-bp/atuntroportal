@@ -164,12 +164,12 @@ function initFirebase(){
 
 /* ── cálculos ── */
 /* CxP y CxC son de la empresa: no se filtran por barco */
+/* CxP y CxC: en la vista global todo; en cada barco, solo las facturas con centro de costo de ese barco */
 function totalesSaldo(){
-  var t={cxp:0,cxpVenc:0,cxc:0,cxcVenc:0,cxpN:0,cxcN:0};
-  lista('cxp').forEach(function(r){ var s=num(r.saldo); t.cxp+=s; t.cxpN+=num(r.facturas||1); if(atrasado(r)) t.cxpVenc+=s; });
-  lista('cxc').forEach(function(r){ var s=num(r.saldo); t.cxc+=s; t.cxcN+=num(r.facturas||1); if(atrasado(r)) t.cxcVenc+=s; });
-  var ag=data&&data.meta&&data.meta.cxp_antiguedad;
-  if(ag&&ag.length===4) t.cxpMas1=num(ag[3]);
+  var t={cxp:0,cxpVenc:0,cxc:0,cxcVenc:0,cxpN:0,cxcN:0,cxpEmp:0};
+  porBarco(lista('cxp')).forEach(function(r){ var s=num(r.saldo); t.cxp+=s; t.cxpN+=num(r.facturas||1); if(atrasado(r)) t.cxpVenc+=s; if(!r.barco) t.cxpEmp+=s; });
+  porBarco(lista('cxc')).forEach(function(r){ var s=num(r.saldo); t.cxc+=s; t.cxcN+=num(r.facturas||1); if(atrasado(r)) t.cxcVenc+=s; });
+  t.cxpMas1=antiguedad('cxp')[3];
   return t;
 }
 function impuestosPend(ent){
@@ -254,11 +254,10 @@ function ultimoViaje(b){
 /* Antigüedad por fecha de emisión: hasta 30 días, 31-90, 91-365, más de 1 año.
    Para CxP agrupado por proveedor se usa el desglose por factura que trae meta.cxp_antiguedad */
 function antiguedad(k){
-  var ag=data&&data.meta&&data.meta[k+'_antiguedad'];
-  if(ag&&ag.length===4) return ag.map(num);
   var bk=[0,0,0,0];
-  lista(k).forEach(function(r){
+  porBarco(lista(k)).forEach(function(r){
     var s=num(r.saldo); if(s<=0) return;
+    if(r.ag&&r.ag.length===4){ for(var i=0;i<4;i++) bk[i]+=num(r.ag[i]); return; }
     var d=diasDesde(r.fecha);
     if(d<=30) bk[0]+=s; else if(d<=90) bk[1]+=s; else if(d<=365) bk[2]+=s; else bk[3]+=s;
   });
@@ -292,12 +291,12 @@ function render(){
 
   html+='<div class="cont-charts">'+
     '<div class="cont-card"><div class="cont-card-h">Costo por viaje</div><div class="cont-chart"><canvas id="cont-ch-viajes" role="img" aria-label="Costo total por viaje"></canvas></div></div>'+
-    '<div class="cont-card"><div class="cont-card-h">Antigüedad de saldos <span class="cont-small">(desde la emisión · empresa)</span></div><div class="cont-chart"><canvas id="cont-ch-aging" role="img" aria-label="Antigüedad de saldos por pagar y por cobrar"></canvas></div></div>'+
+    '<div class="cont-card"><div class="cont-card-h">Antigüedad de saldos <span class="cont-small">(desde la emisión'+(barco==='todos'?' · empresa':' · '+escH(BARCO_LABEL[barco]))+')</span></div><div class="cont-chart"><canvas id="cont-ch-aging" role="img" aria-label="Antigüedad de saldos por pagar y por cobrar"></canvas></div></div>'+
   '</div>';
 
   html+='<div class="cont-card cont-det">'+
     '<div class="cont-det-bar">'+
-      '<div class="cont-tabs">'+TABS.map(function(x){
+      '<div class="cont-tabs">'+TABS.filter(function(x){ return !(x.id==='imp'&&barco!=='todos'); }).map(function(x){
         return '<button class="cont-tab'+(x.id===tab?' active':'')+'" onclick="CONT.setTab(\''+x.id+'\')">'+x.label+'</button>';
       }).join('')+'</div>'+
       '<div class="cont-det-tools">'+
@@ -358,12 +357,11 @@ function kpis(){
     out.push(kpiUltimo(barco,'Costo último viaje'));
     out.push(kpi('Rol tripulación '+anio, rolVal(rt), rolSub('Ver detalle por viaje →'), "CONT.irA('rol','tripulacion')", 'k-rol'));
   }
-  if(barco==='todos'){
-    out.push(kpi('Cuentas por pagar', fmtUSD(t.cxp),
-      escH(t.cxpN+' facturas')+(t.cxpMas1?' · <span class="neg">'+fmtUSD(t.cxpMas1)+' con más de 1 año</span>':(t.cxpVenc?' · <span class="neg">'+fmtUSD(t.cxpVenc)+' +30 días</span>':'')), "CONT.irA('cxp','')"));
-    out.push(kpi('Cuentas por cobrar', fmtUSD(t.cxc),
-      escH(t.cxcN+' facturas')+(t.cxcVenc?' · <span class="neg">'+fmtUSD(t.cxcVenc)+' +30 días</span>':' · <span class="pos">ninguna con más de 30 días</span>'), "CONT.irA('cxc','')"));
-  }
+  out.push(kpi('Cuentas por pagar', fmtUSD(t.cxp),
+    escH(t.cxpN+' facturas')+(t.cxpMas1?' · <span class="neg">'+fmtUSD(t.cxpMas1)+' con más de 1 año</span>':(t.cxpVenc?' · <span class="neg">'+fmtUSD(t.cxpVenc)+' +30 días</span>':''))+
+    (barco==='todos'&&t.cxpEmp?'<br><span class="cont-small">'+fmtUSD(t.cxpEmp)+' sin barco (administrativo, viajes anteriores, por asignar, activos)</span>':''), "CONT.irA('cxp','')"));
+  out.push(kpi('Cuentas por cobrar', fmtUSD(t.cxc),
+    escH(t.cxcN+' facturas')+(t.cxc<=0.005?'':(t.cxcVenc?' · <span class="neg">'+fmtUSD(t.cxcVenc)+' +30 días</span>':' · <span class="pos">ninguna con más de 30 días</span>')), "CONT.irA('cxc','')"));
   if(barco==='todos'){
     var sinImp=lista('impuestos').length===0;
     impTxt=function(x,ent){
@@ -389,7 +387,20 @@ function tabla(){
   var rows, head, body='', foot='';
   if(tab==='cxp'||tab==='cxc'){
     var quien = tab==='cxp'?'proveedor':'cliente';
-    rows=lista(tab).filter(function(r){
+    var base=porBarco(lista(tab));
+    if(tab==='cxp' && barco==='todos'){
+      var mg={};
+      base.forEach(function(r){
+        var k=r.proveedor;
+        if(!mg[k]) mg[k]={proveedor:k,facturas:0,saldo:0,fecha:r.fecha,fecha_ultima:r.fecha_ultima,valor:null,ag:[0,0,0,0],centro:''};
+        var m=mg[k]; m.facturas+=num(r.facturas||1); m.saldo+=num(r.saldo);
+        if(r.fecha&&(!m.fecha||r.fecha<m.fecha)) m.fecha=r.fecha;
+        if(r.fecha_ultima&&(!m.fecha_ultima||r.fecha_ultima>m.fecha_ultima)) m.fecha_ultima=r.fecha_ultima;
+        (r.ag||[0,0,0,0]).forEach(function(v,i){ m.ag[i]+=num(v); });
+      });
+      base=Object.keys(mg).map(function(k){ return mg[k]; });
+    }
+    rows=base.filter(function(r){
       return coincide(r,[quien,'documento','centro']) && (!soloVencido||atrasado(r));
     }).sort(function(a,b){ return num(b.saldo)-num(a.saldo); });
     var agrupado=rows.some(function(r){ return r.facturas>1; });
@@ -398,7 +409,8 @@ function tabla(){
     var sv=0, ss=0, nf=0;
     rows.forEach(function(r){
       sv+=num(r.valor); ss+=num(r.saldo); nf+=num(r.facturas||1);
-      body+='<tr><td class="strong">'+escH(r[quien])+'</td><td>'+escH(r.facturas>1?r.facturas+' facturas':(r.documento||'—'))+'</td>'+
+      body+='<tr><td class="strong">'+escH(r[quien])+'</td><td>'+escH(r.facturas>1?r.facturas+' facturas':(r.documento||'—'))+
+        (r.viaje!=null&&barco==='todos'?' <span class="cont-small">· V'+escH(r.viaje)+' '+escH(r.barco||'')+'</span>':(r.viaje!=null?' <span class="cont-small">· Viaje '+escH(r.viaje)+'</span>':''))+'</td>'+
         '<td>'+fmtFecha(r.fecha)+'</td><td>'+fmtFecha(r.facturas>1?r.fecha_ultima:r.vence)+'</td>'+
         '<td class="r">'+(r.valor!=null?fmtUSD(r.valor):'—')+'</td>'+
         '<td class="r strong">'+fmtUSD(r.saldo)+'</td><td>'+pill(estadoSaldo(r))+'</td></tr>';
@@ -621,6 +633,7 @@ function init(user){
 }
 function switchVessel(b,btn){
   barco=b;
+  if(b!=='todos'&&tab==='imp'){ tab='fact'; sub=''; }
   document.querySelectorAll('#cont-vessel-tabs .vtab').forEach(function(x){ x.classList.remove('active'); });
   if(btn) btn.classList.add('active');
   render();
