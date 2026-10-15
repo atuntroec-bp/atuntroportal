@@ -24,7 +24,7 @@ const TABS = [
 ];
 const SUBFILTROS = {
   rol: [ { id: '', label: 'Todos' }, { id: 'tripulacion', label: 'Tripulación' }, { id: 'admin', label: 'Administrativo' } ],
-  imp: [ { id: '', label: 'Todos' }, { id: 'SRI', label: 'SRI' }, { id: 'IESS', label: 'IESS' } ],
+  imp: [ { id: '', label: 'Todos' }, { id: 'SRI', label: 'SRI' }, { id: 'IESS', label: 'IESS' }, { id: 'CONV', label: 'Convenios de pago' } ],
 };
 const ROL_LABEL = { tripulacion: 'Tripulación', admin: 'Administrativo' };
 
@@ -173,14 +173,29 @@ function totalesSaldo(){
   return t;
 }
 function impuestosPend(ent){
-  var t={valor:0,vence:null};
+  var t={valor:0,vence:null,venc:0,prox:0};
   lista('impuestos').forEach(function(r){
     if(entidadDe(r)!==ent) return;
     if(String(r.estado||'').toLowerCase()==='pagado') return;
     t.valor+=num(r.valor);
+    if(r.vence && diasVencido(r.vence)>0){ t.venc+=num(r.valor); return; }
     if(r.vence&&(!t.vence||r.vence<t.vence)) t.vence=r.vence;
   });
+  if(t.vence) lista('impuestos').forEach(function(r){
+    if(entidadDe(r)===ent && r.vence===t.vence && String(r.estado||'').toLowerCase()!=='pagado') t.prox+=num(r.valor);
+  });
   return t;
+}
+function convenio(ent){
+  var c={saldo:0,cuotas:0,sig:null,total:0};
+  lista('convenios').forEach(function(r){
+    if(r.entidad!==ent) return;
+    c.total+=num(r.valor);
+    if(String(r.estado||'').toLowerCase().indexOf('pagad')===0) return;
+    c.saldo+=num(r.valor); c.cuotas++;
+    if(!c.sig||r.vence<c.sig.vence) c.sig=r;
+  });
+  return c;
 }
 function rolesDe(tipo,b){
   if(tipo==='admin') return lista('roles').filter(function(r){ return r.tipo==='admin' && delAnio(r); });
@@ -351,8 +366,16 @@ function kpis(){
   }
   if(barco==='todos'){
     var sinImp=lista('impuestos').length===0;
-    out.push(kpi('Impuestos SRI pendientes', sinImp?'<span class="cont-pend">Pendiente</span>':fmtUSD(sri.valor), sinImp?'Falta leer de Tucán':impTxt(sri), "CONT.irA('imp','SRI')"));
-    out.push(kpi('Obligaciones IESS pendientes', sinImp?'<span class="cont-pend">Pendiente</span>':fmtUSD(iess.valor), sinImp?'Falta leer de Tucán':impTxt(iess), "CONT.irA('imp','IESS')"));
+    impTxt=function(x,ent){
+      var t=x.valor<=0.005?'<span class="pos">Al día</span>':
+        ((x.venc?'<span class="neg">'+fmtUSD(x.venc)+' vencido</span>':'')+
+         (x.vence?(x.venc?' · ':'')+'<span class="warn">'+fmtUSD(x.prox)+' vence '+fmtFecha(x.vence)+'</span>':''));
+      var cv=convenio(ent);
+      if(cv.cuotas) t+='<br><span class="cont-small">Convenio: saldo '+fmtUSD(cv.saldo)+' ('+cv.cuotas+' cuotas) · próx. '+fmtFecha(cv.sig.vence)+' '+fmtUSD(cv.sig.valor)+'</span>';
+      return t;
+    };
+    out.push(kpi('Impuestos SRI pendientes', sinImp?'<span class="cont-pend">Pendiente</span>':fmtUSD(sri.valor), sinImp?'Falta leer de Tucán':impTxt(sri,'SRI'), "CONT.irA('imp','SRI')"));
+    out.push(kpi('Obligaciones IESS pendientes', sinImp?'<span class="cont-pend">Pendiente</span>':fmtUSD(iess.valor), sinImp?'Falta leer de Tucán':impTxt(iess,'IESS'), "CONT.irA('imp','IESS')"));
   }
   return out.join('');
 }
@@ -446,24 +469,46 @@ function tabla(){
     }
     foot+='<tr><td colspan="6" class="cont-sub-lbl">Total '+(sub?ROL_LABEL[sub].toLowerCase()+' ':'')+anioActual()+'</td><td class="r cont-sub-val">'+fmtUSD(tr)+'</td></tr>';
 
+  } else if(sub==='CONV'){
+    rows=lista('convenios').filter(function(r){ return coincide(r,['entidad','estado']); })
+      .sort(function(a,b){ return String(a.entidad).localeCompare(b.entidad)||num(a.cuota)-num(b.cuota); });
+    head=['<th>Entidad</th>','<th>Cuota</th>','<th>Fecha máxima de pago</th>','<th class="r">Valor</th>','<th>Estado</th>'];
+    var cs={};
+    rows.forEach(function(r){
+      var pag=String(r.estado||'').toLowerCase().indexOf('pagad')===0;
+      cs[r.entidad]=cs[r.entidad]||{p:0,f:0}; cs[r.entidad][pag?'p':'f']+=num(r.valor);
+      var e=pag?{cls:'ok',txt:'Pagada'}:(diasVencido(r.vence)>0?{cls:'venc',txt:'Vencida'}:{cls:'curso',txt:'Futura'});
+      body+='<tr'+(pag?' class="cont-row-paid"':'')+'><td>'+pill({cls:r.entidad==='SRI'?'sri':'iess',txt:r.entidad})+'</td><td>'+escH(r.cuota)+' de '+escH(r.de)+'</td>'+
+        '<td>'+fmtFecha(r.vence)+'</td><td class="r strong">'+fmtUSD(r.valor)+'</td><td>'+pill(e)+'</td></tr>';
+    });
+    Object.keys(cs).forEach(function(k){
+      foot+='<tr><td colspan="3" class="cont-sub-lbl">Convenio '+k+' · pagado '+fmtUSD(cs[k].p)+' · saldo por pagar</td><td class="r cont-sub-val">'+fmtUSD(cs[k].f)+'</td><td></td></tr>';
+    });
   } else {
     rows=lista('impuestos').filter(function(r){
-      return (!sub||entidadDe(r)===sub) && coincide(r,['periodo','tipo','estado']);
-    }).sort(function(a,b){ return String(b.vence||'').localeCompare(String(a.vence||'')); });
-    head=['<th>Entidad</th>','<th>Período</th>','<th>Obligación</th>','<th class="r">Base</th>','<th class="r">Valor</th>','<th>Vence</th>','<th>Estado</th>'];
-    var pend={SRI:0,IESS:0};
+      return (!sub||entidadDe(r)===sub) && coincide(r,['periodo','tipo','estado','detalle']);
+    }).sort(function(a,b){
+      var pa=String(a.estado||'').toLowerCase()==='pagado', pb=String(b.estado||'').toLowerCase()==='pagado';
+      if(pa!==pb) return pa?1:-1;
+      if(!pa) return String(a.vence||'').localeCompare(String(b.vence||''));
+      return String(b.periodo||'').localeCompare(String(a.periodo||''))||String(a.entidad).localeCompare(String(b.entidad));
+    });
+    head=['<th>Entidad</th>','<th>Período</th>','<th>Obligación</th>','<th>Detalle</th>','<th class="r">Valor</th>','<th>Vence</th>','<th>Estado</th>'];
+    var pend={SRI:0,IESS:0}, pag={SRI:0,IESS:0}, ce=0;
     rows.forEach(function(r){
       var ent=entidadDe(r);
       var pagado=String(r.estado||'').toLowerCase()==='pagado';
-      if(!pagado) pend[ent]+=num(r.valor);
+      if(pagado){ pag[ent]+=num(r.valor); ce+=num(r.costo_empresa); } else pend[ent]+=num(r.valor);
       var d=diasVencido(r.vence);
-      var e=pagado?{cls:'ok',txt:'Pagado'}:(d>0?{cls:'venc',txt:'Vencido'}:{cls:'prox',txt:'Pendiente'});
-      body+='<tr><td>'+pill({cls:ent==='SRI'?'sri':'iess',txt:ent})+'</td><td>'+fmtPeriodo(r.periodo)+'</td><td class="strong">'+escH(r.tipo)+'</td>'+
-        '<td class="r">'+(r.base!=null?fmtUSD(r.base):'—')+'</td><td class="r strong">'+fmtUSD(r.valor)+'</td>'+
-        '<td>'+fmtFecha(r.vence)+'</td><td>'+pill(e)+'</td></tr>';
+      var e=pagado?{cls:'ok',txt:'Pagado'}:(d>0?{cls:'venc',txt:'Vencido '+d+'d'}:{cls:'prox',txt:'Pendiente'});
+      body+='<tr'+(pagado?' class="cont-row-paid"':'')+'><td>'+pill({cls:ent==='SRI'?'sri':'iess',txt:ent})+'</td><td>'+fmtPeriodo(r.periodo)+'</td><td class="strong">'+escH(r.tipo)+'</td>'+
+        '<td class="cont-small" style="white-space:normal;min-width:180px">'+escH(r.detalle||'')+'</td><td class="r strong">'+fmtUSD(r.valor)+'</td>'+
+        '<td>'+(r.vence?fmtFecha(r.vence):'—')+'</td><td>'+pill(e)+'</td></tr>';
     });
     ['SRI','IESS'].forEach(function(k){
-      if(!sub||sub===k) foot+='<tr><td colspan="4" class="cont-sub-lbl">Pendiente de pago '+k+'</td><td class="r cont-sub-val">'+fmtUSD(pend[k])+'</td><td colspan="2"></td></tr>';
+      if(sub&&sub!==k) return;
+      foot+='<tr><td colspan="4" class="cont-sub-lbl">Pendiente de pago '+k+'</td><td class="r cont-sub-val'+(pend[k]?' neg':'')+'">'+fmtUSD(pend[k])+'</td><td colspan="2"></td></tr>';
+      foot+='<tr><td colspan="4" class="cont-sub-lbl">Pagado '+k+' en '+anioActual()+(k==='IESS'&&ce?' <span class="cont-small">(costo para la empresa '+fmtUSD(ce)+')</span>':'')+'</td><td class="r cont-sub-val">'+fmtUSD(pag[k])+'</td><td colspan="2"></td></tr>';
     });
   }
   if(!rows.length && tab==='rol' && rolesPendientes()) return '<p class="cont-no-rows">Roles pendientes: la nómina en Tucán no tiene centro de costo. Se cargarán desde la carpeta de contabilidad.</p>';
