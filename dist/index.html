@@ -12013,6 +12013,7 @@ return {
 .cont-banner{margin:12px 12px 0;background:#FFF3CD;color:#856404;border:1px solid #ffe69c;border-radius:8px;padding:9px 14px;font-size:12px}
 .cont-link{background:none;border:none;color:#1F4E79;text-decoration:underline;cursor:pointer;font-size:12px;font-family:inherit;padding:0 0 0 6px}
 .cont-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 12px 0}
+.cont-kpis.cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}.cont-kpis.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .cont-kpi{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:12px 14px;cursor:pointer;border-top:3px solid #2E75B6;transition:.15s}
 .cont-kpi:hover{box-shadow:0 2px 10px rgba(31,78,121,.18)}
 .cont-kpi-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#5a7a99}
@@ -12044,6 +12045,9 @@ return {
 .cont-sub-lbl{font-size:12px;font-weight:700;color:#5a7a99;text-transform:uppercase;letter-spacing:.3px;padding:8px 10px}
 .cont-sub-val{font-size:14px;font-weight:800;color:#1F4E79;padding:8px 10px}
 .cont-pill{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;white-space:nowrap}
+.cont-pill.sri{background:#E6F1FB;color:#0C447C}.cont-pill.iess{background:#E1F5EE;color:#085041}.cont-pill.trip{background:#EAF1F8;color:#1F4E79}.cont-pill.adm{background:#F1EFE8;color:#444441}
+.cont-kpi-val .neg,.cont-tbl .neg{color:#c00}.cont-tbl .pos{color:#2e7d32}
+.cont-chips{display:flex;gap:4px}.cont-chip{padding:4px 11px;border-radius:14px;border:1px solid #c5d5e6;background:#fff;color:#5a7a99;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}.cont-chip.active{background:#EAF1F8;color:#1F4E79;border-color:#2E75B6}
 .cont-pill.ok{background:#d1e7dd;color:#155724}.cont-pill.prox{background:#fff3cd;color:#856404}.cont-pill.venc{background:#fff0f0;color:#c00}
 .cont-no-rows{font-size:12px;color:#aaa;padding:14px 16px;margin:0}
 .cont-empty{text-align:center;padding:50px 20px;color:#5a7a99;background:#fff;border-radius:10px;margin:14px 12px 0;box-shadow:0 1px 4px rgba(0,0,0,.08)}
@@ -12052,7 +12056,8 @@ return {
 .cont-empty p{font-size:13px;max-width:460px;margin:0 auto 16px;line-height:1.5}
 .cont-btn{padding:9px 22px;border:2px dashed #2E75B6;background:transparent;border-radius:7px;color:#2E75B6;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
 .cont-btn:hover{background:#EAF1F8}
-@media(max-width:900px){.cont-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.cont-charts{grid-template-columns:1fr}}
+@media(max-width:1000px){.cont-kpis.cols-5{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){.cont-kpis,.cont-kpis.cols-5,.cont-kpis.cols-3{grid-template-columns:repeat(2,minmax(0,1fr))}.cont-charts{grid-template-columns:1fr}}
 @media(max-width:640px){
   .cont-header{flex-direction:column;align-items:flex-start}
   .cont-header-mid{width:100%;justify-content:flex-start}
@@ -12107,16 +12112,24 @@ const VESSEL_SUB  = {
   MG: 'María de Gracia (215 TM)',
 };
 const TABS = [
-  { id: 'cxp', label: 'Por pagar' },
-  { id: 'cxc', label: 'Por cobrar' },
-  { id: 'cv',  label: 'Costos por viaje' },
-  { id: 'imp', label: 'Impuestos' },
+  { id: 'fact', label: 'Facturación' },
+  { id: 'cv',   label: 'Costos y rentabilidad' },
+  { id: 'rol',  label: 'Roles' },
+  { id: 'cxp',  label: 'Por pagar' },
+  { id: 'cxc',  label: 'Por cobrar' },
+  { id: 'imp',  label: 'Impuestos' },
 ];
+const SUBFILTROS = {
+  rol: [ { id: '', label: 'Todos' }, { id: 'tripulacion', label: 'Tripulación' }, { id: 'admin', label: 'Administrativo' } ],
+  imp: [ { id: '', label: 'Todos' }, { id: 'SRI', label: 'SRI' }, { id: 'IESS', label: 'IESS' } ],
+};
+const ROL_LABEL = { tripulacion: 'Tripulación', admin: 'Administrativo' };
 
-let data       = null;     /* { meta, costos_viaje, cxp, cxc, impuestos } */
+let data       = null;     /* { meta, facturacion, costos_viaje, roles, cxp, cxc, impuestos } */
 let usandoMuestra = false;
 let barco      = 'todos';  /* todos | MF | MG */
-let tab        = 'cxp';
+let tab        = 'fact';
+let sub        = '';       /* subfiltro de Roles (tripulacion/admin) o Impuestos (SRI/IESS) */
 let filtro     = '';
 let soloVencido = false;
 let activeUser = null;
@@ -12132,16 +12145,21 @@ function fmtUSD(n){
   return (neg?'-':'')+'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
 }
 function fmtK(n){
-  var v=num(n);
-  if(Math.abs(v)>=1000) return '$'+(v/1000).toFixed(Math.abs(v)>=100000?0:1)+'k';
+  var v=num(n), a=Math.abs(v);
+  if(a>=1000) return (v<0?'-':'')+'$'+(a/1000).toFixed(a>=100000?0:1)+'k';
   return '$'+v.toFixed(0);
 }
+function fmtPct(n){ return (isFinite(n)?(n*100).toFixed(1):'0.0')+'%'; }
 var MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 function fmtFecha(iso){
   if(!iso) return '—';
   var p=String(iso).slice(0,10).split('-');
   if(p.length!==3) return escH(iso);
   return p[2]+' '+MESES[parseInt(p[1],10)-1]+' '+p[0];
+}
+function fmtPeriodo(p){
+  var m=String(p||'').match(/^(\d{4})-(\d{2})/);
+  return m ? MESES[parseInt(m[2],10)-1]+' '+m[1] : escH(p||'—');
 }
 function fmtCorte(iso){
   if(!iso) return 'sin corte';
@@ -12154,6 +12172,12 @@ function fechaCorte(){
   if(isNaN(d)) d=new Date();
   d.setHours(0,0,0,0); return d;
 }
+function anioActual(){ return fechaCorte().getFullYear(); }
+function anioDe(r){
+  var s=String(r.fecha||r.periodo||'');
+  var m=s.match(/^(\d{4})/); return m?parseInt(m[1],10):null;
+}
+function delAnio(r){ var a=anioDe(r); return a===null || a===anioActual(); }
 function diasVencido(vence){
   if(!vence) return 0;
   var v=new Date(String(vence).slice(0,10)+'T00:00:00'); if(isNaN(v)) return 0;
@@ -12164,10 +12188,12 @@ function lista(k){
   if(!Array.isArray(a)) a=Object.keys(a).map(function(x){ return a[x]; });
   return a;
 }
-function porBarco(arr){
-  if(barco==='todos') return arr;
-  return arr.filter(function(r){ return r.barco===barco; });
+function porBarco(arr, b){
+  b=b||barco;
+  if(b==='todos') return arr;
+  return arr.filter(function(r){ return r.barco===b; });
 }
+function suma(arr,campo){ return arr.reduce(function(t,r){ return t+num(r[campo||'valor']); },0); }
 function viajeLbl(r){
   if(!r.viaje && r.viaje!==0) return r.centro?escH(r.centro):'—';
   return 'V'+r.viaje+(r.barco?' '+r.barco:'');
@@ -12181,6 +12207,11 @@ function estadoSaldo(r){
   return {cls:'ok',txt:'Al día'};
 }
 function pill(e){ return '<span class="cont-pill '+e.cls+'">'+escH(e.txt)+'</span>'; }
+function entidadDe(r){
+  var e=String(r.entidad||'').toUpperCase();
+  if(e==='SRI'||e==='IESS') return e;
+  return /iess|aporte|fondo|reserva|préstamo|prestamo/i.test(String(r.tipo||''))?'IESS':'SRI';
+}
 
 /* ── sync ── */
 function setSync(cls,label){
@@ -12215,50 +12246,69 @@ function initFirebase(){
 }
 
 /* ── cálculos ── */
-function totales(){
-  var cxp=porBarco(lista('cxp')), cxc=porBarco(lista('cxc'));
-  var t={cxp:0,cxpVenc:0,cxc:0,cxcVenc:0,imp:0,impVence:null};
-  cxp.forEach(function(r){ var s=num(r.saldo); t.cxp+=s; if(s>0&&diasVencido(r.vence)>0) t.cxpVenc+=s; });
-  cxc.forEach(function(r){ var s=num(r.saldo); t.cxc+=s; if(s>0&&diasVencido(r.vence)>0) t.cxcVenc+=s; });
+function totalesSaldo(){
+  var t={cxp:0,cxpVenc:0,cxc:0,cxcVenc:0};
+  porBarco(lista('cxp')).forEach(function(r){ var s=num(r.saldo); t.cxp+=s; if(s>0&&diasVencido(r.vence)>0) t.cxpVenc+=s; });
+  porBarco(lista('cxc')).forEach(function(r){ var s=num(r.saldo); t.cxc+=s; if(s>0&&diasVencido(r.vence)>0) t.cxcVenc+=s; });
+  return t;
+}
+function impuestosPend(ent){
+  var t={valor:0,vence:null};
   lista('impuestos').forEach(function(r){
-    if(String(r.estado||'').toLowerCase()!=='pagado'){
-      t.imp+=num(r.valor);
-      if(r.vence&&(!t.impVence||r.vence<t.impVence)) t.impVence=r.vence;
-    }
+    if(entidadDe(r)!==ent) return;
+    if(String(r.estado||'').toLowerCase()==='pagado') return;
+    t.valor+=num(r.valor);
+    if(r.vence&&(!t.vence||r.vence<t.vence)) t.vence=r.vence;
   });
   return t;
 }
-function costosPorViaje(){
+function rolesDe(tipo,b){
+  if(tipo==='admin') return lista('roles').filter(function(r){ return r.tipo==='admin' && delAnio(r); });
+  return porBarco(lista('roles'),b).filter(function(r){ return r.tipo===tipo && delAnio(r); });
+}
+/* Rentabilidad operativa = facturación de viajes − costo de viaje − rol de tripulación (año en curso) */
+function rentabilidad(b){
+  var fact=suma(porBarco(lista('facturacion'),b).filter(delAnio));
+  var costo=suma(porBarco(lista('costos_viaje'),b).filter(delAnio));
+  var rol=suma(rolesDe('tripulacion',b));
+  var res=fact-costo-rol;
+  return {fact:fact,costo:costo,rol:rol,res:res,margen:fact?res/fact:0};
+}
+function costosPorViaje(b){
   var map={};
-  porBarco(lista('costos_viaje')).forEach(function(r){
+  function slot(r){
     var k=(r.barco||'—')+'|'+(r.viaje==null?'—':r.viaje);
-    if(!map[k]) map[k]={barco:r.barco||'—',viaje:r.viaje,total:0,cat:{}};
-    var c=r.categoria||'Otros';
-    map[k].total+=num(r.valor);
-    map[k].cat[c]=(map[k].cat[c]||0)+num(r.valor);
+    if(!map[k]) map[k]={barco:r.barco||'—',viaje:r.viaje,total:0,cat:{},fact:0,rol:0};
+    return map[k];
+  }
+  porBarco(lista('costos_viaje'),b).forEach(function(r){
+    var s=slot(r), c=r.categoria||'Otros';
+    s.total+=num(r.valor); s.cat[c]=(s.cat[c]||0)+num(r.valor);
   });
-  return Object.keys(map).map(function(k){ return map[k]; })
+  porBarco(lista('facturacion'),b).forEach(function(r){ if(r.viaje!=null) slot(r).fact+=num(r.valor); });
+  porBarco(lista('roles'),b).forEach(function(r){ if(r.tipo==='tripulacion'&&r.viaje!=null) slot(r).rol+=num(r.valor); });
+  return Object.keys(map).map(function(k){ var v=map[k]; v.res=v.fact-v.total-v.rol; return v; })
     .sort(function(a,b){ return (num(a.viaje)-num(b.viaje))||String(a.barco).localeCompare(b.barco); });
 }
-function ultimoViaje(arr){
+function ultimoViaje(b){
+  var arr=costosPorViaje(b).filter(function(v){ return v.total>0; });
   if(!arr.length) return null;
-  var ult=arr.slice().sort(function(a,b){ return num(b.viaje)-num(a.viaje); });
-  return ult[0];
+  return arr.sort(function(a,c){ return num(c.viaje)-num(a.viaje); })[0];
 }
 function antiguedad(k){
-  var b=[0,0,0,0]; /* por vencer, 1-30, 31-60, +60 */
+  var bk=[0,0,0,0]; /* por vencer, 1-30, 31-60, +60 */
   porBarco(lista(k)).forEach(function(r){
     var s=num(r.saldo); if(s<=0) return;
     var d=diasVencido(r.vence);
-    if(d<=0) b[0]+=s; else if(d<=30) b[1]+=s; else if(d<=60) b[2]+=s; else b[3]+=s;
+    if(d<=0) bk[0]+=s; else if(d<=30) bk[1]+=s; else if(d<=60) bk[2]+=s; else bk[3]+=s;
   });
-  return b;
+  return bk;
 }
 
 /* ── render ── */
 function render(){
   var el=document.getElementById('cont-content'); if(!el) return;
-  var sub=document.getElementById('cont-vessel-sub'); if(sub) sub.textContent=VESSEL_SUB[barco];
+  var subEl=document.getElementById('cont-vessel-sub'); if(subEl) subEl.textContent=VESSEL_SUB[barco];
   var corteEl=document.getElementById('cont-corte');
   if(corteEl) corteEl.textContent=data?('Corte Tucán: '+fmtCorte(data.meta&&data.meta.corte)+(usandoMuestra?' · MUESTRA':'')):'Sin corte';
 
@@ -12273,26 +12323,12 @@ function render(){
     return;
   }
 
-  var t=totales();
-  var cv=costosPorViaje();
-  var ult=ultimoViaje(cv);
-  var ultMF=ultimoViaje(cv.filter(function(x){return x.barco==='MF';}));
-  var ultMG=ultimoViaje(cv.filter(function(x){return x.barco==='MG';}));
-  var ultTxt=barco==='todos'
-    ? [ultMF?('MF V'+ultMF.viaje+': '+fmtK(ultMF.total)):null, ultMG?('MG V'+ultMG.viaje+': '+fmtK(ultMG.total)):null].filter(Boolean).join(' · ')
-    : (ult?('Viaje '+ult.viaje):'—');
-
   var html='';
   if(usandoMuestra){
     html+='<div class="cont-banner">Datos de muestra (ficticios). Se reemplazan solos al cargar el primer corte real de Tucán. '+
       '<button class="cont-link" onclick="CONT.salirMuestra()">Quitar muestra</button></div>';
   }
-  html+='<div class="cont-kpis">'+
-    kpi('Cuentas por pagar',fmtUSD(t.cxp), t.cxpVenc>0?('<span class="neg">'+fmtUSD(t.cxpVenc)+' vencido</span>'):'<span class="pos">Sin vencidos</span>','cxp',true)+
-    kpi('Cuentas por cobrar',fmtUSD(t.cxc), t.cxcVenc>0?('<span class="neg">'+fmtUSD(t.cxcVenc)+' vencido</span>'):'<span class="pos">Sin vencidos</span>','cxc',true)+
-    kpi(barco==='todos'?'Costo último viaje':'Costo último viaje · '+barco, ult&&barco!=='todos'?fmtUSD(ult.total):(barco==='todos'?(cv.length?fmtUSD((ultMF?ultMF.total:0)+(ultMG?ultMG.total:0)):'—'):'—'), escH(ultTxt||'Sin viajes'),'cv',false)+
-    kpi('Impuestos pendientes',fmtUSD(t.imp), t.impVence?('<span class="warn">Próx. vence '+fmtFecha(t.impVence)+'</span>'):'<span class="pos">Al día</span>','imp',false)+
-  '</div>';
+  html+='<div class="cont-kpis '+(barco==='todos'?'cols-5':'cols-3')+'">'+kpis()+'</div>';
 
   html+='<div class="cont-charts">'+
     '<div class="cont-card"><div class="cont-card-h">Costo por viaje</div><div class="cont-chart"><canvas id="cont-ch-viajes" role="img" aria-label="Costo total por viaje"></canvas></div></div>'+
@@ -12305,6 +12341,9 @@ function render(){
         return '<button class="cont-tab'+(x.id===tab?' active':'')+'" onclick="CONT.setTab(\''+x.id+'\')">'+x.label+'</button>';
       }).join('')+'</div>'+
       '<div class="cont-det-tools">'+
+        (SUBFILTROS[tab]?'<div class="cont-chips">'+SUBFILTROS[tab].filter(function(x){ return !(tab==='rol'&&barco!=='todos'&&x.id==='admin'); }).map(function(x){
+          return '<button class="cont-chip'+(x.id===sub?' active':'')+'" onclick="CONT.setSub(\''+x.id+'\')">'+x.label+'</button>';
+        }).join('')+'</div>':'')+
         ((tab==='cxp'||tab==='cxc')?'<label class="cont-chk"><input type="checkbox" '+(soloVencido?'checked':'')+' onchange="CONT.setVencido(this.checked)"> Solo vencidos</label>':'')+
         '<input class="cont-search" id="cont-search" type="search" placeholder="Buscar proveedor, cliente o documento" value="'+escH(filtro).replace(/"/g,'&quot;')+'" oninput="CONT.setFiltro(this.value)">'+
       '</div>'+
@@ -12313,13 +12352,48 @@ function render(){
   '</div>';
 
   el.innerHTML=html;
-  drawCharts(cv);
+  drawCharts();
 }
-function kpi(lbl,val,sub,go,venc){
-  var click=' onclick="CONT.irA(\''+go+'\','+(venc?'true':'false')+')"';
-  return '<div class="cont-kpi"'+click+' title="Ver detalle"><div class="cont-kpi-lbl">'+lbl+'</div>'+
+
+function kpi(lbl,val,sub,accion,clase){
+  return '<div class="cont-kpi'+(clase?' '+clase:'')+'" onclick="'+accion+'" title="Ver detalle"><div class="cont-kpi-lbl">'+lbl+'</div>'+
     '<div class="cont-kpi-val">'+val+'</div><div class="cont-kpi-sub">'+sub+'</div></div>';
 }
+function kpiUltimo(b,lbl){
+  var u=ultimoViaje(b);
+  return kpi(lbl, u?fmtUSD(u.total):'—', u?('Viaje '+escH(u.viaje)):'Sin viajes', "CONT.irA('cv','')");
+}
+function kpis(){
+  var anio=anioActual();
+  var t=totalesSaldo();
+  var r=rentabilidad(barco);
+  var sri=impuestosPend('SRI'), iess=impuestosPend('IESS');
+  var vencTxt=function(v){ return v>0?('<span class="neg">'+fmtUSD(v)+' vencido</span>'):'<span class="pos">Sin vencidos</span>'; };
+  var impTxt=function(x){ return x.vence?('<span class="warn">Próx. vence '+fmtFecha(x.vence)+'</span>'):'<span class="pos">Al día</span>'; };
+  var out=[];
+  out.push(kpi('Facturación '+anio, fmtUSD(r.fact),
+    escH(porBarco(lista('facturacion')).filter(delAnio).length+' facturas'), "CONT.irA('fact','')", 'k-fact'));
+  out.push(kpi('Rentabilidad operativa '+anio, '<span class="'+(r.res<0?'neg':'')+'">'+fmtUSD(r.res)+'</span>',
+    'Margen '+fmtPct(r.margen)+' · Fact. − costo viaje − rol trip.', "CONT.irA('cv','')", 'k-rent'));
+  var rt=rolesDe('tripulacion');
+  if(barco==='todos'){
+    out.push(kpiUltimo('MF','Costo último viaje · María Fátima'));
+    out.push(kpiUltimo('MG','Costo último viaje · María de Gracia'));
+    out.push(kpi('Rol tripulación '+anio, fmtUSD(suma(rt)), 'Ambos barcos · ver detalle →', "CONT.irA('rol','tripulacion')", 'k-rol'));
+    out.push(kpi('Rol administrativo '+anio, fmtUSD(suma(rolesDe('admin'))), 'Empresa · ver detalle por mes →', "CONT.irA('rol','admin')", 'k-rol'));
+  } else {
+    out.push(kpiUltimo(barco,'Costo último viaje'));
+    out.push(kpi('Rol tripulación '+anio, fmtUSD(suma(rt)), 'Ver detalle por viaje →', "CONT.irA('rol','tripulacion')", 'k-rol'));
+  }
+  out.push(kpi('Cuentas por pagar', fmtUSD(t.cxp), vencTxt(t.cxpVenc), "CONT.irA('cxp','',true)"));
+  out.push(kpi('Cuentas por cobrar', fmtUSD(t.cxc), vencTxt(t.cxcVenc), "CONT.irA('cxc','',true)"));
+  if(barco==='todos'){
+    out.push(kpi('Impuestos SRI pendientes', fmtUSD(sri.valor), impTxt(sri), "CONT.irA('imp','SRI')"));
+    out.push(kpi('Obligaciones IESS pendientes', fmtUSD(iess.valor), impTxt(iess), "CONT.irA('imp','IESS')"));
+  }
+  return out.join('');
+}
+
 function coincide(r,campos){
   if(!filtro) return true;
   var f=filtro.toLowerCase();
@@ -12341,39 +12415,86 @@ function tabla(){
         '<td class="r strong">'+fmtUSD(r.saldo)+'</td><td>'+pill(estadoSaldo(r))+'</td></tr>';
     });
     foot='<tr><td colspan="5" class="cont-sub-lbl">Total ('+rows.length+' documentos)</td><td class="r cont-sub-val">'+fmtUSD(sv)+'</td><td class="r cont-sub-val">'+fmtUSD(ss)+'</td><td></td></tr>';
+
+  } else if(tab==='fact'){
+    rows=porBarco(lista('facturacion')).filter(function(r){ return delAnio(r) && coincide(r,['cliente','documento','centro']); })
+      .sort(function(a,b){ return String(b.fecha||'').localeCompare(String(a.fecha||'')); });
+    head=['<th>Fecha</th>','<th>Cliente</th>','<th>Documento</th>','<th>Viaje</th>','<th>Detalle</th>','<th class="r">Valor</th>'];
+    var tf=0;
+    rows.forEach(function(r){
+      tf+=num(r.valor);
+      body+='<tr><td>'+fmtFecha(r.fecha)+'</td><td class="strong">'+escH(r.cliente)+'</td><td>'+escH(r.documento)+'</td>'+
+        '<td>'+viajeLbl(r)+'</td><td>'+escH(r.detalle||'')+'</td><td class="r strong">'+fmtUSD(r.valor)+'</td></tr>';
+    });
+    foot='<tr><td colspan="5" class="cont-sub-lbl">Total facturado '+anioActual()+' ('+rows.length+' facturas)</td><td class="r cont-sub-val">'+fmtUSD(tf)+'</td></tr>';
+
   } else if(tab==='cv'){
     var agg=costosPorViaje();
     var cats={};
     agg.forEach(function(v){ Object.keys(v.cat).forEach(function(c){ cats[c]=(cats[c]||0)+v.cat[c]; }); });
     var catList=Object.keys(cats).sort(function(a,b){ return cats[b]-cats[a]; });
     rows=agg.filter(function(v){ return coincide({v:'V'+v.viaje+' '+v.barco,b:BARCO_LABEL[v.barco]||''},['v','b']); });
-    head=['<th>Viaje</th>','<th>Embarcación</th>'].concat(catList.map(function(c){ return '<th class="r">'+escH(c)+'</th>'; })).concat(['<th class="r">Total</th>']);
-    var tot=0, tc={};
+    head=['<th>Viaje</th>','<th>Embarcación</th>']
+      .concat(catList.map(function(c){ return '<th class="r">'+escH(c)+'</th>'; }))
+      .concat(['<th class="r">Costo viaje</th>','<th class="r">Rol trip.</th>','<th class="r">Facturación</th>','<th class="r">Resultado</th>','<th class="r">Margen</th>']);
+    var tot={c:0,r:0,f:0,x:0}, tc={};
     rows.slice().reverse().forEach(function(v){
-      tot+=v.total;
+      tot.c+=v.total; tot.r+=v.rol; tot.f+=v.fact; tot.x+=v.res;
       body+='<tr><td class="strong">Viaje '+escH(v.viaje)+'</td><td>'+escH(BARCO_LABEL[v.barco]||v.barco)+'</td>'+
         catList.map(function(c){ tc[c]=(tc[c]||0)+(v.cat[c]||0); return '<td class="r">'+(v.cat[c]?fmtUSD(v.cat[c]):'—')+'</td>'; }).join('')+
-        '<td class="r strong">'+fmtUSD(v.total)+'</td></tr>';
+        '<td class="r strong">'+fmtUSD(v.total)+'</td><td class="r">'+(v.rol?fmtUSD(v.rol):'—')+'</td>'+
+        '<td class="r">'+(v.fact?fmtUSD(v.fact):'—')+'</td>'+
+        '<td class="r strong'+(v.res<0?' neg':' pos')+'">'+(v.fact?fmtUSD(v.res):'—')+'</td>'+
+        '<td class="r">'+(v.fact?fmtPct(v.res/v.fact):'—')+'</td></tr>';
     });
     foot='<tr><td colspan="2" class="cont-sub-lbl">Total ('+rows.length+' viajes)</td>'+
       catList.map(function(c){ return '<td class="r cont-sub-val">'+fmtUSD(tc[c]||0)+'</td>'; }).join('')+
-      '<td class="r cont-sub-val">'+fmtUSD(tot)+'</td></tr>';
-  } else {
-    rows=lista('impuestos').filter(function(r){ return coincide(r,['periodo','tipo','estado']); })
-      .sort(function(a,b){ return String(b.vence||'').localeCompare(String(a.vence||'')); });
-    head=['<th>Período</th>','<th>Tipo</th>','<th class="r">Base</th>','<th class="r">Valor</th>','<th>Vence</th>','<th>Estado</th>'];
-    var tv=0;
+      '<td class="r cont-sub-val">'+fmtUSD(tot.c)+'</td><td class="r cont-sub-val">'+fmtUSD(tot.r)+'</td>'+
+      '<td class="r cont-sub-val">'+fmtUSD(tot.f)+'</td><td class="r cont-sub-val">'+fmtUSD(tot.x)+'</td>'+
+      '<td class="r cont-sub-val">'+(tot.f?fmtPct(tot.x/tot.f):'—')+'</td></tr>';
+
+  } else if(tab==='rol'){
+    rows=lista('roles').filter(function(r){
+      if(barco!=='todos' && (r.tipo==='admin' || r.barco!==barco)) return false;
+      return delAnio(r) && (!sub||r.tipo===sub) && coincide(r,['concepto','periodo','tipo']);
+    }).sort(function(a,b){ return String(b.periodo||'').localeCompare(String(a.periodo||''))||String(a.tipo).localeCompare(String(b.tipo)); });
+    head=['<th>Período</th>','<th>Rol</th>','<th>Embarcación</th>','<th>Viaje</th>','<th>Concepto</th>','<th class="r">Personas</th>','<th class="r">Valor</th>'];
+    var tr=0, porTipo={};
     rows.forEach(function(r){
+      tr+=num(r.valor); porTipo[r.tipo]=(porTipo[r.tipo]||0)+num(r.valor);
+      body+='<tr><td>'+fmtPeriodo(r.periodo)+'</td><td>'+pill({cls:r.tipo==='tripulacion'?'trip':'adm',txt:ROL_LABEL[r.tipo]||r.tipo})+'</td>'+
+        '<td>'+escH(r.tipo==='admin'?'Empresa':(BARCO_LABEL[r.barco]||r.barco||'—'))+'</td><td>'+(r.viaje!=null?'V'+escH(r.viaje):'—')+'</td>'+
+        '<td>'+escH(r.concepto||'')+'</td><td class="r">'+(r.personas!=null?escH(r.personas):'—')+'</td>'+
+        '<td class="r strong">'+fmtUSD(r.valor)+'</td></tr>';
+    });
+    if(!sub){
+      Object.keys(porTipo).forEach(function(k){
+        foot+='<tr><td colspan="6" class="cont-sub-lbl">Subtotal '+(ROL_LABEL[k]||k)+'</td><td class="r cont-sub-val">'+fmtUSD(porTipo[k])+'</td></tr>';
+      });
+    }
+    foot+='<tr><td colspan="6" class="cont-sub-lbl">Total '+(sub?ROL_LABEL[sub].toLowerCase()+' ':'')+anioActual()+'</td><td class="r cont-sub-val">'+fmtUSD(tr)+'</td></tr>';
+
+  } else {
+    rows=lista('impuestos').filter(function(r){
+      return (!sub||entidadDe(r)===sub) && coincide(r,['periodo','tipo','estado']);
+    }).sort(function(a,b){ return String(b.vence||'').localeCompare(String(a.vence||'')); });
+    head=['<th>Entidad</th>','<th>Período</th>','<th>Obligación</th>','<th class="r">Base</th>','<th class="r">Valor</th>','<th>Vence</th>','<th>Estado</th>'];
+    var pend={SRI:0,IESS:0};
+    rows.forEach(function(r){
+      var ent=entidadDe(r);
       var pagado=String(r.estado||'').toLowerCase()==='pagado';
-      if(!pagado) tv+=num(r.valor);
+      if(!pagado) pend[ent]+=num(r.valor);
       var d=diasVencido(r.vence);
       var e=pagado?{cls:'ok',txt:'Pagado'}:(d>0?{cls:'venc',txt:'Vencido'}:{cls:'prox',txt:'Pendiente'});
-      body+='<tr><td class="strong">'+escH(r.periodo)+'</td><td>'+escH(r.tipo)+'</td><td class="r">'+fmtUSD(r.base)+'</td>'+
-        '<td class="r strong">'+fmtUSD(r.valor)+'</td><td>'+fmtFecha(r.vence)+'</td><td>'+pill(e)+'</td></tr>';
+      body+='<tr><td>'+pill({cls:ent==='SRI'?'sri':'iess',txt:ent})+'</td><td>'+fmtPeriodo(r.periodo)+'</td><td class="strong">'+escH(r.tipo)+'</td>'+
+        '<td class="r">'+(r.base!=null?fmtUSD(r.base):'—')+'</td><td class="r strong">'+fmtUSD(r.valor)+'</td>'+
+        '<td>'+fmtFecha(r.vence)+'</td><td>'+pill(e)+'</td></tr>';
     });
-    foot='<tr><td colspan="3" class="cont-sub-lbl">Pendiente de pago</td><td class="r cont-sub-val">'+fmtUSD(tv)+'</td><td colspan="2"></td></tr>';
+    ['SRI','IESS'].forEach(function(k){
+      if(!sub||sub===k) foot+='<tr><td colspan="4" class="cont-sub-lbl">Pendiente de pago '+k+'</td><td class="r cont-sub-val">'+fmtUSD(pend[k])+'</td><td colspan="2"></td></tr>';
+    });
   }
-  if(!rows.length) return '<p class="cont-no-rows">Sin registros'+(filtro||soloVencido?' con este filtro':'')+'.</p>';
+  if(!rows.length) return '<p class="cont-no-rows">Sin registros'+(filtro||soloVencido||sub?' con este filtro':'')+'.</p>';
   return '<table class="cont-tbl"><thead><tr>'+head.join('')+'</tr></thead><tbody>'+body+'</tbody><tfoot>'+foot+'</tfoot></table>';
 }
 
@@ -12382,9 +12503,10 @@ function destroyCharts(){
   Object.keys(charts).forEach(function(k){ try{ charts[k].destroy(); }catch(e){} });
   charts={};
 }
-function drawCharts(cv){
+function drawCharts(){
   destroyCharts();
   if(typeof Chart==='undefined') return;
+  var cv=costosPorViaje();
   var opt=function(){ return {
     responsive:true, maintainAspectRatio:false,
     plugins:{ legend:{ labels:{ boxWidth:10, font:{size:11} } },
@@ -12393,17 +12515,24 @@ function drawCharts(cv){
   }; };
   var c1=document.getElementById('cont-ch-viajes');
   if(c1){
-    var viajes=[], seen={};
-    cv.forEach(function(v){ var k=String(v.viaje); if(!seen[k]){ seen[k]=1; viajes.push(v.viaje); } });
-    viajes=viajes.slice(-8);
-    var ds=[];
-    ['MF','MG'].forEach(function(b){
-      if(barco!=='todos'&&barco!==b) return;
-      var vals=viajes.map(function(vj){ var f=cv.filter(function(x){ return x.barco===b&&String(x.viaje)===String(vj); })[0]; return f?Math.round(f.total):null; });
-      if(vals.some(function(x){ return x!=null; }))
-        ds.push({ label:BARCO_LABEL[b], data:vals, backgroundColor:b==='MF'?'#2E75B6':'#1D9E75', borderRadius:4 });
-    });
-    charts.v=new Chart(c1,{ type:'bar', data:{ labels:viajes.map(function(v){ return 'V'+v; }), datasets:ds }, options:opt() });
+    var ds=[], labels=[];
+    if(barco==='todos'){
+      var viajes=[], seen={};
+      cv.forEach(function(v){ var k=String(v.viaje); if(!seen[k]){ seen[k]=1; viajes.push(v.viaje); } });
+      viajes=viajes.slice(-8); labels=viajes.map(function(v){ return 'V'+v; });
+      ['MF','MG'].forEach(function(b){
+        var vals=viajes.map(function(vj){ var f=cv.filter(function(x){ return x.barco===b&&String(x.viaje)===String(vj); })[0]; return f?Math.round(f.total):null; });
+        if(vals.some(function(x){ return x!=null; }))
+          ds.push({ label:BARCO_LABEL[b], data:vals, backgroundColor:b==='MF'?'#2E75B6':'#1D9E75', borderRadius:4 });
+      });
+    } else {
+      var last=cv.slice(-8); labels=last.map(function(v){ return 'V'+v.viaje; });
+      ds.push({ label:'Costo viaje', data:last.map(function(v){ return Math.round(v.total); }), backgroundColor:'#2E75B6', borderRadius:4, stack:'c' });
+      ds.push({ label:'Rol tripulación', data:last.map(function(v){ return Math.round(v.rol); }), backgroundColor:'#85B7EB', borderRadius:4, stack:'c' });
+      ds.push({ label:'Facturación', data:last.map(function(v){ return Math.round(v.fact); }), backgroundColor:'#1D9E75', borderRadius:4, stack:'f' });
+    }
+    var o=opt(); if(barco!=='todos'){ o.scales.x.stacked=true; o.scales.y.stacked=true; }
+    charts.v=new Chart(c1,{ type:'bar', data:{ labels:labels, datasets:ds }, options:o });
   }
   var c2=document.getElementById('cont-ch-aging');
   if(c2){
@@ -12416,17 +12545,33 @@ function drawCharts(cv){
 
 /* ── muestra ── */
 function muestra(){
-  var hoy=new Date(), iso=function(dd){ var d=new Date(hoy); d.setDate(d.getDate()+dd); return d.toISOString().slice(0,10); };
-  var cv=[];
-  [[75,'MF',[118,24,56]],[76,'MF',[121,25,59]],[77,'MF',[106,22,62]],[78,'MF',[118,24,70]],
-   [38,'MG',[129,26,71]],[39,'MG',[133,27,71]],[40,'MG',[131,27,82]]].forEach(function(x){
+  var hoy=new Date(), Y=hoy.getFullYear();
+  var iso=function(dd){ var d=new Date(hoy); d.setDate(d.getDate()+dd); return d.toISOString().slice(0,10); };
+  var mes=function(m){ return Y+'-'+('0'+m).slice(-2); };
+  var viajes=[
+    /* viaje, barco, mes zarpe, [combustible, víveres, otros] miles, facturación miles, rol trip miles, tripulantes */
+    [75,'MF',1,[118,24,56],372,74,20],[76,'MF',4,[121,25,59],398,80,20],[77,'MF',6,[106,22,62],341,68,20],[78,'MF',9,[118,24,70],415,83,20],
+    [38,'MG',2,[129,26,71],455,91,21],[39,'MG',5,[133,27,71],402,80,21],[40,'MG',8,[131,27,82],468,94,21],
+  ];
+  var cv=[], fact=[], roles=[];
+  viajes.forEach(function(x){
+    var fecha=mes(x[2])+'-15', centro='Viaje '+x[0]+' '+BARCO_LABEL[x[1]];
     ['Combustible','Víveres','Otros'].forEach(function(c,i){
-      cv.push({viaje:x[0],barco:x[1],centro:'Viaje '+x[0]+' '+BARCO_LABEL[x[1]],categoria:c,valor:x[2][i]*1000});
+      cv.push({viaje:x[0],barco:x[1],centro:centro,fecha:fecha,categoria:c,valor:x[3][i]*1000});
     });
+    fact.push({cliente:'ASISERVY S.A.',documento:'001-001-000'+(1000+x[0]),fecha:mes(Math.min(x[2]+1,12))+'-05',viaje:x[0],barco:x[1],centro:centro,detalle:'Atún SKJ/YF',valor:Math.round(x[4]*0.93)*1000});
+    fact.push({cliente:'SIMBAI S.A.',documento:'001-001-000'+(2000+x[0]),fecha:mes(Math.min(x[2]+1,12))+'-08',viaje:x[0],barco:x[1],centro:centro,detalle:'Pesca de rechazo',valor:Math.round(x[4]*0.07)*1000});
+    roles.push({tipo:'tripulacion',barco:x[1],viaje:x[0],periodo:mes(Math.min(x[2]+1,12)),concepto:'Participación de pesca',personas:x[6],valor:Math.round(x[5]*0.88)*1000});
+    roles.push({tipo:'tripulacion',barco:x[1],viaje:x[0],periodo:mes(Math.min(x[2]+1,12)),concepto:'Beneficios sociales',personas:x[6],valor:Math.round(x[5]*0.12)*1000});
   });
+  for(var m=1;m<=9;m++){
+    roles.push({tipo:'admin',periodo:mes(m),concepto:'Sueldos administrativos',personas:8,valor:17500});
+  }
   return {
     meta:{ corte:new Date().toISOString(), fuente:'Muestra' },
+    facturacion:fact,
     costos_viaje:cv,
+    roles:roles,
     cxp:[
       {proveedor:'Combustibles del Pacífico',documento:'001-001-0002451',fecha:iso(-43),vence:iso(-13),valor:22400,saldo:22400,viaje:78,barco:'MF'},
       {proveedor:'Redes y Aparejos S.A.',documento:'001-003-0001180',fecha:iso(-25),vence:iso(5),valor:9860,saldo:9860,viaje:78,barco:'MF'},
@@ -12434,14 +12579,17 @@ function muestra(){
       {proveedor:'Talleres Navales del Sur',documento:'001-001-0000733',fecha:iso(-80),vence:iso(-50),valor:19400,saldo:12600,viaje:40,barco:'MG'},
     ],
     cxc:[
-      {cliente:'ASISERVY S.A.',documento:'001-001-0001022',fecha:iso(-5),vence:iso(10),valor:198300,saldo:198300,viaje:78,barco:'MF'},
-      {cliente:'ASISERVY S.A.',documento:'001-001-0001019',fecha:iso(-35),vence:iso(-5),valor:129600,saldo:129600,viaje:40,barco:'MG'},
-      {cliente:'SIMBAI S.A.',documento:'001-001-0001020',fecha:iso(-6),vence:iso(15),valor:29000,saldo:29000,viaje:78,barco:'MF'},
+      {cliente:'ASISERVY S.A.',documento:'001-001-0001078',fecha:iso(-5),vence:iso(10),valor:386000,saldo:386000,viaje:78,barco:'MF'},
+      {cliente:'ASISERVY S.A.',documento:'001-001-0001040',fecha:iso(-35),vence:iso(-5),valor:129600,saldo:129600,viaje:40,barco:'MG'},
+      {cliente:'SIMBAI S.A.',documento:'001-001-0002078',fecha:iso(-6),vence:iso(15),valor:29000,saldo:29000,viaje:78,barco:'MF'},
     ],
     impuestos:[
-      {periodo:'Mes anterior',tipo:'IVA',base:98500,valor:14775,vence:iso(13),estado:'Pendiente'},
-      {periodo:'Mes anterior',tipo:'Retención en la fuente',base:197750,valor:3955,vence:iso(13),estado:'Pendiente'},
-      {periodo:'Hace 2 meses',tipo:'IVA',base:91200,valor:13680,vence:iso(-17),estado:'Pagado'},
+      {entidad:'SRI',periodo:mes(9),tipo:'IVA',base:98500,valor:14775,vence:iso(13),estado:'Pendiente'},
+      {entidad:'SRI',periodo:mes(9),tipo:'Retención en la fuente',base:197750,valor:3955,vence:iso(13),estado:'Pendiente'},
+      {entidad:'SRI',periodo:mes(8),tipo:'IVA',base:91200,valor:13680,vence:iso(-17),estado:'Pagado'},
+      {entidad:'IESS',periodo:mes(9),tipo:'Aportes patronal y personal',base:61000,valor:12658,vence:iso(0),estado:'Pendiente'},
+      {entidad:'IESS',periodo:mes(9),tipo:'Fondos de reserva',base:61000,valor:5081,vence:iso(0),estado:'Pendiente'},
+      {entidad:'IESS',periodo:mes(8),tipo:'Aportes patronal y personal',base:59500,valor:12346,vence:iso(-30),estado:'Pagado'},
     ],
   };
 }
@@ -12459,7 +12607,8 @@ function switchVessel(b,btn){
   if(btn) btn.classList.add('active');
   render();
 }
-function setTab(t){ tab=t; if(t!=='cxp'&&t!=='cxc') soloVencido=false; render(); }
+function setTab(t){ tab=t; sub=''; if(t!=='cxp'&&t!=='cxc') soloVencido=false; render(); }
+function setSub(s){ sub=s||''; render(); }
 function setVencido(v){ soloVencido=!!v; refreshTabla(); }
 function setFiltro(v){
   filtro=v||'';
@@ -12467,8 +12616,8 @@ function setFiltro(v){
   searchTimer=setTimeout(refreshTabla,200);
 }
 function refreshTabla(){ var w=document.getElementById('cont-tbl'); if(w) w.innerHTML=tabla(); }
-function irA(t,venc){
-  tab=t; soloVencido=!!venc&&(t==='cxp'||t==='cxc'); render();
+function irA(t,s,venc){
+  tab=t; sub=s||''; soloVencido=!!venc&&(t==='cxp'||t==='cxc'); render();
   var d=document.querySelector('.cont-det'); if(d) d.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function verMuestra(){ data=muestra(); usandoMuestra=true; render(); }
@@ -12478,6 +12627,7 @@ return {
   init: init,
   switchVessel: switchVessel,
   setTab: setTab,
+  setSub: setSub,
   setVencido: setVencido,
   setFiltro: setFiltro,
   irA: irA,
