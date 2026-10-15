@@ -625,8 +625,66 @@ function muestra(){
 }
 
 /* ── API pública ── */
+/* ── actualizar datos desde archivo (solo Master; Firebase valida el permiso) ── */
+var pendiente=null;
+function esMaster(){ return !!activeUser && activeUser.role==='master'; }
+function mostrarBotonActualizar(){
+  var b=document.getElementById('cont-upd-btn'); if(b) b.hidden=!esMaster();
+}
+function panel(html,cls){
+  var p=document.getElementById('cont-upd'); if(!p) return;
+  if(!html){ p.innerHTML=''; p.className=''; return; }
+  p.className='cont-upd'+(cls?' '+cls:''); p.innerHTML=html;
+}
+function validar(d){
+  if(!d||typeof d!=='object') return 'El archivo no tiene el formato del dashboard.';
+  if(!d.meta||!d.meta.corte) return 'Al archivo le falta la fecha de corte (meta.corte).';
+  var req=['facturacion','costos_viaje','cxp','cxc','impuestos','convenios'];
+  for(var i=0;i<req.length;i++){ if(!Array.isArray(d[req[i]])) return 'Al archivo le falta el bloque "'+req[i]+'".'; }
+  return '';
+}
+function cargarArchivo(input){
+  var f=input.files&&input.files[0]; input.value='';
+  if(!f) return;
+  var rd=new FileReader();
+  rd.onload=function(){
+    var d; try{ d=JSON.parse(rd.result); }catch(e){ panel('<h4>No se pudo leer el archivo</h4>Elige el archivo <b>atuntro_contable.json</b> que dejó Claude en OneDrive.','err'); return; }
+    var err=validar(d);
+    if(err){ panel('<h4>Archivo no válido</h4>'+escH(err),'err'); return; }
+    pendiente=d;
+    var anio=(String(d.meta.corte).match(/^(\d{4})/)||[])[1];
+    var fact=d.facturacion.filter(function(r){ return String(r.fecha||r.periodo||'').indexOf(anio)===0; }).reduce(function(t,r){ return t+num(r.valor); },0);
+    var cxp=d.cxp.reduce(function(t,r){ return t+num(r.saldo); },0);
+    var cxc=d.cxc.reduce(function(t,r){ return t+num(r.saldo); },0);
+    panel('<h4>¿Publicar este corte?</h4><ul>'+
+      '<li>Corte: <b>'+escH(fmtCorte(d.meta.corte))+'</b></li>'+
+      '<li>Facturación '+escH(anio||'')+': <b>'+fmtUSD(fact)+'</b></li>'+
+      '<li>Cuentas por pagar: <b>'+fmtUSD(cxp)+'</b> · Cuentas por cobrar: <b>'+fmtUSD(cxc)+'</b></li>'+
+      '</ul>Reemplaza los datos actuales del dashboard para todos los usuarios Admin y Master.'+
+      '<div class="cont-upd-acts" style="margin-top:12px"><button type="button" class="cont-upd-pub" onclick="CONT.publicar()">Publicar</button>'+
+      '<button type="button" class="cont-upd-can" onclick="CONT.cancelarCarga()">Cancelar</button></div>');
+  };
+  rd.onerror=function(){ panel('<h4>No se pudo leer el archivo</h4>Intenta de nuevo.','err'); };
+  rd.readAsText(f);
+}
+function publicar(){
+  if(!pendiente) return;
+  if(!fbReady||!db){ panel('<h4>Sin conexión</h4>Revisa tu internet y vuelve a intentarlo.','err'); return; }
+  var d=pendiente;
+  panel('<h4>Publicando…</h4>No cierres esta pestaña.');
+  db.ref(FB_PATH).set(d).then(function(){
+    pendiente=null;
+    panel('<h4>Publicado</h4>Corte '+escH(fmtCorte(d.meta.corte))+'. Todos los usuarios Admin y Master ya ven estas cifras. <button type="button" class="cont-link" onclick="CONT.cancelarCarga()">Cerrar</button>','ok');
+  }).catch(function(e){
+    var perm=/PERMISSION|permission/i.test(String(e&&(e.code||e.message)));
+    panel('<h4>No se publicó</h4>'+(perm?'Solo un usuario Master puede publicar. Entra con tu cuenta Master y vuelve a intentarlo.':'Firebase no respondió. Revisa tu conexión y vuelve a intentarlo.'),'err');
+  });
+}
+function cancelarCarga(){ pendiente=null; panel(''); }
+
 function init(user){
   activeUser=user||null;
+  mostrarBotonActualizar();
   if(!data){ var l=loadLocal(); if(l){ data=l; } }
   render();
   initFirebase();
@@ -656,6 +714,9 @@ function salirMuestra(){ data=loadLocal(); usandoMuestra=false; render(); }
 
 return {
   init: init,
+  cargarArchivo: cargarArchivo,
+  publicar: publicar,
+  cancelarCarga: cancelarCarga,
   switchVessel: switchVessel,
   setTab: setTab,
   setSub: setSub,

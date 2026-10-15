@@ -4967,6 +4967,15 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .cont-sync .sync-dot.ok{background:#4AE3A8}.cont-sync .sync-dot.local{background:#F5B942}.cont-sync .sync-dot.saving{background:#4AE3A8;opacity:.6}
 .cont-back-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:7px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
 .cont-back-btn:hover{background:rgba(255,255,255,.25)}
+.cont-cortebar-r{display:flex;align-items:center;gap:10px}
+.cont-upd-btn{background:#fff;color:#1F4E79;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.cont-upd-btn:hover{background:#EAF1F8}.cont-upd-btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.cont-upd{margin:12px 12px 0;background:#fff;border:1px solid #c5d5e6;border-radius:10px;padding:14px 16px;font-size:13px;color:#1a1a18;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.cont-upd h4{margin:0 0 8px;font-size:14px;color:#1F4E79}.cont-upd ul{margin:0 0 12px;padding-left:18px;line-height:1.6}
+.cont-upd.err{border-color:#f5c2c7;background:#fff5f5;color:#842029}.cont-upd.ok{border-color:#badbcc;background:#f0fff4;color:#155724}
+.cont-upd-acts{display:flex;gap:8px;flex-wrap:wrap}
+.cont-upd-acts button{padding:7px 16px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid #1F4E79}
+.cont-upd-pub{background:#1F4E79;color:#fff}.cont-upd-can{background:#fff;color:#1F4E79}
 .cont-cortebar{background:#1F4E79;color:#fff;padding:8px 20px;font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;opacity:.95}
 .cont-banner{margin:12px 12px 0;background:#FFF3CD;color:#856404;border:1px solid #ffe69c;border-radius:8px;padding:9px 14px;font-size:12px}
 .cont-link{background:none;border:none;color:#1F4E79;text-decoration:underline;cursor:pointer;font-size:12px;font-family:inherit;padding:0 0 0 6px}
@@ -5045,7 +5054,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       <button class="cont-back-btn" onclick="goBackFromContable()">← Volver</button>
     </div>
   </div>
-  <div class="cont-cortebar"><span id="cont-corte">Sin corte</span><span>Fuente: Tucán · Solo lectura</span></div>
+  <div class="cont-cortebar"><span id="cont-corte">Sin corte</span><span class="cont-cortebar-r"><span>Fuente: Tucán</span><button type="button" class="cont-upd-btn" id="cont-upd-btn" hidden onclick="document.getElementById('cont-upd-file').click()">⬆ Actualizar datos</button><input type="file" id="cont-upd-file" accept=".json,application/json" hidden onchange="CONT.cargarArchivo(this)"></span></div>
+  <div id="cont-upd"></div>
 
   <!-- content rendered by CONT.render() -->
   <div id="cont-content"></div>
