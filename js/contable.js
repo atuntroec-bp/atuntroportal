@@ -101,7 +101,21 @@ function viajeLbl(r){
   if(!r.viaje && r.viaje!==0) return r.centro?escH(r.centro):'—';
   return 'V'+r.viaje+(r.barco?' '+r.barco:'');
 }
+function diasDesde(f){
+  if(!f) return 0;
+  var v=new Date(String(f).slice(0,10)+'T00:00:00'); if(isNaN(v)) return 0;
+  return Math.round((fechaCorte()-v)/86400000);
+}
+/* Atrasado: pasó la fecha de vencimiento; si Tucán no la registra, más de 30 días desde la emisión */
+function atrasado(r){ return num(r.saldo)>0 && (r.vence ? diasVencido(r.vence)>0 : diasDesde(r.fecha)>30); }
 function estadoSaldo(r){
+  if(!r.vence){
+    if(num(r.saldo)<=0.005) return {cls:'ok',txt:'Pagado'};
+    var dd=diasDesde(r.fecha);
+    if(r.facturas>1) return {cls:dd>365?'venc':dd>30?'prox':'ok',txt:'Desde '+fmtFecha(r.fecha)};
+    if(dd<=30) return {cls:'ok',txt:dd+' días'};
+    return {cls:dd>90?'venc':'prox',txt:dd+' días'};
+  }
   var s=num(r.saldo);
   if(s<=0.005) return {cls:'ok',txt:'Pagado'};
   var d=diasVencido(r.vence);
@@ -149,10 +163,13 @@ function initFirebase(){
 }
 
 /* ── cálculos ── */
+/* CxP y CxC son de la empresa: no se filtran por barco */
 function totalesSaldo(){
-  var t={cxp:0,cxpVenc:0,cxc:0,cxcVenc:0};
-  porBarco(lista('cxp')).forEach(function(r){ var s=num(r.saldo); t.cxp+=s; if(s>0&&diasVencido(r.vence)>0) t.cxpVenc+=s; });
-  porBarco(lista('cxc')).forEach(function(r){ var s=num(r.saldo); t.cxc+=s; if(s>0&&diasVencido(r.vence)>0) t.cxcVenc+=s; });
+  var t={cxp:0,cxpVenc:0,cxc:0,cxcVenc:0,cxpN:0,cxcN:0};
+  lista('cxp').forEach(function(r){ var s=num(r.saldo); t.cxp+=s; t.cxpN+=num(r.facturas||1); if(atrasado(r)) t.cxpVenc+=s; });
+  lista('cxc').forEach(function(r){ var s=num(r.saldo); t.cxc+=s; t.cxcN+=num(r.facturas||1); if(atrasado(r)) t.cxcVenc+=s; });
+  var ag=data&&data.meta&&data.meta.cxp_antiguedad;
+  if(ag&&ag.length===4) t.cxpMas1=num(ag[3]);
   return t;
 }
 function impuestosPend(ent){
@@ -219,12 +236,16 @@ function ultimoViaje(b){
   if(!arr.length) return null;
   return arr.sort(function(a,c){ return num(c.viaje)-num(a.viaje); })[0];
 }
+/* Antigüedad por fecha de emisión: hasta 30 días, 31-90, 91-365, más de 1 año.
+   Para CxP agrupado por proveedor se usa el desglose por factura que trae meta.cxp_antiguedad */
 function antiguedad(k){
-  var bk=[0,0,0,0]; /* por vencer, 1-30, 31-60, +60 */
-  porBarco(lista(k)).forEach(function(r){
+  var ag=data&&data.meta&&data.meta[k+'_antiguedad'];
+  if(ag&&ag.length===4) return ag.map(num);
+  var bk=[0,0,0,0];
+  lista(k).forEach(function(r){
     var s=num(r.saldo); if(s<=0) return;
-    var d=diasVencido(r.vence);
-    if(d<=0) bk[0]+=s; else if(d<=30) bk[1]+=s; else if(d<=60) bk[2]+=s; else bk[3]+=s;
+    var d=diasDesde(r.fecha);
+    if(d<=30) bk[0]+=s; else if(d<=90) bk[1]+=s; else if(d<=365) bk[2]+=s; else bk[3]+=s;
   });
   return bk;
 }
@@ -252,11 +273,11 @@ function render(){
     html+='<div class="cont-banner">Datos de muestra (ficticios). Se reemplazan solos al cargar el primer corte real de Tucán. '+
       '<button class="cont-link" onclick="CONT.salirMuestra()">Quitar muestra</button></div>';
   }
-  html+='<div class="cont-kpis '+(barco==='todos'?'cols-4':'cols-3')+'">'+kpis()+'</div>';
+  html+='<div class="cont-kpis '+'cols-4'+'">'+kpis()+'</div>';
 
   html+='<div class="cont-charts">'+
     '<div class="cont-card"><div class="cont-card-h">Costo por viaje</div><div class="cont-chart"><canvas id="cont-ch-viajes" role="img" aria-label="Costo total por viaje"></canvas></div></div>'+
-    '<div class="cont-card"><div class="cont-card-h">Antigüedad de saldos</div><div class="cont-chart"><canvas id="cont-ch-aging" role="img" aria-label="Antigüedad de saldos por pagar y por cobrar"></canvas></div></div>'+
+    '<div class="cont-card"><div class="cont-card-h">Antigüedad de saldos <span class="cont-small">(desde la emisión · empresa)</span></div><div class="cont-chart"><canvas id="cont-ch-aging" role="img" aria-label="Antigüedad de saldos por pagar y por cobrar"></canvas></div></div>'+
   '</div>';
 
   html+='<div class="cont-card cont-det">'+
@@ -268,7 +289,7 @@ function render(){
         (SUBFILTROS[tab]?'<div class="cont-chips">'+SUBFILTROS[tab].filter(function(x){ return !(tab==='rol'&&barco!=='todos'&&x.id==='admin'); }).map(function(x){
           return '<button class="cont-chip'+(x.id===sub?' active':'')+'" onclick="CONT.setSub(\''+x.id+'\')">'+x.label+'</button>';
         }).join('')+'</div>':'')+
-        ((tab==='cxp'||tab==='cxc')?'<label class="cont-chk"><input type="checkbox" '+(soloVencido?'checked':'')+' onchange="CONT.setVencido(this.checked)"> Solo vencidos</label>':'')+
+        ((tab==='cxp'||tab==='cxc')?'<label class="cont-chk"><input type="checkbox" '+(soloVencido?'checked':'')+' onchange="CONT.setVencido(this.checked)"> Más de 30 días</label>':'')+
         '<input class="cont-search" id="cont-search" type="search" placeholder="Buscar proveedor, cliente o documento" value="'+escH(filtro).replace(/"/g,'&quot;')+'" oninput="CONT.setFiltro(this.value)">'+
       '</div>'+
     '</div>'+
@@ -299,7 +320,6 @@ function kpis(){
   var t=totalesSaldo();
   var r=rentabilidad(barco);
   var sri=impuestosPend('SRI'), iess=impuestosPend('IESS');
-  var vencTxt=function(v){ return v>0?('<span class="neg">'+fmtUSD(v)+' vencido</span>'):'<span class="pos">Sin vencidos</span>'; };
   var impTxt=function(x){ return x.vence?('<span class="warn">Próx. vence '+fmtFecha(x.vence)+'</span>'):'<span class="pos">Al día</span>'; };
   var out=[];
   var factAnio=porBarco(lista('facturacion')).filter(delAnio);
@@ -323,11 +343,16 @@ function kpis(){
     out.push(kpiUltimo(barco,'Costo último viaje'));
     out.push(kpi('Rol tripulación '+anio, rolVal(rt), rolSub('Ver detalle por viaje →'), "CONT.irA('rol','tripulacion')", 'k-rol'));
   }
-  out.push(kpi('Cuentas por pagar', fmtUSD(t.cxp), vencTxt(t.cxpVenc), "CONT.irA('cxp','',true)"));
-  out.push(kpi('Cuentas por cobrar', fmtUSD(t.cxc), vencTxt(t.cxcVenc), "CONT.irA('cxc','',true)"));
   if(barco==='todos'){
-    out.push(kpi('Impuestos SRI pendientes', fmtUSD(sri.valor), impTxt(sri), "CONT.irA('imp','SRI')"));
-    out.push(kpi('Obligaciones IESS pendientes', fmtUSD(iess.valor), impTxt(iess), "CONT.irA('imp','IESS')"));
+    out.push(kpi('Cuentas por pagar', fmtUSD(t.cxp),
+      escH(t.cxpN+' facturas')+(t.cxpMas1?' · <span class="neg">'+fmtUSD(t.cxpMas1)+' con más de 1 año</span>':(t.cxpVenc?' · <span class="neg">'+fmtUSD(t.cxpVenc)+' +30 días</span>':'')), "CONT.irA('cxp','')"));
+    out.push(kpi('Cuentas por cobrar', fmtUSD(t.cxc),
+      escH(t.cxcN+' facturas')+(t.cxcVenc?' · <span class="neg">'+fmtUSD(t.cxcVenc)+' +30 días</span>':' · <span class="pos">ninguna con más de 30 días</span>'), "CONT.irA('cxc','')"));
+  }
+  if(barco==='todos'){
+    var sinImp=lista('impuestos').length===0;
+    out.push(kpi('Impuestos SRI pendientes', sinImp?'<span class="cont-pend">Pendiente</span>':fmtUSD(sri.valor), sinImp?'Falta leer de Tucán':impTxt(sri), "CONT.irA('imp','SRI')"));
+    out.push(kpi('Obligaciones IESS pendientes', sinImp?'<span class="cont-pend">Pendiente</span>':fmtUSD(iess.valor), sinImp?'Falta leer de Tucán':impTxt(iess), "CONT.irA('imp','IESS')"));
   }
   return out.join('');
 }
@@ -341,18 +366,21 @@ function tabla(){
   var rows, head, body='', foot='';
   if(tab==='cxp'||tab==='cxc'){
     var quien = tab==='cxp'?'proveedor':'cliente';
-    rows=porBarco(lista(tab)).filter(function(r){
-      return coincide(r,[quien,'documento','centro']) && (!soloVencido||(num(r.saldo)>0&&diasVencido(r.vence)>0));
-    }).sort(function(a,b){ return diasVencido(b.vence)-diasVencido(a.vence); });
-    head=['<th>'+(tab==='cxp'?'Proveedor':'Cliente')+'</th>','<th>Documento</th>','<th>Viaje</th>','<th>Emisión</th>','<th>Vence</th>','<th class="r">Valor</th>','<th class="r">Saldo</th>','<th>Estado</th>'];
-    var sv=0, ss=0;
+    rows=lista(tab).filter(function(r){
+      return coincide(r,[quien,'documento','centro']) && (!soloVencido||atrasado(r));
+    }).sort(function(a,b){ return num(b.saldo)-num(a.saldo); });
+    var agrupado=rows.some(function(r){ return r.facturas>1; });
+    head=['<th>'+(tab==='cxp'?'Proveedor':'Cliente')+'</th>','<th>'+(agrupado?'Facturas':'Documento')+'</th>','<th>'+(agrupado?'Emisión más antigua':'Emisión')+'</th>',
+      '<th>'+(agrupado?'Más reciente':'Vence')+'</th>','<th class="r">Valor</th>','<th class="r">Saldo</th>','<th>Antigüedad</th>'];
+    var sv=0, ss=0, nf=0;
     rows.forEach(function(r){
-      sv+=num(r.valor); ss+=num(r.saldo);
-      body+='<tr><td class="strong">'+escH(r[quien])+'</td><td>'+escH(r.documento)+'</td><td>'+viajeLbl(r)+'</td>'+
-        '<td>'+fmtFecha(r.fecha)+'</td><td>'+fmtFecha(r.vence)+'</td><td class="r">'+fmtUSD(r.valor)+'</td>'+
+      sv+=num(r.valor); ss+=num(r.saldo); nf+=num(r.facturas||1);
+      body+='<tr><td class="strong">'+escH(r[quien])+'</td><td>'+escH(r.facturas>1?r.facturas+' facturas':(r.documento||'—'))+'</td>'+
+        '<td>'+fmtFecha(r.fecha)+'</td><td>'+fmtFecha(r.facturas>1?r.fecha_ultima:r.vence)+'</td>'+
+        '<td class="r">'+(r.valor!=null?fmtUSD(r.valor):'—')+'</td>'+
         '<td class="r strong">'+fmtUSD(r.saldo)+'</td><td>'+pill(estadoSaldo(r))+'</td></tr>';
     });
-    foot='<tr><td colspan="5" class="cont-sub-lbl">Total ('+rows.length+' documentos)</td><td class="r cont-sub-val">'+fmtUSD(sv)+'</td><td class="r cont-sub-val">'+fmtUSD(ss)+'</td><td></td></tr>';
+    foot='<tr><td colspan="4" class="cont-sub-lbl">Total ('+nf+' facturas)</td><td class="r cont-sub-val">'+(sv?fmtUSD(sv):'—')+'</td><td class="r cont-sub-val">'+fmtUSD(ss)+'</td><td></td></tr>';
 
   } else if(tab==='fact'){
     rows=porBarco(lista('facturacion')).filter(function(r){ return delAnio(r) && coincide(r,['cliente','documento','centro']); })
@@ -481,7 +509,7 @@ function drawCharts(){
   }
   var c2=document.getElementById('cont-ch-aging');
   if(c2){
-    charts.a=new Chart(c2,{ type:'bar', data:{ labels:['Por vencer','1-30 días','31-60 días','+60 días'], datasets:[
+    charts.a=new Chart(c2,{ type:'bar', data:{ labels:['Hasta 30 días','31-90 días','91-365 días','Más de 1 año'], datasets:[
       { label:'Por pagar', data:antiguedad('cxp').map(Math.round), backgroundColor:'#D85A30', borderRadius:4 },
       { label:'Por cobrar', data:antiguedad('cxc').map(Math.round), backgroundColor:'#7F77DD', borderRadius:4 },
     ] }, options:opt() });
