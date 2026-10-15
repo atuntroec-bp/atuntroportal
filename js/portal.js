@@ -126,6 +126,19 @@
         linkLabel: 'Abrir simulador',
       },
       {
+        id: 'contable',
+        title: 'Dashboard Contable',
+        desc: 'Información de Tucán: costos por viaje, cuentas por pagar, cuentas por cobrar e impuestos. Indicadores, antigüedad de saldos y detalle filtrable.',
+        icon: '📊',
+        iconColor: 'blue',
+        color: 'color-blue',
+        status: 'active',
+        roles: ['admin','master'],
+        vessels: ['María Fátima','María de Gracia'],
+        onclick: 'openContable()',
+        linkLabel: 'Abrir dashboard',
+      },
+      {
         id: 'rentabilidad',
         title: 'Modelo de Rentabilidad',
         desc: 'Base de datos anual de viajes: descargas por talla, costos por proveedor, breakdowns de capitanes y análisis de rentabilidad.',
@@ -205,7 +218,7 @@
 
   // ── Navigation ──────────────────────────────────────────────────────────────
   function hideAllScreens() {
-    ['screen-login','screen-dashboard','screen-gestor','screen-checklist-ops','screen-checklist-adm','screen-equipos','screen-simulador','screen-documentos','screen-boyas','screen-proyectos','screen-plano'].forEach(function(id){
+    ['screen-login','screen-dashboard','screen-gestor','screen-checklist-ops','screen-checklist-adm','screen-equipos','screen-simulador','screen-documentos','screen-boyas','screen-proyectos','screen-plano','screen-contable'].forEach(function(id){
       var el = document.getElementById(id);
       if (el) el.classList.remove('active');
     });
@@ -309,6 +322,22 @@
     }, 100);
   }
   function goBackFromProyectos() {
+    var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
+    if (sess && AUTH.users[sess.id]) { enterDashboard(AUTH.users[sess.id].role); } else { logout(); }
+  }
+  function openContable() {
+    var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
+    if (!sess) { logout(); return; }
+    var u = AUTH.users[sess.id];
+    if (!u || (u.role !== 'admin' && u.role !== 'master')) { enterDashboard(u ? u.role : ''); return; }
+    hideAllScreens();
+    document.getElementById('screen-contable').classList.add('active');
+    window.scrollTo(0,0);
+    setTimeout(function(){
+      if (typeof CONT !== 'undefined') { try { CONT.init({ name: u.name, key: sess.id, role: u.role }); } catch(e){} }
+    }, 100);
+  }
+  function goBackFromContable() {
     var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
     if (sess && AUTH.users[sess.id]) { enterDashboard(AUTH.users[sess.id].role); } else { logout(); }
   }
