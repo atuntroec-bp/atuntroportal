@@ -445,7 +445,7 @@ Object.keys(NETS).forEach(function(v) {
 
 /* ── estado del módulo ── */
 let currentVessel = 'fatima';
-let data = { fatima:{estados:{},textos:{},fechas:{}}, gracia:{estados:{},textos:{},fechas:{}} };
+let data = { fatima:normalize(null), gracia:normalize(null) };
 let activeUser = null;
 let db = null, fbReady = false, applyingRemote = false;
 let isTyping = false, typingTimer = null, persistTimer = null;
@@ -466,6 +466,39 @@ function getEstado(id) {
 function getStatus(id, def)     { var e = bucket().estados; return e[id] !== undefined ? e[id] : def; }
 function getCustomText(id, def) { var t = bucket().textos;  return t[id] !== undefined ? t[id] : def; }
 function getCellDate(id)        { return bucket().fechas[id] || ''; }
+
+/* ── est./arm. por sección (editables) y totales ── */
+function secVal(sec, k) {
+  var o = bucket().secs[sec.id];
+  if (o && o[k] !== undefined && o[k] !== '') return o[k];
+  return sec[k === 'est' ? 'estiradas' : 'armadas'];
+}
+function totalBrazas(k) {
+  return sections().reduce(function (t, sec) {
+    if (sec.divider) return t;
+    var n = parseFloat(secVal(sec, k));
+    return t + (isNaN(n) ? 0 : n);
+  }, 0);
+}
+
+/* ── historial y fecha de actualización ── */
+const HIST_MAX = 500;
+function hoyISO() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function quien() { return (activeUser && activeUser.name) || '—'; }
+function registrar(lugar, que) {
+  var B = bucket();
+  B.hist.unshift({ ts: Date.now(), u: quien(), l: lugar, q: que });
+  if (B.hist.length > HIST_MAX) B.hist.length = HIST_MAX;
+  B.act = { f: hoyISO(), u: quien() };
+}
+function lugarCelda(el) {
+  var pn = el.dataset.panoNum;
+  var pl = (typeof pn === 'string' && (pn.indexOf('Panel') === 0 || isNaN(+pn))) ? pn : 'Paño ' + pn;
+  return el.dataset.secName + ' — ' + pl;
+}
 
 function formatCellDate(raw) {
   if (!raw) return '';
@@ -541,13 +574,20 @@ function loadLocal(v) {
   } catch (e) { return null; }
 }
 function normalize(d) {
-  return { estados:(d && d.estados) || {}, textos:(d && d.textos) || {}, fechas:(d && d.fechas) || {} };
+  return {
+    estados:(d && d.estados) || {}, textos:(d && d.textos) || {}, fechas:(d && d.fechas) || {},
+    secs:(d && d.secs) || {},                               /* est./arm. editados por sección */
+    hist:(d && Array.isArray(d.hist)) ? d.hist : [],        /* historial de cambios */
+    act:(d && d.act) || null                                /* última actualización {f, u} */
+  };
 }
 
 /* El modal está abierto o el usuario escribe → no redibujar la tabla */
 function isBusy() {
   var ov = document.getElementById('pr-overlay');
   if (ov && !ov.classList.contains('pr-hidden')) return true;
+  var so = document.getElementById('pr-secOverlay');
+  if (so && !so.classList.contains('pr-hidden')) return true;
   return isTyping;
 }
 
@@ -694,11 +734,13 @@ function renderTable() {
   var hr2 = document.createElement('tr');
   secs.forEach(function (sec) {
     if (sec.divider) return;
-    var cell = th(hr2, '', { cls:'pr-th-stats', colspan:sec.cols });
-    if (sec.estiradas !== '') {
-      cell.innerHTML = '<span class="pr-est">' + sec.estiradas + ' est.</span>' +
-                       '<span class="pr-arm">' + sec.armadas + ' arm.</span>';
-    }
+    var cell = th(hr2, '', { cls:'pr-th-stats pr-th-stats-ed', colspan:sec.cols });
+    var e = secVal(sec, 'est'), a = secVal(sec, 'arm');
+    cell.innerHTML = '<span class="pr-est">' + (e === '' || e == null ? '—' : e) + ' est.</span>' +
+                     '<span class="pr-arm">' + (a === '' || a == null ? '—' : a) + ' arm.</span>' +
+                     '<span class="pr-ed-ic">✎</span>';
+    cell.title = 'Clic para editar estiradas y armadas de ' + sec.name;
+    cell.addEventListener('click', function () { if (!selMode) abrirSecEdit(sec); });
   });
   thead.appendChild(hr2);
   tbl.appendChild(thead);
@@ -799,16 +841,103 @@ function renderTable() {
   renderVesselHeader();
   initDrag();
   refrescarBarraSel();
+  ajustarVista();
 }
+
+/* ── ver completo: escala el plano al ancho de la pantalla ── */
+let vistaCompleta = true;
+try {
+  var _pv = localStorage.getItem('atuntro_plano_red_vista');
+  /* sin preferencia guardada: en computadora se ve completo; en celular, tamaño real con desplazamiento */
+  vistaCompleta = _pv ? _pv !== 'real' : window.innerWidth >= 700;
+} catch (e) {}
+function ajustarVista() {
+  var tbl = document.getElementById('pr-netPlan');
+  var wrap = tbl && tbl.parentElement;
+  var btn = document.getElementById('pr-btnVista');
+  if (btn) btn.textContent = vistaCompleta ? '🔍 Tamaño real' : '⤢ Ver completo';
+  if (!tbl || !wrap) return;
+  wrap.style.setProperty('--pr-fit', '1');
+  if (!vistaCompleta) return;
+  var disp = wrap.clientWidth - 24, w = tbl.offsetWidth;
+  if (disp > 0 && w > disp) wrap.style.setProperty('--pr-fit', (disp / w).toFixed(4));
+}
+function toggleVista() {
+  vistaCompleta = !vistaCompleta;
+  try { localStorage.setItem('atuntro_plano_red_vista', vistaCompleta ? 'completa' : 'real'); } catch (e) {}
+  ajustarVista();
+}
+window.addEventListener('resize', function () {
+  var sc = document.getElementById('screen-plano');
+  if (sc && sc.classList.contains('active')) ajustarVista();
+});
+
+/* ── editar est./arm. de una sección ── */
+let secEditando = null;
+function abrirSecEdit(sec) {
+  secEditando = sec;
+  document.getElementById('pr-secTitle').textContent = sec.name;
+  var e = secVal(sec, 'est'), a = secVal(sec, 'arm');
+  document.getElementById('pr-secEst').value = (e === '—' || e == null) ? '' : e;
+  document.getElementById('pr-secArm').value = (a === '—' || a == null) ? '' : a;
+  document.getElementById('pr-secOverlay').classList.remove('pr-hidden');
+  setTimeout(function () { document.getElementById('pr-secEst').focus(); }, 40);
+}
+function cerrarSecEdit() { document.getElementById('pr-secOverlay').classList.add('pr-hidden'); secEditando = null; }
+function guardarSecEdit() {
+  var sec = secEditando; if (!sec) return;
+  var est = document.getElementById('pr-secEst').value.trim();
+  var arm = document.getElementById('pr-secArm').value.trim();
+  if ((est !== '' && isNaN(+est)) || (arm !== '' && isNaN(+arm))) { alert('Escribe solo números (brazas).'); return; }
+  var e0 = secVal(sec, 'est'), a0 = secVal(sec, 'arm');
+  var e1 = est === '' ? '—' : +est, a1 = arm === '' ? '—' : +arm;
+  if (String(e0) !== String(e1) || String(a0) !== String(a1)) {
+    bucket().secs[sec.id] = { est: e1, arm: a1 };
+    registrar(sec.name, 'Brazas: ' + e0 + ' est. / ' + a0 + ' arm. → ' + e1 + ' est. / ' + a1 + ' arm.');
+    markTyping();
+    persistNow();
+    renderTable();
+    renderLastMod();
+  }
+  cerrarSecEdit();
+}
+
+/* ── historial de cambios ── */
+function abrirHistorial() {
+  var B = bucket();
+  document.getElementById('pr-histSub').textContent = net().label + ' · ' + B.hist.length + ' cambio(s) registrados';
+  var sel = document.getElementById('pr-histSec');
+  var secs = [];
+  B.hist.forEach(function (h) { var s0 = String(h.l).split(' — ')[0]; if (secs.indexOf(s0) < 0) secs.push(s0); });
+  sel.innerHTML = '<option value="">Todas las secciones</option>' + secs.map(function (x) { return '<option value="' + escH(x) + '">' + escH(x) + '</option>'; }).join('');
+  pintarHistorial();
+  document.getElementById('pr-histOverlay').classList.remove('pr-hidden');
+}
+function pintarHistorial() {
+  var f = document.getElementById('pr-histSec').value;
+  var list = bucket().hist.filter(function (h) { return !f || String(h.l).split(' — ')[0] === f; });
+  var box = document.getElementById('pr-histList');
+  if (!list.length) { box.innerHTML = '<div class="pr-hist-empty">Todavía no hay cambios registrados.</div>'; return; }
+  box.innerHTML = list.map(function (h) {
+    var d = new Date(h.ts);
+    var fh = formatCellDate(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')) +
+             ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return '<div class="pr-hist-row"><div class="pr-hist-when">' + fh + '<br><span>' + escH(h.u) + '</span></div>' +
+           '<div class="pr-hist-what"><b>' + escH(h.l) + '</b><br>' + escH(h.q) + '</div></div>';
+  }).join('');
+}
+function cerrarHistorial() { document.getElementById('pr-histOverlay').classList.add('pr-hidden'); }
+function escH(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]; }); }
 
 /* ── cabecera del buque ── */
 function renderVesselHeader() {
   var N = net();
   var sub = document.getElementById('pr-vessel-sub');
-  if (sub) sub.textContent = 'B/P ' + N.label + '  ·  plano ' + N.fecha;
+  var act = bucket().act;
+  if (sub) sub.textContent = 'B/P ' + N.label + '  ·  ' + (act ? 'actualizado ' + formatCellDate(act.f) : 'plano ' + N.fecha);
   var mid = document.getElementById('pr-header-mid');
   if (mid) {
-    mid.innerHTML = '<span>Estiradas <b>' + N.estiradas + ' brazas</b> · Armadas <b>' + N.armadas + ' brazas</b></span>' +
+    mid.innerHTML = '<span>Estiradas <b>' + totalBrazas('est') + ' brazas</b> · Armadas <b>' + totalBrazas('arm') + ' brazas</b></span>' +
                     '<span>' + N.numPanos + ' paños · ' + N.alto + ' bz. de profundidad</span>';
   }
 }
@@ -853,6 +982,8 @@ function updateStats() {
 function renderLastMod() {
   var el = document.getElementById('pr-lastMod');
   if (!el) return;
+  var act = bucket().act;
+  if (act) { el.textContent = act.u ? 'Último cambio por ' + act.u : ''; renderVesselHeader(); return; }
   var f = bucket().fechas, last = '';
   Object.keys(f).forEach(function (k) { if (f[k] > last) last = f[k]; });
   el.textContent = last ? 'Último cambio registrado: ' + formatCellDate(last) : '';
@@ -888,8 +1019,10 @@ function openModal(el) {
     dateInp.onchange = function () {
       if (!activeCell) return;
       var v = dateInp.value;
+      var antes = bucket().fechas[activeCell.dataset.id] || '';
       if (v) bucket().fechas[activeCell.dataset.id] = v;
       else delete bucket().fechas[activeCell.dataset.id];
+      if (v !== antes) registrar(lugarCelda(activeCell), 'Fecha: ' + (antes ? formatCellDate(antes) : '—') + ' → ' + (v ? formatCellDate(v) : '—'));
       markTyping();
       persistDebounced();
       refreshCellDate(activeCell, v);
@@ -903,7 +1036,15 @@ function openModal(el) {
 
 function applyStatus(statusId) {
   if (!activeCell) return;
-  bucket().estados[activeCell.dataset.id] = statusId;
+  var id = activeCell.dataset.id;
+  var antes = getStatus(id, getDefaultStatus(id));
+  bucket().estados[id] = statusId;
+  if (antes !== statusId) {
+    bucket().fechas[id] = hoyISO();
+    refreshCellDate(activeCell, bucket().fechas[id]);
+    registrar(lugarCelda(activeCell), 'Estado: ' + getEstado(antes).label + ' → ' + getEstado(statusId).label);
+    renderLastMod();
+  }
   markTyping();
   persistDebounced();
   activeCell.classList.remove.apply(activeCell.classList, ALL_S_CLASSES);
@@ -917,7 +1058,9 @@ function clearCellDate() {
   if (!activeCell) return;
   var dateInp = document.getElementById('pr-mDateInput');
   if (dateInp) dateInp.value = '';
+  var antes = bucket().fechas[activeCell.dataset.id];
   delete bucket().fechas[activeCell.dataset.id];
+  if (antes) registrar(lugarCelda(activeCell), 'Fecha quitada (' + formatCellDate(antes) + ')');
   markTyping();
   persistDebounced();
   refreshCellDate(activeCell, '');
@@ -961,7 +1104,13 @@ function saveTextEdit() {
   var inp = document.querySelector('.pr-text-edit-input');
   var newText = inp ? inp.value.trim() : '';
   var id = activeCell.dataset.id;
+  var antes = getCustomText(id, activeCell.dataset.rawText || '—');
   if (newText) bucket().textos[id] = newText; else delete bucket().textos[id];
+  var despues = newText || activeCell.dataset.rawText || '—';
+  if (despues !== antes) {
+    bucket().fechas[id] = hoyISO();
+    registrar(lugarCelda(activeCell), 'Medida: ' + antes + ' → ' + despues);
+  }
   markTyping();
   persistDebounced();
 
@@ -977,6 +1126,9 @@ function saveTextEdit() {
     if (keepDate) activeCell.appendChild(keepDate);
   }
   document.getElementById('pr-mMeas').textContent = final;
+  refreshCellDate(activeCell, getCellDate(id));
+  var di = document.getElementById('pr-mDateInput'); if (di) di.value = getCellDate(id);
+  renderLastMod();
   resetEditBtn();
 }
 
@@ -1026,8 +1178,10 @@ function resetAll() {
     }
   });
   bucket().estados = est;
+  registrar('Todo el plano', 'Reseteo: todos los tramos a Sin Asignar');
   persistNow();
   renderTable();
+  renderLastMod();
 }
 
 /* El plano es mucho más ancho que alto: se imprime apaisado y escalado
@@ -1198,15 +1352,21 @@ function aplicarMasivo() {
   if (!confirm('Se aplicará ' + resumen.join(' y ') + ' a ' + ids.length + ' tramo(s) de ' +
                net().label + '.\n\n¿Continuar?')) return;
 
-  var B = bucket();
+  var B = bucket(), hoy = hoyISO(), cambiados = 0;
   ids.forEach(function (id) {
-    if (estado) B.estados[id] = estado;
+    if (estado) {
+      if (getStatus(id, getDefaultStatus(id)) !== estado) cambiados++;
+      B.estados[id] = estado;
+    }
     if (quitarFecha) delete B.fechas[id];
     else if (ponerFecha) B.fechas[id] = fecha;
+    else if (estado) B.fechas[id] = hoy;      /* cualquier cambio deja la fecha del día */
   });
+  registrar('Cambio masivo · ' + ids.length + ' tramo(s)', resumen.join(' y ') + (estado ? ' (' + cambiados + ' cambiaron de estado)' : ''));
   markTyping();
   persistNow();
   renderTable();
+  renderLastMod();
   pintarSel();
   refrescarBarraSel();
 }
@@ -1421,7 +1581,7 @@ function buildSheet() {
 
   /* encabezado del documento */
   put(1, 1, 'PLANO DE RED  ·  B/P ' + N.label, XF.TITLE);      merge(1, 1, 1, Math.min(lastCol, 14));
-  put(2, 1, N.estiradas + ' brazas estiradas  ·  ' + N.armadas + ' brazas armadas  ·  ' +
+  put(2, 1, totalBrazas('est') + ' brazas estiradas  ·  ' + totalBrazas('arm') + ' brazas armadas  ·  ' +
             NUM + ' paños (' + N.alto + ' bz. de alto)  ·  plano ' + N.fecha, XF.SUB);
   merge(2, 1, 2, Math.min(lastCol, 18));
   /* leyenda de colores */
@@ -1443,7 +1603,7 @@ function buildSheet() {
       return;
     }
     put(R_SEC, c0, sec.name, XF.SECHDR); merge(R_SEC, c0, R_SEC, c1);
-    put(R_STATS, c0, sec.estiradas === '' ? '' : sec.estiradas + ' est.  ·  ' + sec.armadas + ' arm.', XF.STATS);
+    put(R_STATS, c0, secVal(sec, 'est') === '' ? '' : secVal(sec, 'est') + ' est.  ·  ' + secVal(sec, 'arm') + ' arm.', XF.STATS);
     merge(R_STATS, c0, R_STATS, c1);
   });
 
@@ -1608,6 +1768,12 @@ return {
   clearCellDate: clearCellDate,
   enableTextEdit: enableTextEdit,
   resetAll: resetAll,
+  toggleVista: toggleVista,
+  abrirHistorial: abrirHistorial,
+  pintarHistorial: pintarHistorial,
+  cerrarHistorial: cerrarHistorial,
+  cerrarSecEdit: cerrarSecEdit,
+  guardarSecEdit: guardarSecEdit,
   imprimir: imprimir,
   exportarExcel: exportarExcel,
   toggleSelMode: toggleSelMode,

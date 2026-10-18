@@ -5505,6 +5505,28 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
 .pr-th-stats{background:#0d3258;color:#7aa8c8;font-size:9px;text-align:center;padding:4px 8px;border:1px solid #12416e;white-space:nowrap}
 .pr-th-stats .pr-est{color:#70b8ee}
 .pr-th-stats .pr-arm{color:#88d4a0;margin-left:6px}
+.pr-th-stats-ed{cursor:pointer}
+.pr-th-stats-ed:hover{background:#12416e}
+.pr-th-stats .pr-ed-ic{color:#7aa8c8;margin-left:6px;opacity:.55}
+.pr-th-stats-ed:hover .pr-ed-ic{opacity:1}
+#pr-netPlan{zoom:var(--pr-fit,1)}
+.pr-sec-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+.pr-sec-fields label{display:block;font-size:10px;font-weight:700;color:#5a7290;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.pr-sec-fields input{width:100%;box-sizing:border-box;border:1.5px solid #b8cce0;border-radius:7px;padding:8px 10px;font-size:14px;font-family:inherit}
+.pr-sec-fields input:focus{outline:none;border-color:#1c6dc4}
+.pr-sec-hint{font-size:11px;color:#5a7290;margin-top:6px}
+.pr-btn-ok{background:#0b2a4a;color:#fff;border:none;border-radius:7px;padding:8px 18px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;margin-left:8px}
+.pr-btn-ok:hover{background:#1c6dc4}
+.pr-modal-hist{width:640px;max-height:86vh;display:flex;flex-direction:column}
+.pr-hist-tools{margin:12px 0 8px}
+.pr-hist-tools select{border:1.5px solid #b8cce0;border-radius:7px;padding:6px 8px;font-size:12px;font-family:inherit}
+.pr-hist-list{overflow-y:auto;flex:1;border-top:1px solid #e3ebf4}
+.pr-hist-row{display:flex;gap:12px;padding:9px 2px;border-bottom:1px solid #eef2f8;font-size:12px;color:#0b1f38}
+.pr-hist-when{width:118px;flex-shrink:0;color:#5a7290;font-size:11px;line-height:1.45}
+.pr-hist-when span{color:#1c6dc4;font-weight:600}
+.pr-hist-what{line-height:1.45}
+.pr-hist-empty{padding:28px;text-align:center;color:#8fa3b8;font-size:12px}
+@media (max-width:700px){.pr-header-right{flex-wrap:wrap}.pr-hist-when{width:92px}}
 .pr-td-label,.pr-th-label{background:#07213a;color:#7aa8c8;font-size:11.5px;font-weight:600;text-align:center;padding:0 10px;min-width:46px;width:46px;border:1px solid #12416e;position:sticky;left:0;z-index:2;font-variant-numeric:tabular-nums}
 .pr-th-label{font-size:9px;letter-spacing:.08em;text-transform:uppercase;vertical-align:middle}
 .pr-row-even .pr-td-label{background:#0d3258}
@@ -5624,6 +5646,8 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
       </div>
       <button class="pr-btn" id="pr-resetBtn" onclick="PR.resetAll()">↺ Resetear</button>
       <button class="pr-btn" id="pr-btnSel" onclick="PR.toggleSelMode()">☐ Selección múltiple</button>
+      <button class="pr-btn" id="pr-btnVista" onclick="PR.toggleVista()">🔍 Tamaño real</button>
+      <button class="pr-btn" onclick="PR.abrirHistorial()">🕘 Historial</button>
       <button class="pr-btn" onclick="PR.exportarExcel()">⤓ Excel</button>
       <button class="pr-btn" onclick="PR.imprimir()">⎙ Imprimir</button>
       <button class="pr-btn" onclick="goBackFromPlano()">← Volver</button>
@@ -5706,6 +5730,36 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
     </div>
     <div class="pr-modal-foot">
       <button class="pr-btn-cancel" onclick="PR.closeModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="pr-overlay pr-hidden" id="pr-secOverlay" role="dialog" aria-modal="true" onclick="if(event.target===this)PR.cerrarSecEdit()">
+  <div class="pr-modal">
+    <div class="pr-modal-title">Brazas de la sección</div>
+    <div class="pr-modal-sub" id="pr-secTitle"></div>
+    <div class="pr-sec-fields">
+      <div><label for="pr-secEst">Estiradas</label><input type="number" min="0" step="1" id="pr-secEst" onkeydown="if(event.key==='Enter')PR.guardarSecEdit()"></div>
+      <div><label for="pr-secArm">Armadas</label><input type="number" min="0" step="1" id="pr-secArm" onkeydown="if(event.key==='Enter')PR.guardarSecEdit()"></div>
+    </div>
+    <div class="pr-sec-hint">El total de estiradas y armadas de arriba se suma solo.</div>
+    <div class="pr-modal-foot">
+      <button class="pr-btn-cancel" onclick="PR.cerrarSecEdit()">Cancelar</button>
+      <button class="pr-btn-ok" onclick="PR.guardarSecEdit()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="pr-overlay pr-hidden" id="pr-histOverlay" role="dialog" aria-modal="true" onclick="if(event.target===this)PR.cerrarHistorial()">
+  <div class="pr-modal pr-modal-hist">
+    <div class="pr-modal-title">🕘 Historial de cambios</div>
+    <div class="pr-modal-sub" id="pr-histSub"></div>
+    <div class="pr-hist-tools">
+      <select id="pr-histSec" onchange="PR.pintarHistorial()"></select>
+    </div>
+    <div class="pr-hist-list" id="pr-histList"></div>
+    <div class="pr-modal-foot">
+      <button class="pr-btn-cancel" onclick="PR.cerrarHistorial()">Cerrar</button>
     </div>
   </div>
 </div>
