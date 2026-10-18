@@ -98,16 +98,16 @@
     gestor_modules: [
       {
         id: 'gestor-tareas',
-        title: 'Gestor de Tareas',
-        desc: 'Registro y seguimiento de tareas del equipo: pendientes, compromisos, fechas límite y estado de cumplimiento.',
-        icon: '✅',
+        title: 'Gestión de Equipo',
+        desc: 'Tareas del equipo, agenda de fechas clave (zarpes, vencimientos de documentos) y reuniones con sus convocados.',
+        icon: '👥',
         iconColor: 'green',
         color: 'color-green',
         status: 'active',
         roles: ['operaciones','operaciones_master','admin','contabilidad','master'],
         vessels: [],
         url: null,
-        linkLabel: 'Abrir Gestor',
+        linkLabel: 'Abrir Gestión de Equipo',
         onclick: "openGestor()",
       },
     ],
@@ -204,11 +204,12 @@
 
     document.getElementById('role-badge-text').textContent = ROLE_LABELS[role] || role;
     document.getElementById('grid-ops').innerHTML = opsModules.map(renderCard).join('');
-    document.getElementById('grid-fin').innerHTML = [...finModules, ...gestorModules].map(renderCard).join('');
+    document.getElementById('grid-fin').innerHTML = finModules.map(renderCard).join('');
+    document.getElementById('grid-equipo').innerHTML = gestorModules.map(renderCard).join('');
 
     document.getElementById('section-ops').style.display = opsModules.length ? 'block' : 'none';
-    const finTotal = finModules.length + gestorModules.length;
-    document.getElementById('section-fin').style.display = finTotal ? 'block' : 'none';
+    document.getElementById('section-equipo').style.display = gestorModules.length ? 'block' : 'none';
+    document.getElementById('section-fin').style.display = finModules.length ? 'block' : 'none';
 
     const finLabel = document.getElementById('section-fin-label');
     if (finLabel) {
@@ -236,6 +237,7 @@
     window.scrollTo(0,0);
     setTimeout(function(){
       if (typeof GT !== 'undefined') { try { GT.init(); } catch(e){} }
+      if (typeof EQ !== 'undefined') { try { EQ.init(); } catch(e){} }
       loadPendingTasks();
     }, 100);
   }

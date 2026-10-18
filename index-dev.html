@@ -3090,6 +3090,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       <div class="mod-grid" id="grid-ops"></div>
     </div>
 
+    <!-- GESTIÓN DE EQUIPO -->
+    <div id="section-equipo" class="fade-up d2">
+      <div class="section-label" style="margin-top:32px">Gestión de Equipo</div>
+      <div class="mod-grid" id="grid-equipo"></div>
+    </div>
+
     <!-- MÓDULOS FINANCIEROS / HERRAMIENTAS -->
     <div id="section-fin" class="fade-up d2">
       <div class="section-label" style="margin-top:32px" id="section-fin-label">Finanzas y Rentabilidad</div>
@@ -3127,9 +3133,16 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       <button class="btn-back" onclick="goBackFromGestor()">&#8592; Volver</button>
       <button class="btn-back" onclick="openChangePinModal()" title="Cambiar contraseña" style="padding:7px 10px">🔐</button>
     </div>
-    <span class="nav-title">Portal Operativo &#183; Gestor de Tareas</span>
+    <span class="nav-title" id="eq-nav-title">Portal Operativo &#183; Gestión de Equipo</span>
   </div>
   <div class="gestor-body-wrap">
+<!-- ════════ GESTIÓN DE EQUIPO — pestañas ════════ -->
+<div class="eq-tabs">
+  <button type="button" class="eq-tab on" data-tab="tareas" onclick="EQ.showTab('tareas')">📋 Tareas</button>
+  <button type="button" class="eq-tab" data-tab="agenda" onclick="EQ.showTab('agenda')">📅 Agenda <span class="eq-cnt" id="eq-cnt-agenda">0</span></button>
+  <button type="button" class="eq-tab" data-tab="reuniones" onclick="EQ.showTab('reuniones')">🤝 Reuniones <span class="eq-cnt" id="eq-cnt-reu">0</span></button>
+</div>
+<div class="eq-panel on" id="eq-p-tareas">
 <!-- ════════ GESTOR DE TAREAS — bloque integrable ════════ -->
 <div id="gt-root">
 
@@ -3220,6 +3233,157 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
   <div class="gt-footer">ATUNTRO S.A. · Gestor de Tareas v2.0 · Generado con Claude</div>
 </div>
 <!-- ════════ fin bloque integrable ════════ -->
+</div><!-- /eq-p-tareas -->
+
+<!-- ════════ AGENDA ════════ -->
+<div class="eq-panel" id="eq-p-agenda">
+  <div class="gt-header">
+    <div class="gt-header-left">
+      <h2>📅 Agenda</h2>
+      <p>Fechas de tareas, zarpes y arribos, reuniones y vencimientos de documentos</p>
+    </div>
+    <div class="gt-header-btns">
+      <button class="gt-add-btn" onclick="EQ.abrirEvento()">+ Nuevo evento</button>
+    </div>
+  </div>
+  <div class="gt-card">
+    <div class="gt-card-title">Próximos 7 días</div>
+    <div id="eq-ag-prox"></div>
+  </div>
+  <div class="gt-card" style="margin-top:10px">
+    <div class="gt-card-title">Más adelante · próximos 90 días</div>
+    <div id="eq-ag-mas"></div>
+  </div>
+  <div class="eq-nota">Aparecen solos: las fechas de las tareas pendientes de tu área, tus reuniones y los vencimientos de Control Documental. Zarpes, arribos y otros se agregan con "+ Nuevo evento".</div>
+</div>
+
+<!-- ════════ REUNIONES ════════ -->
+<div class="eq-panel" id="eq-p-reuniones">
+  <div class="gt-header">
+    <div class="gt-header-left">
+      <h2>🤝 Reuniones</h2>
+      <p>Solo los convocados pueden ver cada reunión</p>
+    </div>
+    <div class="gt-header-btns">
+      <button class="gt-add-btn" onclick="EQ.abrirReunion()">+ Convocar reunión</button>
+    </div>
+  </div>
+  <div class="gt-filters">
+    <input class="gt-search" id="eq-reu-search" type="text" placeholder="🔍 Buscar reunión o lugar…" oninput="EQ.renderReus()">
+    <select class="gt-sel" id="eq-reu-est" onchange="EQ.renderReus()">
+      <option value="">Todos los estados</option>
+      <option value="PROGRAMADA">PROGRAMADA</option>
+      <option value="REALIZADA">REALIZADA</option>
+    </select>
+    <span class="gt-clear-btn" onclick="EQ.limpiarReus()">✕ Limpiar</span>
+  </div>
+  <div class="gt-table-wrap">
+    <div class="gt-table-head">
+      <div class="gt-th"></div>
+      <div class="gt-th gt-th-num">Hora</div>
+      <div class="gt-th">Reunión</div>
+      <div class="gt-th gt-th-dept">Fecha</div>
+      <div class="gt-th gt-th-resp">Convocados</div>
+      <div class="gt-th">Estado</div>
+    </div>
+    <div id="eq-reu-list"></div>
+  </div>
+</div>
+
+<!-- ── Modal: Nuevo evento ── -->
+<div id="eq-ev-modal" class="gt-modal-overlay" onclick="EQ.cerrarEventoBg(event)">
+  <div class="gt-modal" style="max-width:440px">
+    <div class="gt-modal-title">📅 Nuevo evento</div>
+    <div class="gt-modal-row"><label>Descripción</label><input id="eq-ev-txt" type="text" placeholder="Ej.: Zarpe, arribo, descarga…"></div>
+    <div class="gt-modal-grid">
+      <div class="gt-modal-row"><label>Tipo</label>
+        <select id="eq-ev-tipo">
+          <option value="op">Operación (zarpe, arribo, descarga)</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="gt-modal-row"><label>Fecha</label><input id="eq-ev-fecha" type="date"></div>
+    </div>
+    <div class="gt-modal-row"><label>Barco / Área</label>
+      <select id="eq-ev-area">
+        <option value="María Fátima">María Fátima</option>
+        <option value="María de Gracia">María de Gracia</option>
+        <option value="Ambos barcos">Ambos barcos</option>
+        <option value="Oficina">Oficina</option>
+      </select>
+    </div>
+    <div class="eq-err" id="eq-ev-err"></div>
+    <div class="gt-modal-actions">
+      <button class="gt-btn-cancel" onclick="EQ.cerrarEvento()">Cancelar</button>
+      <button class="gt-btn-save" onclick="EQ.guardarEvento()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Convocar reunión ── -->
+<div id="eq-rm-modal" class="gt-modal-overlay" onclick="EQ.cerrarReunionBg(event)">
+  <div class="gt-modal" style="max-width:480px;max-height:92vh;overflow-y:auto">
+    <div class="gt-modal-title">🤝 Convocar reunión</div>
+    <div class="gt-modal-row"><label>Tema</label><input id="eq-rm-tema" type="text" placeholder="Ej.: Planificación zarpe María Fátima"></div>
+    <div class="gt-modal-grid">
+      <div class="gt-modal-row"><label>Fecha</label><input id="eq-rm-fecha" type="date"></div>
+      <div class="gt-modal-row"><label>Hora</label><input id="eq-rm-hora" type="time"></div>
+    </div>
+    <div class="gt-modal-row"><label>Lugar</label><input id="eq-rm-lugar" type="text" placeholder="Ej.: Oficina, muelle, a bordo María Fátima, videollamada"></div>
+    <div class="gt-modal-row">
+      <label>¿Quiénes van? <span id="eq-rm-cnt" class="eq-sel-cnt">0 seleccionados</span></label>
+      <div class="eq-conv" id="eq-rm-conv"></div>
+    </div>
+    <div class="eq-nota" style="margin-top:0">🔒 Solo las personas marcadas podrán ver esta reunión.</div>
+    <div class="eq-err" id="eq-rm-err"></div>
+    <div class="gt-modal-actions">
+      <button class="gt-btn-cancel" onclick="EQ.cerrarReunion()">Cancelar</button>
+      <button class="gt-btn-save" onclick="EQ.guardarReunion()">Convocar</button>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ═══ GESTIÓN DE EQUIPO (prefijo .eq-) ═══ */
+.eq-tabs{max-width:960px;margin:0 auto 12px;display:flex;gap:6px;background:#fff;border-radius:10px;padding:6px;box-shadow:0 1px 4px rgba(0,0,0,.07);flex-wrap:wrap;font-family:'Segoe UI',Arial,sans-serif}
+.eq-tab{flex:1;min-width:140px;border:none;background:transparent;border-radius:7px;padding:9px 12px;font-size:12px;font-weight:600;color:#888;cursor:pointer;font-family:inherit;transition:.2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.eq-tab:hover{background:#f5f5f3;color:#1F4E79}
+.eq-tab.on{background:#1F4E79;color:#fff}
+.eq-cnt{font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;background:#E6F1FB;color:#042C53}
+.eq-tab.on .eq-cnt{background:rgba(255,255,255,.22);color:#fff}
+.eq-panel{display:none;max-width:960px;margin:0 auto;font-family:'Segoe UI',Arial,sans-serif;color:#1a1a18}
+.eq-panel.on{display:block}
+.eq-ev{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.05)}
+.eq-ev:last-child{border-bottom:none}
+.eq-ev-fecha{width:52px;flex-shrink:0;text-align:center;border-radius:8px;background:#f9f9f7;border:1px solid #e8e6e0;padding:4px 0}
+.eq-ev-dow,.eq-ev-mes{font-size:9px;font-weight:700;color:#888;text-transform:uppercase}
+.eq-ev-dia{font-size:18px;font-weight:700;color:#1F4E79;line-height:1.1}
+.eq-ev-txt{flex:1;min-width:0;font-size:12px;color:#1a1a18}
+.eq-ev-sub{font-size:10px;color:#999;margin-top:2px}
+.eq-t-tarea{background:#E6F1FB;color:#042C53}
+.eq-t-op{background:#E1F5EE;color:#085041}
+.eq-t-doc{background:#FAEEDA;color:#412402}
+.eq-t-reu{background:#EEEDFE;color:#26215C}
+.eq-t-otro{background:#EFEFED;color:#4A4A47}
+.eq-del{background:none;border:none;color:#ccc;cursor:pointer;font-size:12px;padding:2px 6px;border-radius:6px}
+.eq-del:hover{color:#C0392B;background:#FAECE7}
+.eq-nota{font-size:10px;color:#aaa;font-style:italic;margin-top:8px}
+.eq-avs{display:flex;flex-wrap:wrap;gap:3px;padding-top:2px}
+.eq-av{width:24px;height:24px;border-radius:50%;background:#E6F1FB;color:#042C53;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;box-shadow:0 0 0 1px #BDD7EE}
+.eq-av.mas{background:#f0ede8;color:#555;box-shadow:0 0 0 1px #e8e6e0}
+.eq-st-PROGRAMADA{background:#FAEEDA;color:#412402}
+.eq-st-REALIZADA{background:#E1F5EE;color:#085041}
+.eq-conv-line{color:#999}
+.eq-cancel{color:#D85A30;cursor:pointer;font-weight:600;margin-left:6px}
+.eq-cancel:hover{text-decoration:underline}
+.eq-conv{border:1.5px solid rgba(0,0,0,.12);border-radius:7px;background:#f9f9f7;max-height:230px;overflow-y:auto;padding:4px 10px 8px}
+.eq-grp{font-size:10px;font-weight:700;color:#1F4E79;text-transform:uppercase;letter-spacing:.5px;margin:8px 0 2px}
+.gt-modal-row .eq-pers{display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:12px;color:#1a1a18;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400;margin:0}
+.gt-modal-row .eq-pers input{width:16px;height:16px;padding:0;margin:0;flex-shrink:0;accent-color:#1F4E79}
+.eq-yo{font-size:10px;color:#999}
+.eq-sel-cnt{float:right;color:#2E75B6;text-transform:none;letter-spacing:0}
+.eq-err{color:#C0392B;font-size:11px;min-height:14px;margin-top:6px}
+</style>
 <!-- ── Modal: Nueva / Editar tarea ── -->
 <div id="gt-modal-bg" class="gt-modal-overlay" onclick="GT.closeModalBg(event)">
   <div class="gt-modal" style="max-width:480px">
@@ -3493,6 +3657,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 <script src="js/portal.js"></script>
 
 <script src="js/gestor-tareas.js"></script>
+
+<script src="js/equipo.js"></script>
 
 
 <!-- ════════════════════════════════════════════

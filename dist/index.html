@@ -3090,6 +3090,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       <div class="mod-grid" id="grid-ops"></div>
     </div>
 
+    <!-- GESTIÓN DE EQUIPO -->
+    <div id="section-equipo" class="fade-up d2">
+      <div class="section-label" style="margin-top:32px">Gestión de Equipo</div>
+      <div class="mod-grid" id="grid-equipo"></div>
+    </div>
+
     <!-- MÓDULOS FINANCIEROS / HERRAMIENTAS -->
     <div id="section-fin" class="fade-up d2">
       <div class="section-label" style="margin-top:32px" id="section-fin-label">Finanzas y Rentabilidad</div>
@@ -3127,9 +3133,16 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       <button class="btn-back" onclick="goBackFromGestor()">&#8592; Volver</button>
       <button class="btn-back" onclick="openChangePinModal()" title="Cambiar contraseña" style="padding:7px 10px">🔐</button>
     </div>
-    <span class="nav-title">Portal Operativo &#183; Gestor de Tareas</span>
+    <span class="nav-title" id="eq-nav-title">Portal Operativo &#183; Gestión de Equipo</span>
   </div>
   <div class="gestor-body-wrap">
+<!-- ════════ GESTIÓN DE EQUIPO — pestañas ════════ -->
+<div class="eq-tabs">
+  <button type="button" class="eq-tab on" data-tab="tareas" onclick="EQ.showTab('tareas')">📋 Tareas</button>
+  <button type="button" class="eq-tab" data-tab="agenda" onclick="EQ.showTab('agenda')">📅 Agenda <span class="eq-cnt" id="eq-cnt-agenda">0</span></button>
+  <button type="button" class="eq-tab" data-tab="reuniones" onclick="EQ.showTab('reuniones')">🤝 Reuniones <span class="eq-cnt" id="eq-cnt-reu">0</span></button>
+</div>
+<div class="eq-panel on" id="eq-p-tareas">
 <!-- ════════ GESTOR DE TAREAS — bloque integrable ════════ -->
 <div id="gt-root">
 
@@ -3220,6 +3233,157 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
   <div class="gt-footer">ATUNTRO S.A. · Gestor de Tareas v2.0 · Generado con Claude</div>
 </div>
 <!-- ════════ fin bloque integrable ════════ -->
+</div><!-- /eq-p-tareas -->
+
+<!-- ════════ AGENDA ════════ -->
+<div class="eq-panel" id="eq-p-agenda">
+  <div class="gt-header">
+    <div class="gt-header-left">
+      <h2>📅 Agenda</h2>
+      <p>Fechas de tareas, zarpes y arribos, reuniones y vencimientos de documentos</p>
+    </div>
+    <div class="gt-header-btns">
+      <button class="gt-add-btn" onclick="EQ.abrirEvento()">+ Nuevo evento</button>
+    </div>
+  </div>
+  <div class="gt-card">
+    <div class="gt-card-title">Próximos 7 días</div>
+    <div id="eq-ag-prox"></div>
+  </div>
+  <div class="gt-card" style="margin-top:10px">
+    <div class="gt-card-title">Más adelante · próximos 90 días</div>
+    <div id="eq-ag-mas"></div>
+  </div>
+  <div class="eq-nota">Aparecen solos: las fechas de las tareas pendientes de tu área, tus reuniones y los vencimientos de Control Documental. Zarpes, arribos y otros se agregan con "+ Nuevo evento".</div>
+</div>
+
+<!-- ════════ REUNIONES ════════ -->
+<div class="eq-panel" id="eq-p-reuniones">
+  <div class="gt-header">
+    <div class="gt-header-left">
+      <h2>🤝 Reuniones</h2>
+      <p>Solo los convocados pueden ver cada reunión</p>
+    </div>
+    <div class="gt-header-btns">
+      <button class="gt-add-btn" onclick="EQ.abrirReunion()">+ Convocar reunión</button>
+    </div>
+  </div>
+  <div class="gt-filters">
+    <input class="gt-search" id="eq-reu-search" type="text" placeholder="🔍 Buscar reunión o lugar…" oninput="EQ.renderReus()">
+    <select class="gt-sel" id="eq-reu-est" onchange="EQ.renderReus()">
+      <option value="">Todos los estados</option>
+      <option value="PROGRAMADA">PROGRAMADA</option>
+      <option value="REALIZADA">REALIZADA</option>
+    </select>
+    <span class="gt-clear-btn" onclick="EQ.limpiarReus()">✕ Limpiar</span>
+  </div>
+  <div class="gt-table-wrap">
+    <div class="gt-table-head">
+      <div class="gt-th"></div>
+      <div class="gt-th gt-th-num">Hora</div>
+      <div class="gt-th">Reunión</div>
+      <div class="gt-th gt-th-dept">Fecha</div>
+      <div class="gt-th gt-th-resp">Convocados</div>
+      <div class="gt-th">Estado</div>
+    </div>
+    <div id="eq-reu-list"></div>
+  </div>
+</div>
+
+<!-- ── Modal: Nuevo evento ── -->
+<div id="eq-ev-modal" class="gt-modal-overlay" onclick="EQ.cerrarEventoBg(event)">
+  <div class="gt-modal" style="max-width:440px">
+    <div class="gt-modal-title">📅 Nuevo evento</div>
+    <div class="gt-modal-row"><label>Descripción</label><input id="eq-ev-txt" type="text" placeholder="Ej.: Zarpe, arribo, descarga…"></div>
+    <div class="gt-modal-grid">
+      <div class="gt-modal-row"><label>Tipo</label>
+        <select id="eq-ev-tipo">
+          <option value="op">Operación (zarpe, arribo, descarga)</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="gt-modal-row"><label>Fecha</label><input id="eq-ev-fecha" type="date"></div>
+    </div>
+    <div class="gt-modal-row"><label>Barco / Área</label>
+      <select id="eq-ev-area">
+        <option value="María Fátima">María Fátima</option>
+        <option value="María de Gracia">María de Gracia</option>
+        <option value="Ambos barcos">Ambos barcos</option>
+        <option value="Oficina">Oficina</option>
+      </select>
+    </div>
+    <div class="eq-err" id="eq-ev-err"></div>
+    <div class="gt-modal-actions">
+      <button class="gt-btn-cancel" onclick="EQ.cerrarEvento()">Cancelar</button>
+      <button class="gt-btn-save" onclick="EQ.guardarEvento()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Convocar reunión ── -->
+<div id="eq-rm-modal" class="gt-modal-overlay" onclick="EQ.cerrarReunionBg(event)">
+  <div class="gt-modal" style="max-width:480px;max-height:92vh;overflow-y:auto">
+    <div class="gt-modal-title">🤝 Convocar reunión</div>
+    <div class="gt-modal-row"><label>Tema</label><input id="eq-rm-tema" type="text" placeholder="Ej.: Planificación zarpe María Fátima"></div>
+    <div class="gt-modal-grid">
+      <div class="gt-modal-row"><label>Fecha</label><input id="eq-rm-fecha" type="date"></div>
+      <div class="gt-modal-row"><label>Hora</label><input id="eq-rm-hora" type="time"></div>
+    </div>
+    <div class="gt-modal-row"><label>Lugar</label><input id="eq-rm-lugar" type="text" placeholder="Ej.: Oficina, muelle, a bordo María Fátima, videollamada"></div>
+    <div class="gt-modal-row">
+      <label>¿Quiénes van? <span id="eq-rm-cnt" class="eq-sel-cnt">0 seleccionados</span></label>
+      <div class="eq-conv" id="eq-rm-conv"></div>
+    </div>
+    <div class="eq-nota" style="margin-top:0">🔒 Solo las personas marcadas podrán ver esta reunión.</div>
+    <div class="eq-err" id="eq-rm-err"></div>
+    <div class="gt-modal-actions">
+      <button class="gt-btn-cancel" onclick="EQ.cerrarReunion()">Cancelar</button>
+      <button class="gt-btn-save" onclick="EQ.guardarReunion()">Convocar</button>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ═══ GESTIÓN DE EQUIPO (prefijo .eq-) ═══ */
+.eq-tabs{max-width:960px;margin:0 auto 12px;display:flex;gap:6px;background:#fff;border-radius:10px;padding:6px;box-shadow:0 1px 4px rgba(0,0,0,.07);flex-wrap:wrap;font-family:'Segoe UI',Arial,sans-serif}
+.eq-tab{flex:1;min-width:140px;border:none;background:transparent;border-radius:7px;padding:9px 12px;font-size:12px;font-weight:600;color:#888;cursor:pointer;font-family:inherit;transition:.2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.eq-tab:hover{background:#f5f5f3;color:#1F4E79}
+.eq-tab.on{background:#1F4E79;color:#fff}
+.eq-cnt{font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;background:#E6F1FB;color:#042C53}
+.eq-tab.on .eq-cnt{background:rgba(255,255,255,.22);color:#fff}
+.eq-panel{display:none;max-width:960px;margin:0 auto;font-family:'Segoe UI',Arial,sans-serif;color:#1a1a18}
+.eq-panel.on{display:block}
+.eq-ev{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.05)}
+.eq-ev:last-child{border-bottom:none}
+.eq-ev-fecha{width:52px;flex-shrink:0;text-align:center;border-radius:8px;background:#f9f9f7;border:1px solid #e8e6e0;padding:4px 0}
+.eq-ev-dow,.eq-ev-mes{font-size:9px;font-weight:700;color:#888;text-transform:uppercase}
+.eq-ev-dia{font-size:18px;font-weight:700;color:#1F4E79;line-height:1.1}
+.eq-ev-txt{flex:1;min-width:0;font-size:12px;color:#1a1a18}
+.eq-ev-sub{font-size:10px;color:#999;margin-top:2px}
+.eq-t-tarea{background:#E6F1FB;color:#042C53}
+.eq-t-op{background:#E1F5EE;color:#085041}
+.eq-t-doc{background:#FAEEDA;color:#412402}
+.eq-t-reu{background:#EEEDFE;color:#26215C}
+.eq-t-otro{background:#EFEFED;color:#4A4A47}
+.eq-del{background:none;border:none;color:#ccc;cursor:pointer;font-size:12px;padding:2px 6px;border-radius:6px}
+.eq-del:hover{color:#C0392B;background:#FAECE7}
+.eq-nota{font-size:10px;color:#aaa;font-style:italic;margin-top:8px}
+.eq-avs{display:flex;flex-wrap:wrap;gap:3px;padding-top:2px}
+.eq-av{width:24px;height:24px;border-radius:50%;background:#E6F1FB;color:#042C53;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;box-shadow:0 0 0 1px #BDD7EE}
+.eq-av.mas{background:#f0ede8;color:#555;box-shadow:0 0 0 1px #e8e6e0}
+.eq-st-PROGRAMADA{background:#FAEEDA;color:#412402}
+.eq-st-REALIZADA{background:#E1F5EE;color:#085041}
+.eq-conv-line{color:#999}
+.eq-cancel{color:#D85A30;cursor:pointer;font-weight:600;margin-left:6px}
+.eq-cancel:hover{text-decoration:underline}
+.eq-conv{border:1.5px solid rgba(0,0,0,.12);border-radius:7px;background:#f9f9f7;max-height:230px;overflow-y:auto;padding:4px 10px 8px}
+.eq-grp{font-size:10px;font-weight:700;color:#1F4E79;text-transform:uppercase;letter-spacing:.5px;margin:8px 0 2px}
+.gt-modal-row .eq-pers{display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:12px;color:#1a1a18;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400;margin:0}
+.gt-modal-row .eq-pers input{width:16px;height:16px;padding:0;margin:0;flex-shrink:0;accent-color:#1F4E79}
+.eq-yo{font-size:10px;color:#999}
+.eq-sel-cnt{float:right;color:#2E75B6;text-transform:none;letter-spacing:0}
+.eq-err{color:#C0392B;font-size:11px;min-height:14px;margin-top:6px}
+</style>
 <!-- ── Modal: Nueva / Editar tarea ── -->
 <div id="gt-modal-bg" class="gt-modal-overlay" onclick="GT.closeModalBg(event)">
   <div class="gt-modal" style="max-width:480px">
@@ -3591,16 +3755,16 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     gestor_modules: [
       {
         id: 'gestor-tareas',
-        title: 'Gestor de Tareas',
-        desc: 'Registro y seguimiento de tareas del equipo: pendientes, compromisos, fechas límite y estado de cumplimiento.',
-        icon: '✅',
+        title: 'Gestión de Equipo',
+        desc: 'Tareas del equipo, agenda de fechas clave (zarpes, vencimientos de documentos) y reuniones con sus convocados.',
+        icon: '👥',
         iconColor: 'green',
         color: 'color-green',
         status: 'active',
         roles: ['operaciones','operaciones_master','admin','contabilidad','master'],
         vessels: [],
         url: null,
-        linkLabel: 'Abrir Gestor',
+        linkLabel: 'Abrir Gestión de Equipo',
         onclick: "openGestor()",
       },
     ],
@@ -3697,11 +3861,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
     document.getElementById('role-badge-text').textContent = ROLE_LABELS[role] || role;
     document.getElementById('grid-ops').innerHTML = opsModules.map(renderCard).join('');
-    document.getElementById('grid-fin').innerHTML = [...finModules, ...gestorModules].map(renderCard).join('');
+    document.getElementById('grid-fin').innerHTML = finModules.map(renderCard).join('');
+    document.getElementById('grid-equipo').innerHTML = gestorModules.map(renderCard).join('');
 
     document.getElementById('section-ops').style.display = opsModules.length ? 'block' : 'none';
-    const finTotal = finModules.length + gestorModules.length;
-    document.getElementById('section-fin').style.display = finTotal ? 'block' : 'none';
+    document.getElementById('section-equipo').style.display = gestorModules.length ? 'block' : 'none';
+    document.getElementById('section-fin').style.display = finModules.length ? 'block' : 'none';
 
     const finLabel = document.getElementById('section-fin-label');
     if (finLabel) {
@@ -3729,6 +3894,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     window.scrollTo(0,0);
     setTimeout(function(){
       if (typeof GT !== 'undefined') { try { GT.init(); } catch(e){} }
+      if (typeof EQ !== 'undefined') { try { EQ.init(); } catch(e){} }
       loadPendingTasks();
     }, 100);
   }
@@ -5190,6 +5356,327 @@ const GT = (() => {
     rutDraftSet, rutDraftAdd, rutDraftDel, saveRutina, deleteRutina,
     openCargar, closeCargar, closeCargarBg, renderCargarPreview, confirmarCarga
   };
+})();
+</script>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  EQ — Gestión de Equipo ATUNTRO S.A.
+//  Pestañas: Tareas (Gestor GT existente) · Agenda · Reuniones
+//  Firebase:
+//    atuntro_agenda/eventos/{id}            eventos manuales (zarpes, arribos, otros)
+//    atuntro_reuniones/items/{id}           reunión (solo la leen sus convocados)
+//    atuntro_reuniones/porUsuario/{pid}/{id} índice de reuniones de cada persona
+//  Lee además: atuntro_gestor/data (tareas) y atuntro_documentos/data (vencimientos)
+// ════════════════════════════════════════════════════════════
+const EQ = (() => {
+
+  const P_EVENTOS  = 'atuntro_agenda/eventos';
+  const P_REU      = 'atuntro_reuniones/items';
+  const P_REU_IDX  = 'atuntro_reuniones/porUsuario';
+  const P_TAREAS   = 'atuntro_gestor/data';
+  const P_DOCS     = 'atuntro_documentos/data';
+  const HORIZONTE  = 90;   // días que mira la Agenda hacia adelante
+  const PROXIMOS   = 7;    // días de "Próximos"
+
+  const TIPOS = {
+    tarea: { lab: 'Tarea',     cls: 'eq-t-tarea' },
+    op:    { lab: 'Operación', cls: 'eq-t-op' },
+    doc:   { lab: 'Documento', cls: 'eq-t-doc' },
+    reu:   { lab: 'Reunión',   cls: 'eq-t-reu' },
+    otro:  { lab: 'Otro',      cls: 'eq-t-otro' },
+  };
+  // Mismo criterio que el Gestor de Tareas: qué departamentos ve cada rol.
+  const ROLE_DEPTS = {
+    operaciones:        ['Operativo'],
+    operaciones_master: ['Operativo'],
+    contabilidad:       ['Contabilidad'],
+    admin:              ['Administrativo','Operativo','Contabilidad'],
+    master:             ['Administrativo','Operativo','Contabilidad'],
+  };
+  const GRUPOS = [
+    { lab: 'Gerencia',          roles: ['master'] },
+    { lab: 'Administración',    roles: ['admin'] },
+    { lab: 'Operaciones',       roles: ['operaciones_master','operaciones'] },
+    { lab: 'Contabilidad',      roles: ['contabilidad'] },
+  ];
+  const DOW = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+  let started = false;
+  let tab = 'tareas';
+  let eventos = {};          // id → evento
+  let tareas = [];           // del Gestor
+  let docs = [];             // filas de Control Documental
+  let reus = {};             // id → reunión (solo las mías)
+  let reuRefs = {};          // id → handler activo
+  let reuError = '';
+
+  /* ── Utilidades ─────────────────────────────────────── */
+  function db() { try { return firebase.database(); } catch (e) { return null; } }
+  function esc(x) {
+    return String(x == null ? '' : x).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+  function sess() { try { return JSON.parse(sessionStorage.getItem('atuntro_session') || 'null'); } catch (e) { return null; } }
+  function users() { return (typeof AUTH !== 'undefined' && AUTH.users) ? AUTH.users : {}; }
+  function myId() { const s = sess(); return s && s.id ? s.id : null; }
+  function myRole() { const u = users()[myId()]; return (u && u.role) || 'admin'; }
+  function viendoComo() { return typeof AUTH !== 'undefined' && AUTH.realId && myId() && AUTH.realId !== myId(); }
+  function nombre(pid) { const u = users()[pid]; return u ? u.name : pid; }
+  function iniciales(n) { return String(n).split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase(); }
+  function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function hoyIso() { return iso(new Date()); }
+  function sumarDias(isoStr, n) { const d = new Date(isoStr + 'T12:00:00'); d.setDate(d.getDate() + n); return iso(d); }
+  function diasHasta(isoStr) { return Math.round((new Date(isoStr + 'T12:00:00') - new Date(hoyIso() + 'T12:00:00')) / 86400000); }
+  function dmy(isoStr) { const p = String(isoStr).split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : isoStr; }
+  function $(id) { return document.getElementById(id); }
+
+  /* ── Arranque ───────────────────────────────────────── */
+  function init() {
+    showTab('tareas');   // al entrar siempre se abre en Tareas
+    if (started) { renderAll(); return; }
+    const d = db();
+    if (!d) { renderAll(); return; }
+    started = true;
+
+    d.ref(P_EVENTOS).on('value', s => { eventos = s.val() || {}; renderAgenda(); },
+      () => { eventos = {}; renderAgenda(); });
+
+    d.ref(P_TAREAS).on('value', s => {
+      const v = s.val();
+      tareas = (v && Array.isArray(v.tasks)) ? v.tasks.filter(Boolean) : [];
+      renderAgenda();
+    }, () => {});
+
+    d.ref(P_DOCS).on('value', s => {
+      const v = s.val();
+      docs = (v && Array.isArray(v.rows)) ? v.rows.filter(Boolean) : [];
+      renderAgenda();
+    }, () => {});
+
+    escucharMisReuniones();
+  }
+
+  // Lee el índice de reuniones de la persona y se suscribe a cada una.
+  function escucharMisReuniones() {
+    const d = db(), pid = myId();
+    if (!d || !pid) return;
+    if (viendoComo()) { reuError = 'Las reuniones son privadas de cada convocado y no se muestran en modo "Ver como".'; renderReus(); return; }
+    d.ref(P_REU_IDX + '/' + pid).on('value', s => {
+      const ids = Object.keys(s.val() || {});
+      // dejar de escuchar las que ya no están
+      Object.keys(reuRefs).forEach(id => {
+        if (ids.indexOf(id) < 0) { d.ref(P_REU + '/' + id).off('value', reuRefs[id]); delete reuRefs[id]; delete reus[id]; }
+      });
+      ids.forEach(id => {
+        if (reuRefs[id]) return;
+        reuRefs[id] = d.ref(P_REU + '/' + id).on('value', rs => {
+          const v = rs.val();
+          if (v) reus[id] = Object.assign({ id: id }, v); else delete reus[id];
+          renderReus(); renderAgenda();
+        }, () => { delete reus[id]; renderReus(); });
+      });
+      reuError = '';
+      renderReus(); renderAgenda();
+    }, () => { reuError = 'No se pudieron leer las reuniones (falta publicar las reglas de Firebase de Reuniones).'; renderReus(); });
+  }
+
+  /* ── Pestañas ───────────────────────────────────────── */
+  function showTab(t) {
+    tab = t;
+    document.querySelectorAll('.eq-tab').forEach(b => b.classList.toggle('on', b.getAttribute('data-tab') === t));
+    document.querySelectorAll('.eq-panel').forEach(p => p.classList.toggle('on', p.id === 'eq-p-' + t));
+  }
+
+  function renderAll() { renderAgenda(); renderReus(); }
+
+  /* ══════════ AGENDA ══════════ */
+  function itemsAgenda() {
+    const hoy = hoyIso(), fin = sumarDias(hoy, HORIZONTE), out = [];
+    const dentro = f => f && f >= hoy && f <= fin;
+
+    Object.keys(eventos).forEach(id => {
+      const e = eventos[id];
+      if (e && dentro(e.fecha)) out.push({ fecha: e.fecha, txt: e.txt + (e.area ? ' — ' + e.area : ''), tipo: TIPOS[e.tipo] ? e.tipo : 'otro', id: id, borrable: puedeBorrar(e) });
+    });
+
+    const depts = ROLE_DEPTS[myRole()] || ROLE_DEPTS.admin;
+    tareas.forEach(t => {
+      if (t.estado === 'COMPLETO' || depts.indexOf(t.dept) < 0 || !dentro(t.fecha)) return;
+      out.push({ fecha: t.fecha, txt: t.tarea, sub: t.resp ? 'Responsable: ' + t.resp : '', tipo: 'tarea' });
+    });
+
+    // Control Documental: solo próximos vencimientos (no vencidos, no permanentes)
+    const grp = {};
+    docs.forEach(r => {
+      if (!r.ven || +String(r.ven).slice(0, 4) >= 2090 || !dentro(r.ven)) return;
+      const k = String(r.nom || '').toLowerCase() + '|' + r.barco + '|' + r.ven;
+      if (grp[k]) grp[k].n++; else grp[k] = { nom: r.nom || 'Documento', barco: r.barco || '', ven: r.ven, n: 1 };
+    });
+    Object.keys(grp).forEach(k => {
+      const g = grp[k], dd = diasHasta(g.ven);
+      const nom = g.nom.charAt(0).toUpperCase() + g.nom.slice(1) + (g.n > 1 ? ' (x' + g.n + ')' : '');
+      out.push({ fecha: g.ven, txt: 'Vence: ' + nom + (g.barco ? ' — ' + g.barco : ''), sub: (dd <= 30 ? 'Por vencer' : 'Atención') + ' · ' + (dd === 0 ? 'hoy' : dd + ' días'), tipo: 'doc' });
+    });
+
+    Object.keys(reus).forEach(id => {
+      const r = reus[id];
+      if (r && dentro(r.fecha)) out.push({ fecha: r.fecha, txt: r.tema, sub: '📍 ' + (r.lugar || 'Lugar por definir') + ' · ' + (r.hora || ''), tipo: 'reu' });
+    });
+
+    return out.sort((a, b) => a.fecha.localeCompare(b.fecha) || a.tipo.localeCompare(b.tipo));
+  }
+
+  function filaAgenda(i) {
+    const d = new Date(i.fecha + 'T12:00:00');
+    return '<div class="eq-ev">' +
+      '<div class="eq-ev-fecha"><div class="eq-ev-dow">' + DOW[d.getDay()] + '</div><div class="eq-ev-dia">' + d.getDate() + '</div><div class="eq-ev-mes">' + MES[d.getMonth()] + '</div></div>' +
+      '<div class="eq-ev-txt">' + esc(i.txt) + (i.sub ? '<div class="eq-ev-sub">' + esc(i.sub) + '</div>' : '') + '</div>' +
+      '<span class="gt-badge ' + TIPOS[i.tipo].cls + '">' + TIPOS[i.tipo].lab + '</span>' +
+      (i.borrable ? '<button type="button" class="eq-del" title="Eliminar evento" onclick="EQ.borrarEvento(\'' + esc(i.id) + '\')">✕</button>' : '') +
+      '</div>';
+  }
+
+  function renderAgenda() {
+    const prox = $('eq-ag-prox'), mas = $('eq-ag-mas');
+    if (!prox || !mas) return;
+    const lim = sumarDias(hoyIso(), PROXIMOS);
+    const items = itemsAgenda();
+    const a = items.filter(i => i.fecha <= lim), b = items.filter(i => i.fecha > lim);
+    prox.innerHTML = a.length ? a.map(filaAgenda).join('') : '<div class="gt-empty">Nada en los próximos 7 días.</div>';
+    mas.innerHTML = b.length ? b.map(filaAgenda).join('') : '<div class="gt-empty">Sin eventos más adelante.</div>';
+    const c = $('eq-cnt-agenda'); if (c) c.textContent = a.length;
+  }
+
+  function puedeBorrar(e) { return e && (e.creadoPor === myId() || myRole() === 'master'); }
+
+  function abrirEvento() {
+    $('eq-ev-txt').value = '';
+    $('eq-ev-fecha').value = hoyIso();
+    $('eq-ev-err').textContent = '';
+    $('eq-ev-modal').classList.add('gt-show');
+    setTimeout(() => $('eq-ev-txt').focus(), 50);
+  }
+  function cerrarEvento() { $('eq-ev-modal').classList.remove('gt-show'); }
+  function cerrarEventoBg(ev) { if (ev.target === $('eq-ev-modal')) cerrarEvento(); }
+  function guardarEvento() {
+    const txt = $('eq-ev-txt').value.trim(), fecha = $('eq-ev-fecha').value, err = $('eq-ev-err');
+    if (!txt) { err.textContent = 'Escribe la descripción del evento.'; return; }
+    if (!fecha) { err.textContent = 'Indica la fecha.'; return; }
+    const d = db(); if (!d) { err.textContent = 'Sin conexión con la base de datos.'; return; }
+    const ev = { txt: txt, fecha: fecha, tipo: $('eq-ev-tipo').value, area: $('eq-ev-area').value, creadoPor: myId() || '', ts: Date.now() };
+    d.ref(P_EVENTOS).push(ev).then(cerrarEvento).catch(() => { err.textContent = 'No se pudo guardar (revisa permisos de Firebase para la Agenda).'; });
+  }
+  function borrarEvento(id) {
+    const e = eventos[id];
+    if (!puedeBorrar(e)) return;
+    if (!confirm('¿Eliminar el evento "' + (e.txt || '') + '"?')) return;
+    const d = db(); if (d) d.ref(P_EVENTOS + '/' + id).remove().catch(() => alert('No se pudo eliminar.'));
+  }
+
+  /* ══════════ REUNIONES ══════════ */
+  function renderReus() {
+    const list = $('eq-reu-list');
+    if (!list) return;
+    const q = ($('eq-reu-search') || {}).value ? $('eq-reu-search').value.toLowerCase() : '';
+    const fe = ($('eq-reu-est') || {}).value || '';
+    const hoy = hoyIso();
+    const todas = Object.keys(reus).map(id => reus[id]).filter(Boolean).map(r => Object.assign({}, r, { estado: (r.fecha && r.fecha < hoy) ? 'REALIZADA' : 'PROGRAMADA' }));
+    const c = $('eq-cnt-reu'); if (c) c.textContent = todas.filter(r => r.estado === 'PROGRAMADA').length;
+
+    if (reuError) { list.innerHTML = '<div class="gt-empty">' + esc(reuError) + '</div>'; return; }
+    const vis = todas.filter(r => {
+      if (fe && r.estado !== fe) return false;
+      if (q && ((r.tema || '') + ' ' + (r.lugar || '')).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    }).sort((a, b) => {
+      if (a.estado !== b.estado) return a.estado === 'PROGRAMADA' ? -1 : 1;
+      return a.estado === 'PROGRAMADA' ? (a.fecha || '').localeCompare(b.fecha || '') : (b.fecha || '').localeCompare(a.fecha || '');
+    });
+    if (!vis.length) { list.innerHTML = '<div class="gt-empty">' + (todas.length ? 'Sin reuniones que coincidan con los filtros.' : 'No tienes reuniones convocadas.') + '</div>'; return; }
+
+    list.innerHTML = vis.map(r => {
+      const done = r.estado === 'REALIZADA';
+      const conv = Object.keys(r.conv || {});
+      const nombres = conv.map(nombre);
+      const avs = nombres.slice(0, 4).map(n => '<span class="eq-av" title="' + esc(n) + '">' + esc(iniciales(n)) + '</span>').join('') +
+        (nombres.length > 4 ? '<span class="eq-av mas" title="' + esc(nombres.slice(4).join(', ')) + '">+' + (nombres.length - 4) + '</span>' : '');
+      const mia = r.convoca === myId() || myRole() === 'master';
+      return '<div class="gt-task-row' + (done ? ' gt-done-row' : '') + '">' +
+        '<div class="gt-chk ' + (done ? 'gt-chk-done' : '') + '" title="' + (done ? 'Realizada' : 'Programada') + '"></div>' +
+        '<div class="gt-task-num">' + esc(r.hora || '') + '</div>' +
+        '<div><div class="gt-task-text">' + esc(r.tema) + '</div>' +
+          '<div class="gt-task-obs">📍 ' + esc(r.lugar || 'Lugar por definir') + '</div>' +
+          '<div class="gt-task-fecha eq-conv-line" title="' + esc(nombres.join(', ')) + '">Convoca: ' + esc(nombre(r.convoca)) + ' · 🔒 ' + conv.length + ' convocados' +
+            (mia && !done ? ' <span class="eq-cancel" onclick="EQ.cancelarReunion(\'' + esc(r.id) + '\')">Cancelar reunión</span>' : '') +
+          '</div></div>' +
+        '<div class="gt-col-dept gt-resp-cell">' + dmy(r.fecha) + '</div>' +
+        '<div class="gt-col-resp"><div class="eq-avs">' + avs + '</div></div>' +
+        '<div class="gt-status-cell"><span class="gt-badge eq-st-' + r.estado + '">' + r.estado + '</span></div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function limpiarReus() { $('eq-reu-search').value = ''; $('eq-reu-est').value = ''; renderReus(); }
+
+  function contarSel() {
+    const n = document.querySelectorAll('#eq-rm-conv input:checked').length;
+    $('eq-rm-cnt').textContent = n + (n === 1 ? ' seleccionado' : ' seleccionados');
+  }
+  function abrirReunion() {
+    if (viendoComo()) { alert('En modo "Ver como" no se pueden convocar reuniones.'); return; }
+    const yo = myId(), us = users();
+    $('eq-rm-tema').value = ''; $('eq-rm-lugar').value = '';
+    $('eq-rm-fecha').value = hoyIso(); $('eq-rm-hora').value = '09:00';
+    $('eq-rm-err').textContent = '';
+    $('eq-rm-conv').innerHTML = GRUPOS.map(g => {
+      const ids = Object.keys(us).filter(id => us[id] && g.roles.indexOf(us[id].role) >= 0)
+        .sort((a, b) => String(us[a].name).localeCompare(String(us[b].name)));
+      if (!ids.length) return '';
+      return '<div class="eq-grp">' + g.lab + '</div>' + ids.map(id => {
+        const soy = id === yo;
+        return '<label class="eq-pers"><input type="checkbox" value="' + esc(id) + '"' + (soy ? ' checked disabled' : '') + ' onchange="EQ.contarSel()"> ' +
+          esc(us[id].name) + (soy ? ' <span class="eq-yo">(tú)</span>' : '') + '</label>';
+      }).join('');
+    }).join('');
+    contarSel();
+    $('eq-rm-modal').classList.add('gt-show');
+    setTimeout(() => $('eq-rm-tema').focus(), 50);
+  }
+  function cerrarReunion() { $('eq-rm-modal').classList.remove('gt-show'); }
+  function cerrarReunionBg(ev) { if (ev.target === $('eq-rm-modal')) cerrarReunion(); }
+  function guardarReunion() {
+    const err = $('eq-rm-err');
+    const tema = $('eq-rm-tema').value.trim(), lugar = $('eq-rm-lugar').value.trim();
+    const fecha = $('eq-rm-fecha').value, hora = $('eq-rm-hora').value;
+    const yo = myId();
+    const conv = Array.prototype.map.call(document.querySelectorAll('#eq-rm-conv input:checked'), c => c.value);
+    if (!tema) { err.textContent = 'Escribe el tema de la reunión.'; return; }
+    if (!fecha) { err.textContent = 'Indica la fecha.'; return; }
+    if (!lugar) { err.textContent = 'Indica el lugar de la reunión.'; return; }
+    if (conv.length < 2) { err.textContent = 'Marca al menos a una persona más.'; return; }
+    const d = db(); if (!d || !yo) { err.textContent = 'Sin conexión con la base de datos.'; return; }
+    const id = d.ref(P_REU).push().key;
+    const convObj = {}; conv.forEach(p => { convObj[p] = true; });
+    const upd = {};
+    upd[P_REU + '/' + id] = { tema: tema, fecha: fecha, hora: hora || '', lugar: lugar, convoca: yo, conv: convObj, ts: Date.now() };
+    conv.forEach(p => { upd[P_REU_IDX + '/' + p + '/' + id] = true; });
+    d.ref().update(upd).then(cerrarReunion).catch(() => { err.textContent = 'No se pudo guardar (falta publicar las reglas de Firebase de Reuniones).'; });
+  }
+  function cancelarReunion(id) {
+    const r = reus[id];
+    if (!r || !(r.convoca === myId() || myRole() === 'master')) return;
+    if (!confirm('¿Cancelar la reunión "' + (r.tema || '') + '"? Desaparecerá para todos los convocados.')) return;
+    const d = db(); if (!d) return;
+    const upd = {};
+    Object.keys(r.conv || {}).forEach(p => { upd[P_REU_IDX + '/' + p + '/' + id] = null; });
+    upd[P_REU + '/' + id] = null;
+    d.ref().update(upd).catch(() => alert('No se pudo cancelar.'));
+  }
+
+  return { init, showTab, renderReus, limpiarReus,
+           abrirEvento, cerrarEvento, cerrarEventoBg, guardarEvento, borrarEvento,
+           abrirReunion, cerrarReunion, cerrarReunionBg, guardarReunion, cancelarReunion, contarSel };
 })();
 </script>
 
