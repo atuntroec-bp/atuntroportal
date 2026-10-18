@@ -3383,6 +3383,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .eq-yo{font-size:10px;color:#999}
 .eq-sel-cnt{float:right;color:#2E75B6;text-transform:none;letter-spacing:0}
 .eq-err{color:#C0392B;font-size:11px;min-height:14px;margin-top:6px}
+.gt-done-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 14px;background:#f9f9f7;border-top:1px solid rgba(0,0,0,.06);border-bottom:1px solid rgba(0,0,0,.05);font-size:11px;font-weight:700;color:#1D9E75;cursor:pointer;user-select:none}
+.gt-done-toggle:hover{background:#f1f0ec}
+.gt-done-del{color:#C0392B;font-weight:600;padding:3px 8px;border-radius:6px}
+.gt-done-del:hover{background:#FAECE7}
 </style>
 <!-- ── Modal: Nueva / Editar tarea ── -->
 <div id="gt-modal-bg" class="gt-modal-overlay" onclick="GT.closeModalBg(event)">
@@ -4889,7 +4893,20 @@ const GT = (() => {
       list.innerHTML = '<div class="gt-empty">Sin tareas que coincidan con los filtros.</div>';
       return;
     }
-    list.innerHTML = visible.map(t => {
+    // Las completadas se agrupan al final y van plegadas (salvo que se filtre por COMPLETO).
+    const abiertas = visible.filter(t => t.estado !== 'COMPLETO');
+    const hechas   = visible.filter(t => t.estado === 'COMPLETO');
+    const verHechas = fE === 'COMPLETO' || showDone;
+    const toggle = (hechas.length && fE !== 'COMPLETO')
+      ? `<div class="gt-done-toggle" onclick="GT.toggleDone()">
+           <span>${showDone ? '▾' : '▸'} ✓ Completadas (${hechas.length}) — ${showDone ? 'ocultar' : 'mostrar'}</span>
+           ${adminUnlocked ? `<span class="gt-done-del" onclick="event.stopPropagation();GT.deleteDone()">🗑 Borrar completadas</span>` : ''}
+         </div>` : '';
+    list.innerHTML = rowsHtml(abiertas) + toggle + (verHechas ? rowsHtml(hechas) : '');
+  }
+
+  function rowsHtml(arr) {
+    return arr.map(t => {
       const done = t.estado==='COMPLETO', inc = t.estado==='INCOMPLETO';
       const chkCls = done?'gt-chk-done':inc?'gt-chk-inc':'';
       return `<div class="gt-task-row${done?' gt-done-row':''}">
@@ -4908,6 +4925,28 @@ const GT = (() => {
         ${adminUnlocked ? `<div class="gt-del-cell"><button class="gt-row-del" onclick="GT.deleteTask(${t.id})" title="Eliminar esta tarea">🗑</button></div>` : ''}
       </div>`;
     }).join('');
+  }
+
+  /* ── Completadas: plegar / borrar ───────────────────── */
+  const DONE_KEY = 'atuntro_gestor_ver_completadas';
+  let showDone = false;
+  try { showDone = localStorage.getItem(DONE_KEY) === '1'; } catch(e) {}
+  function toggleDone() {
+    showDone = !showDone;
+    try { localStorage.setItem(DONE_KEY, showDone ? '1' : '0'); } catch(e) {}
+    applyFilters();
+  }
+  function deleteDone() {
+    if (!adminUnlocked) {
+      alert('Para eliminar tareas, primero ingrese al panel de administración (🔒 Admin).');
+      return;
+    }
+    const borrar = visibleForRole(tasks).filter(t => t.estado === 'COMPLETO');
+    if (!borrar.length) return;
+    if (!confirm('¿Eliminar las ' + borrar.length + ' tareas completadas?\n\nEsta acción no se puede deshacer.')) return;
+    const ids = new Set(borrar.map(t => t.id));
+    tasks = tasks.filter(t => !ids.has(t.id));
+    save(); renderAll();
   }
 
   function clearFilters() {
@@ -5350,7 +5389,7 @@ const GT = (() => {
     openPin, closePin, closePinBg, checkPin,
     openAdmin, closeAdmin, closeAdminBg,
     addResponsable, removeResponsable,
-    resetTasks, changePass, deleteTask,
+    resetTasks, changePass, deleteTask, toggleDone, deleteDone,
     openRutinas, closeRutinas, closeRutinasBg,
     openRutEditor, closeRutEditor, closeRutEditorBg,
     rutDraftSet, rutDraftAdd, rutDraftDel, saveRutina, deleteRutina,
