@@ -201,7 +201,7 @@ function rolesDe(tipo,b){
   if(tipo==='admin') return lista('roles').filter(function(r){ return r.tipo==='admin' && delAnio(r); });
   return porBarco(lista('roles'),b).filter(function(r){ return r.tipo===tipo && delAnio(r); });
 }
-function rolesPendientes(){ return lista('roles').length===0; }
+function rolesPendientes(tipo){ return !lista('roles').some(function(r){ return !tipo || r.tipo===tipo; }); }
 /* Rentabilidad operativa = facturación de viajes − costo de viaje − rol de tripulación.
    Se mide por viaje cerrado facturado en el año: si el viaje empezó el año anterior,
    sus costos de ese año también se restan. Los viajes en curso quedan fuera. */
@@ -340,22 +340,22 @@ function kpis(){
   var desc=factAnio.filter(function(r){ return r.tipo==='descuento_salinidad'; });
   out.push(kpi('Facturación '+anio, fmtUSD(suma(factAnio)),
     (desc.length?'Incluye '+fmtUSD(suma(desc))+' en descuentos por salinidad ('+desc.length+' NC)':escH(factAnio.length+' registros')), "CONT.irA('fact','')", 'k-fact'));
-  var pend=rolesPendientes();
+  var pend=rolesPendientes('tripulacion'), pendAdm=rolesPendientes('admin');
   var rentSub='Margen '+fmtPct(r.margen)+' · viajes cerrados'+(pend?' · <b>sin roles (pendiente)</b>':' · fact. − costo − rol trip.')+
     (r.enCurso.length?'<br><span class="cont-curso-txt">Excluye en curso: '+r.enCurso.map(function(v){ return 'V'+escH(v.viaje)+' '+escH(v.barco); }).join(', ')+'</span>':'');
   out.push(kpi('Rentabilidad operativa '+anio, '<span class="'+(r.res<0?'neg':'')+'">'+fmtUSD(r.res)+'</span>', rentSub, "CONT.irA('cv','')", 'k-rent'));
   var rt=rolesDe('tripulacion');
-  var rolVal=function(arr){ return pend?'<span class="cont-pend">Pendiente</span>':fmtUSD(suma(arr)); };
-  var rolSub=function(t){ return pend?'Falta la fuente de roles':t; };
+  var rolVal=function(arr,p){ return p?'<span class="cont-pend">Pendiente</span>':fmtUSD(suma(arr)); };
+  var rolSub=function(t,p){ return p?'Falta la fuente de roles':t; };
   if(barco==='todos'){
     out.push(kpiOtros());
     out.push(kpiUltimo('MF','Costo último viaje · María Fátima'));
     out.push(kpiUltimo('MG','Costo último viaje · María de Gracia'));
-    out.push(kpi('Rol tripulación '+anio, rolVal(rt), rolSub('Ambos barcos · ver detalle →'), "CONT.irA('rol','tripulacion')", 'k-rol'));
-    out.push(kpi('Rol administrativo '+anio, rolVal(rolesDe('admin')), rolSub('Empresa · ver detalle por mes →'), "CONT.irA('rol','admin')", 'k-rol'));
+    out.push(kpi('Rol tripulación '+anio, rolVal(rt,pend), rolSub('Ambos barcos · ver detalle →',pend), "CONT.irA('rol','tripulacion')", 'k-rol'));
+    out.push(kpi('Rol administrativo '+anio, rolVal(rolesDe('admin'),pendAdm), rolSub('Empresa · ver detalle por mes →',pendAdm), "CONT.irA('rol','admin')", 'k-rol'));
   } else {
     out.push(kpiUltimo(barco,'Costo último viaje'));
-    out.push(kpi('Rol tripulación '+anio, rolVal(rt), rolSub('Ver detalle por viaje →'), "CONT.irA('rol','tripulacion')", 'k-rol'));
+    out.push(kpi('Rol tripulación '+anio, rolVal(rt,pend), rolSub('Ver detalle por viaje →',pend), "CONT.irA('rol','tripulacion')", 'k-rol'));
   }
   if(barco==='todos') out.push(kpi('Cuentas por pagar', fmtUSD(t.cxp),
     escH(t.cxpN+' facturas')+(t.cxpMas1?' · <span class="neg">'+fmtUSD(t.cxpMas1)+' con más de 1 año</span>':(t.cxpVenc?' · <span class="neg">'+fmtUSD(t.cxpVenc)+' +30 días</span>':'')), "CONT.irA('cxp','')"));
@@ -464,7 +464,7 @@ function tabla(){
     rows=lista('roles').filter(function(r){
       if(barco!=='todos' && (r.tipo==='admin' || r.barco!==barco)) return false;
       return delAnio(r) && (!sub||r.tipo===sub) && coincide(r,['concepto','periodo','tipo']);
-    }).sort(function(a,b){ return String(b.periodo||'').localeCompare(String(a.periodo||''))||String(a.tipo).localeCompare(String(b.tipo)); });
+    }).sort(function(a,b){ return String(b.periodo||'').localeCompare(String(a.periodo||''))||String(a.tipo).localeCompare(String(b.tipo))||String(a.barco||'').localeCompare(String(b.barco||''))||num(b.viaje)-num(a.viaje); });
     head=['<th>Período</th>','<th>Rol</th>','<th>Embarcación</th>','<th>Viaje</th>','<th>Concepto</th>','<th class="r">Personas</th>','<th class="r">Valor</th>'];
     var tr=0, porTipo={};
     rows.forEach(function(r){
@@ -523,7 +523,7 @@ function tabla(){
       foot+='<tr><td colspan="4" class="cont-sub-lbl">Pagado '+k+' en '+anioActual()+(k==='IESS'&&ce?' <span class="cont-small">(costo para la empresa '+fmtUSD(ce)+')</span>':'')+'</td><td class="r cont-sub-val">'+fmtUSD(pag[k])+'</td><td colspan="2"></td></tr>';
     });
   }
-  if(!rows.length && tab==='rol' && rolesPendientes()) return '<p class="cont-no-rows">Roles pendientes: la nómina en Tucán no tiene centro de costo. Se cargarán desde la carpeta de contabilidad.</p>';
+  if(!rows.length && tab==='rol' && rolesPendientes(sub||undefined)) return '<p class="cont-no-rows">'+(sub==='admin'?'Rol administrativo pendiente: falta la fuente de datos.':'Roles pendientes: falta la fuente de datos.')+'</p>';
   if(!rows.length) return '<p class="cont-no-rows">Sin registros'+(filtro||soloVencido||sub?' con este filtro':'')+'.</p>';
   return '<table class="cont-tbl"><thead><tr>'+head.join('')+'</tr></thead><tbody>'+body+'</tbody><tfoot>'+foot+'</tfoot></table>';
 }
