@@ -349,8 +349,31 @@ function fmtL(d){if(!d)return'';return d.toLocaleString('es-EC',{day:'2-digit',m
 // Mapea el rol del portal al actor key de CKADM
 function _myActorKey(){
   if(!currentUser) return null;
-  const map={operaciones:'capitan',admin:'admin',contabilidad:'contabilidad'};
+  const map={operaciones:'capitan',operaciones_master:'capitan',admin:'admin',contabilidad:'contabilidad',gerencia:'gerencia'};
   return map[currentUser.role]||null;
+}
+// Normaliza nombres: sin tildes, puntos, mayúsculas ni espacios extra
+function _normName(s){
+  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+}
+function _namesMatch(a,b){
+  const na=_normName(a), nb=_normName(b);
+  if(!na||!nb) return false;
+  if(na===nb) return true;
+  const ta=na.split(' '), tb=nb.split(' ');
+  const [sh,lg]=ta.length<=tb.length?[ta,tb]:[tb,ta];
+  return sh.length>=2 && sh.every(w=>lg.includes(w));
+}
+// ¿El usuario actual es el responsable de este actor?
+// Por rol (capitán, administración, contabilidad…), por clave de usuario
+// o por nombre de persona si el responsable se creó con su nombre.
+function _isMyActor(actorKey){
+  if(!currentUser||!actorKey) return false;
+  if(_myActorKey()===actorKey) return true;
+  if(currentUser.key && currentUser.key===actorKey) return true;
+  const a=ACTORS.find(x=>x.key===actorKey);
+  return !!(a && _namesMatch(a.label,currentUser.name));
 }
 function toggleStep(pid,idx){
   if(!currentUser) return;
@@ -362,7 +385,7 @@ function toggleStep(pid,idx){
       alert('Este paso no tiene responsable asignado. Solo el administrador puede marcarlo.');
       return;
     }
-    if(_myActorKey()!==step.actor){
+    if(!_isMyActor(step.actor)){
       const actorLabel=actorByKey(step.actor).label;
       alert('Solo "'+actorLabel+'" o el administrador pueden marcar este paso.');
       return;

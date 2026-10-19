@@ -6216,8 +6216,9 @@ function initFirebase(){
         if(r&&JSON.stringify(r)!==JSON.stringify(state[v])){
           applyingRemote=true;state[v]=r;
           try{localStorage.setItem(lsKey(v),JSON.stringify(r));}catch(e){}
-          if(v===currentVessel)render();
           applyingRemote=false;
+          migrateRespKeys(v);
+          if(v===currentVessel)render();
         }
       });
     });
@@ -6328,6 +6329,77 @@ function updateUserChip(){
   }
 }
 function isMaster(){ return !!activeUser && !!activeUser.isAdmin; }
+
+/* ══════════════════════════════════════════
+   RESPONSABLES ↔ USUARIOS DEL PORTAL
+   Los responsables se guardan con la clave del usuario del portal (respKey),
+   que no cambia aunque se edite el nombre. Las asignaciones antiguas (solo
+   nombre) se reconocen aunque cambien tildes, puntos o mayúsculas.
+   ══════════════════════════════════════════ */
+const RESP_ROLES=['operaciones','operaciones_master','admin','master'];
+function normName(s){
+  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+}
+function namesMatch(a,b){
+  const na=normName(a), nb=normName(b);
+  if(!na||!nb) return false;
+  if(na===nb) return true;
+  // "Rubén Vera" ↔ "Rubén Eduardo Vera": todas las palabras del nombre corto están en el largo
+  const ta=na.split(' '), tb=nb.split(' ');
+  const [sh,lg]=ta.length<=tb.length?[ta,tb]:[tb,ta];
+  return sh.length>=2 && sh.every(w=>lg.includes(w));
+}
+function portalUsers(){
+  try{ if(typeof AUTH!=='undefined'&&AUTH.users) return AUTH.users; }catch(e){}
+  return {};
+}
+/* Lista de personas asignables: usuarios del portal; si aún no cargan, la lista antigua */
+function respPeople(){
+  const us=portalUsers();
+  const list=Object.keys(us).filter(k=>us[k]&&us[k].name&&(!us[k].role||RESP_ROLES.includes(us[k].role)))
+    .map(k=>({key:k,name:us[k].name}));
+  if(list.length) return list.sort((a,b)=>a.name.localeCompare(b.name,'es'));
+  return people.map(p=>({key:'',name:p.name}));
+}
+/* Clave del portal para un nombre antiguo (solo si la coincidencia es única) */
+function keyForName(name){
+  const us=portalUsers();
+  const hits=Object.keys(us).filter(k=>us[k]&&namesMatch(us[k].name,name));
+  return hits.length===1?hits[0]:'';
+}
+function respKeyOf(ss){ return (ss&&(ss.respKey||(ss.resp?keyForName(ss.resp):'')))||''; }
+/* Nombre actual del responsable (sigue los cambios de nombre del portal) */
+function respLabel(ss){
+  if(!ss||!ss.resp) return '';
+  const k=respKeyOf(ss), us=portalUsers();
+  return (k&&us[k]&&us[k].name)||ss.resp;
+}
+function isMyStep(ss){
+  if(!activeUser||!ss||!ss.resp) return false;
+  const k=respKeyOf(ss);
+  if(k&&activeUser.key) return k===activeUser.key;
+  return namesMatch(ss.resp,activeUser.name);
+}
+/* Completa respKey en asignaciones antiguas; solo el master guarda en la base */
+function migrateRespKeys(v){
+  const st=state[v]; if(!st||!st.areas||!Object.keys(portalUsers()).length) return;
+  let changed=false;
+  Object.keys(st.areas).forEach(aid=>{
+    const steps=(st.areas[aid]&&st.areas[aid].steps)||{};
+    Object.keys(steps).forEach(sid=>{
+      const ss=steps[sid];
+      if(ss&&ss.resp&&!ss.respKey){
+        const k=keyForName(ss.resp);
+        if(k){ ss.respKey=k; ss.resp=portalUsers()[k].name; changed=true; }
+      }
+    });
+  });
+  if(changed&&isMaster()){
+    try{localStorage.setItem(lsKey(v),JSON.stringify(st));}catch(e){}
+    if(fbReady&&db){ db.ref(FB_PATH+'/'+v).set(st).catch(()=>{}); }
+  }
+}
 
 /* ══════════════════════════════════════════
    PERSONAS
@@ -6516,7 +6588,7 @@ function sectionCheckAll(aid,secIdx){
   items.forEach(it=>{
     const ss=stepState(aid,it.id);
     // Solo marca si el usuario es responsable del item o es master
-    if(!ss.done && (isMaster() || ss.resp===activeUser.name)){
+    if(!ss.done && (isMaster() || isMyStep(ss))){
       if(!ss.hist)ss.hist=[];
       ss.done=true;
       ss.hist.push({action:'marcado',by:activeUser.name,at:Date.now()});
@@ -6538,8 +6610,8 @@ function toggleStep(aid,sid){
       alert('Este punto no tiene responsable asignado. Solo el administrador puede marcarlo.');
       return;
     }
-    if(ss.resp!==activeUser.name){
-      alert('Solo "'+ss.resp+'" o el administrador pueden marcar este punto.');
+    if(!isMyStep(ss)){
+      alert('Solo "'+respLabel(ss)+'" o el administrador pueden marcar este punto.');
       return;
     }
   }
@@ -6583,7 +6655,11 @@ function updateStepText(aid,sid,val){
 }
 function updateResp(aid,sid,val){
   if(!isMaster())return;
-  stepState(aid,sid).resp=val;persistDebounced();
+  const ss=stepState(aid,sid);
+  const hit=respPeople().find(p=>(p.key||p.name)===val);
+  if(hit){ ss.resp=hit.name; if(hit.key) ss.respKey=hit.key; else delete ss.respKey; }
+  else { ss.resp=val; delete ss.respKey; }
+  persistDebounced();
   const s=document.getElementById('resp_'+sid);if(s)s.classList.toggle('has-val',!!val);
 }
 function updateNote(aid,val){markTyping();areaData(aid).notes=val;persistDebounced();}
@@ -6677,8 +6753,12 @@ function renderAreaTabs(){
 /* ══════════════════════════════════════════
    RENDER
    ══════════════════════════════════════════ */
-function respOpts(sel){
-  return'<option value="">Sin asignar</option>'+people.map(p=>`<option value="${escA(p.name)}"${p.name===sel?' selected':''}>${escH(p.name)}</option>`).join('')+(sel&&!people.find(p=>p.name===sel)?`<option value="${escA(sel)}" selected>${escH(sel)}</option>`:'');
+function respOpts(ss){
+  ss=ss||{};
+  const list=respPeople(), selKey=respKeyOf(ss);
+  const isSel=p=>ss.resp&&(p.key&&selKey?p.key===selKey:namesMatch(p.name,ss.resp));
+  const found=list.some(isSel);
+  return'<option value="">Sin asignar</option>'+list.map(p=>`<option value="${escA(p.key||p.name)}"${isSel(p)?' selected':''}>${escH(p.name)}</option>`).join('')+(ss.resp&&!found?`<option value="${escA(ss.resp)}" selected>${escH(ss.resp)}</option>`:'');
 }
 function stepHtml(aid,secIdx,item,numLabel){
   const ss=stepState(aid,item.id),done=!!ss.done;
@@ -6697,7 +6777,7 @@ function stepHtml(aid,secIdx,item,numLabel){
       <textarea class="step-txt${done?' done-txt':''}" id="txt_${item.id}" rows="1" ${roAttr}
         oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';updateStepText('${aid}','${item.id}',this.value)">${escH(item.text)}</textarea>
       <div class="step-meta">
-        <select class="resp-sel${ss.resp?' has-val':''}" id="resp_${item.id}" ${disAttr} onchange="updateResp('${aid}','${item.id}',this.value)">${respOpts(ss.resp||'')}</select>
+        <select class="resp-sel${ss.resp?' has-val':''}" id="resp_${item.id}" ${disAttr} onchange="updateResp('${aid}','${item.id}',this.value)">${respOpts(ss)}</select>
         ${ctrlBtns}
       </div>
       <input type="text" class="obs-input" id="obs_${item.id}" placeholder="Observaciones…" value="${escA(ss.obs||'')}" oninput="updateObs('${aid}','${item.id}',this.value)">
@@ -6811,6 +6891,7 @@ function copyRespFromFatima(){
         if(!gArea.steps[sid])gArea.steps[sid]={};
         if(!gArea.steps[sid].resp){
           gArea.steps[sid].resp=fStep.resp;
+          if(fStep.respKey) gArea.steps[sid].respKey=fStep.respKey;
           copied++;
         }
       }
@@ -6863,7 +6944,7 @@ function exportCumplimientoPDF(){
         aTotal++; totalAll++;
         if(done){ aDone++; doneAll++; }
         const lastMark = (ss.hist||[]).filter(h=>h.action==='marcado').slice(-1)[0];
-        const quien = done ? (lastMark?escH(lastMark.by):(ss.resp?escH(ss.resp):'—')) : (ss.resp?escH(ss.resp):'—');
+        const quien = done ? (lastMark?escH(lastMark.by):(ss.resp?escH(respLabel(ss)):'—')) : (ss.resp?escH(respLabel(ss)):'—');
         const cuando = done && lastMark ? fmtDt(lastMark.at) : '—';
         rows += `<tr>
           <td class="c-chk">${done?'<span class="ok">✔</span>':'<span class="no">○</span>'}</td>
@@ -6984,6 +7065,7 @@ thresholds=loadThr();
     /* portalUser = {name, key, role} from portal session */
     activeUser = {
       name: portalUser.name,
+      key:  portalUser.key,
       pin:  '____',  /* bypass – already authenticated */
       isAdmin: portalUser.role === 'master' || portalUser.role === 'operaciones_master'
     };
@@ -6996,6 +7078,7 @@ thresholds=loadThr();
     if (ov) { ov.style.display = 'none'; ov.style.visibility = 'hidden'; }
     /* Connect to Firebase using portal's already-initialised app */
     if (!fbReady) initFirebase();
+    migrateRespKeys('fatima'); migrateRespKeys('gracia');
     render();
   }
   /* ── Expose unique functions globally for HTML onclick attributes ── */
@@ -7383,8 +7466,31 @@ function fmtL(d){if(!d)return'';return d.toLocaleString('es-EC',{day:'2-digit',m
 // Mapea el rol del portal al actor key de CKADM
 function _myActorKey(){
   if(!currentUser) return null;
-  const map={operaciones:'capitan',admin:'admin',contabilidad:'contabilidad'};
+  const map={operaciones:'capitan',operaciones_master:'capitan',admin:'admin',contabilidad:'contabilidad',gerencia:'gerencia'};
   return map[currentUser.role]||null;
+}
+// Normaliza nombres: sin tildes, puntos, mayúsculas ni espacios extra
+function _normName(s){
+  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+}
+function _namesMatch(a,b){
+  const na=_normName(a), nb=_normName(b);
+  if(!na||!nb) return false;
+  if(na===nb) return true;
+  const ta=na.split(' '), tb=nb.split(' ');
+  const [sh,lg]=ta.length<=tb.length?[ta,tb]:[tb,ta];
+  return sh.length>=2 && sh.every(w=>lg.includes(w));
+}
+// ¿El usuario actual es el responsable de este actor?
+// Por rol (capitán, administración, contabilidad…), por clave de usuario
+// o por nombre de persona si el responsable se creó con su nombre.
+function _isMyActor(actorKey){
+  if(!currentUser||!actorKey) return false;
+  if(_myActorKey()===actorKey) return true;
+  if(currentUser.key && currentUser.key===actorKey) return true;
+  const a=ACTORS.find(x=>x.key===actorKey);
+  return !!(a && _namesMatch(a.label,currentUser.name));
 }
 function toggleStep(pid,idx){
   if(!currentUser) return;
@@ -7396,7 +7502,7 @@ function toggleStep(pid,idx){
       alert('Este paso no tiene responsable asignado. Solo el administrador puede marcarlo.');
       return;
     }
-    if(_myActorKey()!==step.actor){
+    if(!_isMyActor(step.actor)){
       const actorLabel=actorByKey(step.actor).label;
       alert('Solo "'+actorLabel+'" o el administrador pueden marcar este paso.');
       return;
