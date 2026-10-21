@@ -40,12 +40,31 @@ function loadActors(v){ try{const r=localStorage.getItem(actorsKey(v));return r?
 function persistActors(a){ localStorage.setItem(actorsKey(),JSON.stringify(a)); }
 let ACTORS = loadActors('fatima');
 
-function actorByKey(k){ return ACTORS.find(a=>a.key===k)||{key:k,label:k,css:'ac-custom'}; }
+/* ── Responsables por persona (usuarios del portal) ──
+   step.actor guarda la clave del usuario del portal (ej. ricardo_baida_d), que no
+   cambia aunque se edite su nombre. Los pasos que aún tienen un grupo antiguo
+   (Capitán, Administración…) se muestran con ese grupo hasta reasignarlos. */
+const RESP_ROLES_ADM=['admin','contabilidad'];
+const ROLE_CSS={admin:'ac-admin',contabilidad:'ac-contabilidad',master:'ac-gerencia',operaciones:'ac-capitan',operaciones_master:'ac-capitan'};
+function _portalUsers(){ try{ if(typeof AUTH!=='undefined'&&AUTH.users) return AUTH.users; }catch(e){} return {}; }
+function respPeopleAdm(){
+  const us=_portalUsers();
+  return Object.keys(us).filter(k=>us[k]&&us[k].name&&RESP_ROLES_ADM.includes(us[k].role))
+    .map(k=>({key:k,label:us[k].name,css:ROLE_CSS[us[k].role]||'ac-custom'}))
+    .sort((a,b)=>a.label.localeCompare(b.label,'es'));
+}
+function actorByKey(k){
+  if(!k) return {key:'',label:'Sin asignar',css:'ac-custom'};
+  const us=_portalUsers();
+  if(us[k]&&us[k].name) return {key:k,label:us[k].name,css:ROLE_CSS[us[k].role]||'ac-custom',person:true};
+  const g=ACTORS.find(a=>a.key===k);
+  return g?{key:g.key,label:g.label,css:g.css,group:true}:{key:k,label:k,css:'ac-custom'};
+}
 function rebuildLegend(){
   const bar=document.getElementById('ckadm-legendBar');
   if(!bar) return;
   bar.innerHTML='<span class="leg-title">Responsables:</span>'
-    +ACTORS.map(a=>`<span class="leg-pill ${a.css}">${esc(a.label)}</span>`).join('')
+    +respPeopleAdm().map(a=>`<span class="leg-pill ${a.css}">${esc(a.label)}</span>`).join('')
     +'<span style="font-size:10px;color:#bbb;margin-left:6px">🔴 Rojo = tarea vencida</span>';
 }
 
@@ -428,7 +447,7 @@ function deleteStep(pid,idx){
 }
 function addStep(pid){
   if(!isAdmin()) return;
-  phaseData(pid).stepList.push({id:'x_'+Date.now(),text:'Nuevo paso',actor:ACTORS[0]?ACTORS[0].key:'admin',doc:'',done:false,maxDays:1,log:[]});
+  phaseData(pid).stepList.push({id:'x_'+Date.now(),text:'Nuevo paso',actor:'',doc:'',done:false,maxDays:1,log:[]});
   persist(); renderBody(pid);
   setTimeout(()=>{ const n=phaseData(pid).stepList.length-1; const ta=document.getElementById('stxt_'+pid+'_'+n); if(ta){ta.focus();ta.select();} },60);
 }
@@ -439,7 +458,13 @@ function addStep(pid){
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 function buildActorOptions(selKey){
-  return ACTORS.map(a=>`<option value="${esc(a.key)}"${a.key===selKey?' selected':''}>${esc(a.label)}</option>`).join('');
+  const people=respPeopleAdm();
+  let html=`<option value=""${!selKey?' selected':''}>Sin asignar</option>`;
+  if(selKey && !people.some(p=>p.key===selKey)){
+    const a=actorByKey(selKey);
+    html+=`<option value="${esc(selKey)}" selected>${esc(a.label)}${a.group?' (grupo — reasignar)':''}</option>`;
+  }
+  return html+people.map(a=>`<option value="${esc(a.key)}"${a.key===selKey?' selected':''}>${esc(a.label)}</option>`).join('');
 }
 
 function renderBody(pid){
