@@ -404,7 +404,7 @@ const EQ = (() => {
           (i.resp ? '<div class="eq-ev-sub">Respaldo: ' + esc(nombre(i.resp)) + '</div>' : '<div class="eq-ev-sub eq-rol-sinresp">Sin respaldo</div>') +
           '</div><span class="gt-badge ' + frec(i.frec).cls + '">' + frec(i.frec).lab + '</span></li>').join('') + '</ol>'
         : '<div class="gt-empty eq-rol-vacio">Sin responsabilidades definidas todavía.</div>';
-      html += '<div class="gt-card eq-rol-card">' +
+      html += '<div class="gt-card eq-rol-card' + (PRIMERO_ROL.indexOf(pid) >= 0 ? ' eq-rol-lider' : '') + '">' +
         '<div class="eq-rol-head"><span class="eq-av eq-rol-av">' + esc(iniciales(u.name)) + '</span>' +
           '<div class="eq-rol-who"><div class="eq-rol-name">' + esc(u.name) + '</div>' +
           '<div class="eq-rol-cargo">' + esc(r.cargo || 'Cargo por definir') + '</div></div>' +
