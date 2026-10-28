@@ -3298,6 +3298,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       <h2>🧭 Roles y responsabilidades</h2>
       <p>Lo que cada persona tiene a su cargo de forma permanente · 🔒 Visible solo para master</p>
     </div>
+    <div class="gt-header-btns eq-rol-vista">
+      <button type="button" class="eq-rol-vbtn on" data-v="org" onclick="EQ.vistaRoles('org')">🌳 Organigrama</button>
+      <button type="button" class="eq-rol-vbtn" data-v="tarjetas" onclick="EQ.vistaRoles('tarjetas')">🗂 Responsabilidades</button>
+    </div>
   </div>
   <div class="gt-kpis">
     <div class="gt-kpi gt-kpi-total"><div class="gt-kpi-n" id="eq-rk-pers">0</div><div class="gt-kpi-lbl">Equipo</div><div class="gt-kpi-sub">personas con acceso</div></div>
@@ -3305,7 +3309,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     <div class="gt-kpi gt-kpi-inc"><div class="gt-kpi-n" id="eq-rk-tot">0</div><div class="gt-kpi-lbl">Responsabilidades</div><div class="gt-kpi-sub">en total</div></div>
     <div class="gt-kpi gt-kpi-pend"><div class="gt-kpi-n" id="eq-rk-sin">0</div><div class="gt-kpi-lbl">Sin respaldo</div><div class="gt-kpi-sub">nadie las cubre si falta el titular</div></div>
   </div>
-  <div class="gt-filters">
+  <div class="gt-filters" id="eq-rol-filtros">
     <input class="gt-search" id="eq-rol-search" type="text" placeholder="🔍 Buscar persona, cargo o responsabilidad…" oninput="EQ.renderRoles()">
     <select class="gt-sel" id="eq-rol-area" onchange="EQ.renderRoles()">
       <option value="">Todas las áreas</option>
@@ -3333,7 +3337,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 <div id="eq-ro-modal" class="gt-modal-overlay" onclick="EQ.cerrarRolBg(event)">
   <div class="gt-modal" style="max-width:720px;max-height:92vh;overflow-y:auto">
     <div class="gt-modal-title" id="eq-ro-title">🧭 Rol</div>
-    <div class="gt-modal-row"><label>Cargo</label><input id="eq-ro-cargo" type="text" placeholder="Ej.: Jefe de Operaciones"></div>
+    <div class="gt-modal-grid">
+      <div class="gt-modal-row"><label>Cargo</label><input id="eq-ro-cargo" type="text" placeholder="Ej.: Jefe de Operaciones"></div>
+      <div class="gt-modal-row"><label>Reporta a</label><select id="eq-ro-jefe"></select></div>
+    </div>
     <div class="gt-modal-row"><label>Misión del puesto (una frase)</label><textarea id="eq-ro-mision" placeholder="Ej.: Garantizar que cada zarpe salga a tiempo, completo y con la documentación en regla."></textarea></div>
     <div class="gt-modal-row">
       <label>Responsabilidades permanentes</label>
@@ -3447,6 +3454,35 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .eq-rol-grp{grid-column:1/-1;font-size:10px;font-weight:700;color:#1F4E79;text-transform:uppercase;letter-spacing:.6px;margin:8px 0 -2px}
 .eq-rol-card{display:flex;flex-direction:column;gap:8px}
 .eq-rol-lider{grid-column:1/-1;width:calc(50% - 5px);justify-self:center}
+.eq-rol-rep{color:#666}
+.eq-rol-rep b{color:#1F4E79}
+.eq-rol-vbtn{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:7px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
+.eq-rol-vbtn.on{background:#fff;color:#1F4E79;border-color:#fff}
+.eq-org-card{margin-bottom:10px}
+.eq-org-scroll{overflow-x:auto;padding-bottom:6px}
+.eq-org{display:flex;justify-content:center;min-width:max-content;margin:0 auto}
+.eq-org ul{display:flex;justify-content:center;padding:18px 0 0;margin:0;position:relative;list-style:none}
+.eq-org>ul{padding-top:0}
+.eq-org li{position:relative;padding:18px 6px 0;text-align:center;list-style:none}
+.eq-org>ul>li{padding-top:0}
+.eq-org li::before,.eq-org li::after{content:'';position:absolute;top:0;right:50%;width:50%;height:18px;border-top:2px solid #BDD7EE}
+.eq-org li::after{right:auto;left:50%;border-left:2px solid #BDD7EE}
+.eq-org li:only-child::before,.eq-org li:only-child::after{border-top:none}
+.eq-org li:only-child::after{border-left:2px solid #BDD7EE}
+.eq-org>ul>li::before,.eq-org>ul>li::after{display:none}
+.eq-org li:first-child::before,.eq-org li:last-child::after{border:0 none}
+.eq-org li:last-child::before{border-right:2px solid #BDD7EE;border-radius:0 6px 0 0}
+.eq-org li:first-child::after{border-radius:6px 0 0 0}
+.eq-org li:only-child::after{border-radius:0}
+.eq-org ul ul::before{content:'';position:absolute;top:0;left:50%;height:18px;border-left:2px solid #BDD7EE}
+.eq-org-node{display:inline-flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:1.5px solid #e8e6e0;border-top:3px solid #1F4E79;border-radius:10px;padding:10px 12px;min-width:130px;max-width:170px;cursor:pointer;transition:.2s}
+.eq-org-node:hover{box-shadow:0 3px 10px rgba(0,0,0,.11);border-color:#2E75B6}
+.eq-org-node .eq-rol-av{margin-bottom:4px}
+.eq-org-name{font-size:12px;font-weight:700;color:#1a1a18}
+.eq-org-meta{font-size:9px;color:#aaa;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.eq-org-sueltos{display:flex;flex-wrap:wrap;gap:6px}
+.eq-org-chip{display:inline-flex;align-items:center;gap:6px;background:#f9f9f7;border:1.5px solid #e8e6e0;border-radius:20px;padding:4px 12px 4px 4px;font-size:12px;color:#1a1a18;cursor:pointer;font-family:inherit}
+.eq-org-chip:hover{border-color:#2E75B6;background:#E6F1FB}
 .eq-rol-head{display:flex;align-items:center;gap:10px}
 .eq-rol-av{width:34px;height:34px;font-size:11px;flex-shrink:0}
 .eq-rol-who{flex:1;min-width:0}
@@ -3480,6 +3516,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 @media(max-width:680px){
   .eq-rol-grid{grid-template-columns:1fr}
   .eq-rol-lider{width:auto;justify-self:stretch}
+  .eq-org-node{min-width:104px;max-width:130px;padding:8px}
+  .eq-org-name{font-size:11px}
+  .eq-org li{padding-left:3px;padding-right:3px}
   .eq-rol-row{grid-template-columns:1fr 1fr;padding:8px;border:1px solid #e8e6e0;border-radius:8px}
   .eq-rol-row .eq-ri-txt{grid-column:1/-1}
   .eq-rol-row-btns{grid-column:1/-1;justify-content:flex-end}
@@ -5567,6 +5606,7 @@ const EQ = (() => {
   let roles = {};            // pid → { cargo, mision, items[], actualizado, por }
   let rolesOn = false;       // listener de roles activo
   let rolEdit = null;        // pid que se está editando
+  let rolVista = 'org';      // 'org' (organigrama) | 'tarjetas'
 
   /* ── Utilidades ─────────────────────────────────────── */
   function db() { try { return firebase.database(); } catch (e) { return null; } }
@@ -5645,6 +5685,7 @@ const EQ = (() => {
     tab = t;
     document.querySelectorAll('.eq-tab').forEach(b => b.classList.toggle('on', b.getAttribute('data-tab') === t));
     document.querySelectorAll('.eq-panel').forEach(p => p.classList.toggle('on', p.id === 'eq-p-' + t));
+    if (t === 'roles') centrarOrg();
   }
 
   function renderAll() { renderAgenda(); renderReus(); renderRoles(); }
@@ -5873,6 +5914,55 @@ const EQ = (() => {
   }
   function itemsDe(pid) { const r = roles[pid]; return (r && Array.isArray(r.items)) ? r.items.filter(i => i && i.txt) : []; }
 
+  // ── Línea de reporte (quién reporta a quién) ──
+  function jefeDe(pid) { const j = (roles[pid] || {}).reportaA; return (j && j !== pid && users()[j]) ? j : ''; }
+  function subordinados(pid) { return personasOrdenadas().filter(id => jefeDe(id) === pid); }
+  function debajoDe(pid) {   // todos los que están por debajo (para evitar ciclos)
+    const out = {}, cola = [pid];
+    while (cola.length) subordinados(cola.shift()).forEach(id => { if (!out[id]) { out[id] = 1; cola.push(id); } });
+    return out;
+  }
+  // En celular el organigrama es más ancho que la pantalla: abrirlo centrado en la cabeza.
+  function centrarOrg() {
+    requestAnimationFrame(() => {
+      const sc = document.querySelector('#eq-rol-list .eq-org-scroll');
+      if (sc && sc.scrollWidth > sc.clientWidth) sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) / 2;
+    });
+  }
+  function vistaRoles(v) {
+    rolVista = v === 'tarjetas' ? 'tarjetas' : 'org';
+    document.querySelectorAll('.eq-rol-vbtn').forEach(b => b.classList.toggle('on', b.getAttribute('data-v') === rolVista));
+    renderRoles();
+  }
+  function nodoOrg(pid, visto) {
+    visto[pid] = 1;
+    const r = roles[pid] || {}, hijos = subordinados(pid).filter(id => !visto[id]);
+    return '<li><div class="eq-org-node" onclick="EQ.abrirRol(\'' + esc(pid) + '\')" title="Editar rol">' +
+      '<span class="eq-av eq-rol-av">' + esc(iniciales(nombre(pid))) + '</span>' +
+      '<div class="eq-org-name">' + esc(nombre(pid)) + '</div>' +
+      '<div class="eq-rol-cargo">' + esc(r.cargo || 'Cargo por definir') + '</div>' +
+      '<div class="eq-org-meta">' + esc(grupoDe(pid)) + ' · ' + itemsDe(pid).length + ' resp.</div></div>' +
+      (hijos.length ? '<ul>' + hijos.map(h => nodoOrg(h, visto)).join('') + '</ul>' : '') + '</li>';
+  }
+  function renderOrg() {
+    const pers = personasOrdenadas(), visto = {};
+    const raices = pers.filter(id => !jefeDe(id) && subordinados(id).length);
+    const sueltos = pers.filter(id => !jefeDe(id) && !subordinados(id).length);
+    let html = '<div class="gt-card eq-org-card">';
+    if (raices.length) {
+      html += '<div class="eq-org-scroll"><div class="eq-org"><ul>' + raices.map(id => nodoOrg(id, visto)).join('') + '</ul></div></div>';
+    } else {
+      html += '<div class="gt-empty">Todavía no hay líneas de reporte. Abre a cada persona (✎) y elige a quién reporta.</div>';
+    }
+    html += '</div>';
+    if (sueltos.length) {
+      html += '<div class="gt-card eq-org-card"><div class="gt-card-title">Sin línea de reporte definida</div><div class="eq-org-sueltos">' +
+        sueltos.map(id => '<button type="button" class="eq-org-chip" onclick="EQ.abrirRol(\'' + esc(id) + '\')">' +
+          '<span class="eq-av">' + esc(iniciales(nombre(id))) + '</span>' + esc(nombre(id)) + '</button>').join('') + '</div></div>';
+    }
+    return html;
+  }
+
   function renderRoles(msgError) {
     const cont = $('eq-rol-list');
     if (!cont) return;
@@ -5887,11 +5977,21 @@ const EQ = (() => {
     k('eq-rk-def-sub', pers.length ? Math.round(conRol.length * 100 / pers.length) + '% del equipo' : '—');
     k('eq-rk-tot', total); k('eq-rk-sin', sinResp);
     if (msgError) { cont.innerHTML = '<div class="gt-empty">' + esc(msgError) + '</div>'; return; }
+    const filtros = $('eq-rol-filtros');
+    if (filtros) filtros.style.display = rolVista === 'org' ? 'none' : '';
+    cont.classList.toggle('eq-rol-grid', rolVista !== 'org');
+    if (rolVista === 'org') {
+      cont.innerHTML = renderOrg();
+      centrarOrg();
+      return;
+    }
 
     const q = (($('eq-rol-search') || {}).value || '').toLowerCase().trim();
     const fa = ($('eq-rol-area') || {}).value || '';
     const ff = ($('eq-rol-frec') || {}).value || '';
     let html = '', ultimoGrupo = '', visibles = 0;
+    const porGrupo = {};
+    pers.forEach(id => { const g = grupoDe(id); porGrupo[g] = (porGrupo[g] || 0) + 1; });
     pers.forEach(pid => {
       const u = users()[pid], r = roles[pid] || {}, g = grupoDe(pid);
       if (fa && g !== fa) return;
@@ -5907,11 +6007,13 @@ const EQ = (() => {
           (i.resp ? '<div class="eq-ev-sub">Respaldo: ' + esc(nombre(i.resp)) + '</div>' : '<div class="eq-ev-sub eq-rol-sinresp">Sin respaldo</div>') +
           '</div><span class="gt-badge ' + frec(i.frec).cls + '">' + frec(i.frec).lab + '</span></li>').join('') + '</ol>'
         : '<div class="gt-empty eq-rol-vacio">Sin responsabilidades definidas todavía.</div>';
-      html += '<div class="gt-card eq-rol-card' + (PRIMERO_ROL.indexOf(pid) >= 0 ? ' eq-rol-lider' : '') + '">' +
+      html += '<div class="gt-card eq-rol-card' + ((PRIMERO_ROL.indexOf(pid) >= 0 || porGrupo[g] === 1) ? ' eq-rol-lider' : '') + '">' +
         '<div class="eq-rol-head"><span class="eq-av eq-rol-av">' + esc(iniciales(u.name)) + '</span>' +
           '<div class="eq-rol-who"><div class="eq-rol-name">' + esc(u.name) + '</div>' +
           '<div class="eq-rol-cargo">' + esc(r.cargo || 'Cargo por definir') + '</div></div>' +
           '<button type="button" class="eq-rol-edit" onclick="EQ.abrirRol(\'' + esc(pid) + '\')">✎ Editar</button></div>' +
+        '<div class="eq-ev-sub eq-rol-rep">⬆ Reporta a: <b>' + esc(jefeDe(pid) ? nombre(jefeDe(pid)) : '—') + '</b>' +
+          (subordinados(pid).length ? ' · ⬇ A cargo: ' + esc(subordinados(pid).map(nombre).join(', ')) : '') + '</div>' +
         (r.mision ? '<div class="eq-rol-mision">' + esc(r.mision) + '</div>' : '') +
         lista +
         (r.actualizado ? '<div class="eq-nota">Actualizado ' + dmy(iso(new Date(r.actualizado))) + (r.por ? ' por ' + esc(nombre(r.por)) : '') + '</div>' : '') +
@@ -5944,6 +6046,10 @@ const EQ = (() => {
     $('eq-ro-title').textContent = '🧭 Rol de ' + nombre(pid);
     $('eq-ro-cargo').value = r.cargo || '';
     $('eq-ro-mision').value = r.mision || '';
+    const bloqueados = debajoDe(pid), jefe = jefeDe(pid);
+    $('eq-ro-jefe').innerHTML = '<option value="">— Nadie (cabeza del organigrama) —</option>' +
+      personasOrdenadas().filter(id => id !== pid && !bloqueados[id])
+        .map(id => '<option value="' + esc(id) + '"' + (id === jefe ? ' selected' : '') + '>' + esc(nombre(id)) + ' · ' + esc(grupoDe(id)) + '</option>').join('');
     const its = itemsDe(pid);
     $('eq-ro-items').innerHTML = (its.length ? its : [{}]).map(filaItem).join('');
     $('eq-ro-err').textContent = '';
@@ -5973,15 +6079,17 @@ const EQ = (() => {
       resp: f.querySelector('.eq-ri-resp').value,
     })).filter(i => i.txt);
     const cargo = $('eq-ro-cargo').value.trim(), mision = $('eq-ro-mision').value.trim();
+    const reportaA = $('eq-ro-jefe').value;
+    if (reportaA && debajoDe(pid)[reportaA]) { err.textContent = 'Esa persona ya reporta (directa o indirectamente) a ' + nombre(pid) + '.'; return; }
     const d = db(); if (!d) { err.textContent = 'Sin conexión con la base de datos.'; return; }
     const ref = d.ref(P_ROLES + '/' + pid);
-    const op = (!cargo && !mision && !items.length) ? ref.remove()
-      : ref.set({ cargo: cargo, mision: mision, items: items, actualizado: Date.now(), por: myId() || '' });
+    const op = (!cargo && !mision && !items.length && !reportaA) ? ref.remove()
+      : ref.set({ cargo: cargo, mision: mision, reportaA: reportaA, items: items, actualizado: Date.now(), por: myId() || '' });
     op.then(cerrarRol).catch(() => { err.textContent = 'No se pudo guardar (falta publicar la regla de Firebase de atuntro_roles).'; });
   }
 
   return { init, showTab, renderReus, limpiarReus,
-           renderRoles, limpiarRoles, abrirRol, agregarItem, quitarItem, moverItem, cerrarRol, cerrarRolBg, guardarRol,
+           renderRoles, limpiarRoles, vistaRoles, abrirRol, agregarItem, quitarItem, moverItem, cerrarRol, cerrarRolBg, guardarRol,
            abrirEvento, cerrarEvento, cerrarEventoBg, guardarEvento, borrarEvento,
            abrirReunion, cerrarReunion, cerrarReunionBg, guardarReunion, cancelarReunion, contarSel };
 })();

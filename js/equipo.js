@@ -64,6 +64,7 @@ const EQ = (() => {
   let roles = {};            // pid → { cargo, mision, items[], actualizado, por }
   let rolesOn = false;       // listener de roles activo
   let rolEdit = null;        // pid que se está editando
+  let rolVista = 'org';      // 'org' (organigrama) | 'tarjetas'
 
   /* ── Utilidades ─────────────────────────────────────── */
   function db() { try { return firebase.database(); } catch (e) { return null; } }
@@ -142,6 +143,7 @@ const EQ = (() => {
     tab = t;
     document.querySelectorAll('.eq-tab').forEach(b => b.classList.toggle('on', b.getAttribute('data-tab') === t));
     document.querySelectorAll('.eq-panel').forEach(p => p.classList.toggle('on', p.id === 'eq-p-' + t));
+    if (t === 'roles') centrarOrg();
   }
 
   function renderAll() { renderAgenda(); renderReus(); renderRoles(); }
@@ -370,6 +372,55 @@ const EQ = (() => {
   }
   function itemsDe(pid) { const r = roles[pid]; return (r && Array.isArray(r.items)) ? r.items.filter(i => i && i.txt) : []; }
 
+  // ── Línea de reporte (quién reporta a quién) ──
+  function jefeDe(pid) { const j = (roles[pid] || {}).reportaA; return (j && j !== pid && users()[j]) ? j : ''; }
+  function subordinados(pid) { return personasOrdenadas().filter(id => jefeDe(id) === pid); }
+  function debajoDe(pid) {   // todos los que están por debajo (para evitar ciclos)
+    const out = {}, cola = [pid];
+    while (cola.length) subordinados(cola.shift()).forEach(id => { if (!out[id]) { out[id] = 1; cola.push(id); } });
+    return out;
+  }
+  // En celular el organigrama es más ancho que la pantalla: abrirlo centrado en la cabeza.
+  function centrarOrg() {
+    requestAnimationFrame(() => {
+      const sc = document.querySelector('#eq-rol-list .eq-org-scroll');
+      if (sc && sc.scrollWidth > sc.clientWidth) sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) / 2;
+    });
+  }
+  function vistaRoles(v) {
+    rolVista = v === 'tarjetas' ? 'tarjetas' : 'org';
+    document.querySelectorAll('.eq-rol-vbtn').forEach(b => b.classList.toggle('on', b.getAttribute('data-v') === rolVista));
+    renderRoles();
+  }
+  function nodoOrg(pid, visto) {
+    visto[pid] = 1;
+    const r = roles[pid] || {}, hijos = subordinados(pid).filter(id => !visto[id]);
+    return '<li><div class="eq-org-node" onclick="EQ.abrirRol(\'' + esc(pid) + '\')" title="Editar rol">' +
+      '<span class="eq-av eq-rol-av">' + esc(iniciales(nombre(pid))) + '</span>' +
+      '<div class="eq-org-name">' + esc(nombre(pid)) + '</div>' +
+      '<div class="eq-rol-cargo">' + esc(r.cargo || 'Cargo por definir') + '</div>' +
+      '<div class="eq-org-meta">' + esc(grupoDe(pid)) + ' · ' + itemsDe(pid).length + ' resp.</div></div>' +
+      (hijos.length ? '<ul>' + hijos.map(h => nodoOrg(h, visto)).join('') + '</ul>' : '') + '</li>';
+  }
+  function renderOrg() {
+    const pers = personasOrdenadas(), visto = {};
+    const raices = pers.filter(id => !jefeDe(id) && subordinados(id).length);
+    const sueltos = pers.filter(id => !jefeDe(id) && !subordinados(id).length);
+    let html = '<div class="gt-card eq-org-card">';
+    if (raices.length) {
+      html += '<div class="eq-org-scroll"><div class="eq-org"><ul>' + raices.map(id => nodoOrg(id, visto)).join('') + '</ul></div></div>';
+    } else {
+      html += '<div class="gt-empty">Todavía no hay líneas de reporte. Abre a cada persona (✎) y elige a quién reporta.</div>';
+    }
+    html += '</div>';
+    if (sueltos.length) {
+      html += '<div class="gt-card eq-org-card"><div class="gt-card-title">Sin línea de reporte definida</div><div class="eq-org-sueltos">' +
+        sueltos.map(id => '<button type="button" class="eq-org-chip" onclick="EQ.abrirRol(\'' + esc(id) + '\')">' +
+          '<span class="eq-av">' + esc(iniciales(nombre(id))) + '</span>' + esc(nombre(id)) + '</button>').join('') + '</div></div>';
+    }
+    return html;
+  }
+
   function renderRoles(msgError) {
     const cont = $('eq-rol-list');
     if (!cont) return;
@@ -384,11 +435,21 @@ const EQ = (() => {
     k('eq-rk-def-sub', pers.length ? Math.round(conRol.length * 100 / pers.length) + '% del equipo' : '—');
     k('eq-rk-tot', total); k('eq-rk-sin', sinResp);
     if (msgError) { cont.innerHTML = '<div class="gt-empty">' + esc(msgError) + '</div>'; return; }
+    const filtros = $('eq-rol-filtros');
+    if (filtros) filtros.style.display = rolVista === 'org' ? 'none' : '';
+    cont.classList.toggle('eq-rol-grid', rolVista !== 'org');
+    if (rolVista === 'org') {
+      cont.innerHTML = renderOrg();
+      centrarOrg();
+      return;
+    }
 
     const q = (($('eq-rol-search') || {}).value || '').toLowerCase().trim();
     const fa = ($('eq-rol-area') || {}).value || '';
     const ff = ($('eq-rol-frec') || {}).value || '';
     let html = '', ultimoGrupo = '', visibles = 0;
+    const porGrupo = {};
+    pers.forEach(id => { const g = grupoDe(id); porGrupo[g] = (porGrupo[g] || 0) + 1; });
     pers.forEach(pid => {
       const u = users()[pid], r = roles[pid] || {}, g = grupoDe(pid);
       if (fa && g !== fa) return;
@@ -404,11 +465,13 @@ const EQ = (() => {
           (i.resp ? '<div class="eq-ev-sub">Respaldo: ' + esc(nombre(i.resp)) + '</div>' : '<div class="eq-ev-sub eq-rol-sinresp">Sin respaldo</div>') +
           '</div><span class="gt-badge ' + frec(i.frec).cls + '">' + frec(i.frec).lab + '</span></li>').join('') + '</ol>'
         : '<div class="gt-empty eq-rol-vacio">Sin responsabilidades definidas todavía.</div>';
-      html += '<div class="gt-card eq-rol-card' + (PRIMERO_ROL.indexOf(pid) >= 0 ? ' eq-rol-lider' : '') + '">' +
+      html += '<div class="gt-card eq-rol-card' + ((PRIMERO_ROL.indexOf(pid) >= 0 || porGrupo[g] === 1) ? ' eq-rol-lider' : '') + '">' +
         '<div class="eq-rol-head"><span class="eq-av eq-rol-av">' + esc(iniciales(u.name)) + '</span>' +
           '<div class="eq-rol-who"><div class="eq-rol-name">' + esc(u.name) + '</div>' +
           '<div class="eq-rol-cargo">' + esc(r.cargo || 'Cargo por definir') + '</div></div>' +
           '<button type="button" class="eq-rol-edit" onclick="EQ.abrirRol(\'' + esc(pid) + '\')">✎ Editar</button></div>' +
+        '<div class="eq-ev-sub eq-rol-rep">⬆ Reporta a: <b>' + esc(jefeDe(pid) ? nombre(jefeDe(pid)) : '—') + '</b>' +
+          (subordinados(pid).length ? ' · ⬇ A cargo: ' + esc(subordinados(pid).map(nombre).join(', ')) : '') + '</div>' +
         (r.mision ? '<div class="eq-rol-mision">' + esc(r.mision) + '</div>' : '') +
         lista +
         (r.actualizado ? '<div class="eq-nota">Actualizado ' + dmy(iso(new Date(r.actualizado))) + (r.por ? ' por ' + esc(nombre(r.por)) : '') + '</div>' : '') +
@@ -441,6 +504,10 @@ const EQ = (() => {
     $('eq-ro-title').textContent = '🧭 Rol de ' + nombre(pid);
     $('eq-ro-cargo').value = r.cargo || '';
     $('eq-ro-mision').value = r.mision || '';
+    const bloqueados = debajoDe(pid), jefe = jefeDe(pid);
+    $('eq-ro-jefe').innerHTML = '<option value="">— Nadie (cabeza del organigrama) —</option>' +
+      personasOrdenadas().filter(id => id !== pid && !bloqueados[id])
+        .map(id => '<option value="' + esc(id) + '"' + (id === jefe ? ' selected' : '') + '>' + esc(nombre(id)) + ' · ' + esc(grupoDe(id)) + '</option>').join('');
     const its = itemsDe(pid);
     $('eq-ro-items').innerHTML = (its.length ? its : [{}]).map(filaItem).join('');
     $('eq-ro-err').textContent = '';
@@ -470,15 +537,17 @@ const EQ = (() => {
       resp: f.querySelector('.eq-ri-resp').value,
     })).filter(i => i.txt);
     const cargo = $('eq-ro-cargo').value.trim(), mision = $('eq-ro-mision').value.trim();
+    const reportaA = $('eq-ro-jefe').value;
+    if (reportaA && debajoDe(pid)[reportaA]) { err.textContent = 'Esa persona ya reporta (directa o indirectamente) a ' + nombre(pid) + '.'; return; }
     const d = db(); if (!d) { err.textContent = 'Sin conexión con la base de datos.'; return; }
     const ref = d.ref(P_ROLES + '/' + pid);
-    const op = (!cargo && !mision && !items.length) ? ref.remove()
-      : ref.set({ cargo: cargo, mision: mision, items: items, actualizado: Date.now(), por: myId() || '' });
+    const op = (!cargo && !mision && !items.length && !reportaA) ? ref.remove()
+      : ref.set({ cargo: cargo, mision: mision, reportaA: reportaA, items: items, actualizado: Date.now(), por: myId() || '' });
     op.then(cerrarRol).catch(() => { err.textContent = 'No se pudo guardar (falta publicar la regla de Firebase de atuntro_roles).'; });
   }
 
   return { init, showTab, renderReus, limpiarReus,
-           renderRoles, limpiarRoles, abrirRol, agregarItem, quitarItem, moverItem, cerrarRol, cerrarRolBg, guardarRol,
+           renderRoles, limpiarRoles, vistaRoles, abrirRol, agregarItem, quitarItem, moverItem, cerrarRol, cerrarRolBg, guardarRol,
            abrirEvento, cerrarEvento, cerrarEventoBg, guardarEvento, borrarEvento,
            abrirReunion, cerrarReunion, cerrarReunionBg, guardarReunion, cancelarReunion, contarSel };
 })();

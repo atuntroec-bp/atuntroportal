@@ -3298,6 +3298,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       <h2>🧭 Roles y responsabilidades</h2>
       <p>Lo que cada persona tiene a su cargo de forma permanente · 🔒 Visible solo para master</p>
     </div>
+    <div class="gt-header-btns eq-rol-vista">
+      <button type="button" class="eq-rol-vbtn on" data-v="org" onclick="EQ.vistaRoles('org')">🌳 Organigrama</button>
+      <button type="button" class="eq-rol-vbtn" data-v="tarjetas" onclick="EQ.vistaRoles('tarjetas')">🗂 Responsabilidades</button>
+    </div>
   </div>
   <div class="gt-kpis">
     <div class="gt-kpi gt-kpi-total"><div class="gt-kpi-n" id="eq-rk-pers">0</div><div class="gt-kpi-lbl">Equipo</div><div class="gt-kpi-sub">personas con acceso</div></div>
@@ -3305,7 +3309,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     <div class="gt-kpi gt-kpi-inc"><div class="gt-kpi-n" id="eq-rk-tot">0</div><div class="gt-kpi-lbl">Responsabilidades</div><div class="gt-kpi-sub">en total</div></div>
     <div class="gt-kpi gt-kpi-pend"><div class="gt-kpi-n" id="eq-rk-sin">0</div><div class="gt-kpi-lbl">Sin respaldo</div><div class="gt-kpi-sub">nadie las cubre si falta el titular</div></div>
   </div>
-  <div class="gt-filters">
+  <div class="gt-filters" id="eq-rol-filtros">
     <input class="gt-search" id="eq-rol-search" type="text" placeholder="🔍 Buscar persona, cargo o responsabilidad…" oninput="EQ.renderRoles()">
     <select class="gt-sel" id="eq-rol-area" onchange="EQ.renderRoles()">
       <option value="">Todas las áreas</option>
@@ -3333,7 +3337,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 <div id="eq-ro-modal" class="gt-modal-overlay" onclick="EQ.cerrarRolBg(event)">
   <div class="gt-modal" style="max-width:720px;max-height:92vh;overflow-y:auto">
     <div class="gt-modal-title" id="eq-ro-title">🧭 Rol</div>
-    <div class="gt-modal-row"><label>Cargo</label><input id="eq-ro-cargo" type="text" placeholder="Ej.: Jefe de Operaciones"></div>
+    <div class="gt-modal-grid">
+      <div class="gt-modal-row"><label>Cargo</label><input id="eq-ro-cargo" type="text" placeholder="Ej.: Jefe de Operaciones"></div>
+      <div class="gt-modal-row"><label>Reporta a</label><select id="eq-ro-jefe"></select></div>
+    </div>
     <div class="gt-modal-row"><label>Misión del puesto (una frase)</label><textarea id="eq-ro-mision" placeholder="Ej.: Garantizar que cada zarpe salga a tiempo, completo y con la documentación en regla."></textarea></div>
     <div class="gt-modal-row">
       <label>Responsabilidades permanentes</label>
@@ -3447,6 +3454,35 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .eq-rol-grp{grid-column:1/-1;font-size:10px;font-weight:700;color:#1F4E79;text-transform:uppercase;letter-spacing:.6px;margin:8px 0 -2px}
 .eq-rol-card{display:flex;flex-direction:column;gap:8px}
 .eq-rol-lider{grid-column:1/-1;width:calc(50% - 5px);justify-self:center}
+.eq-rol-rep{color:#666}
+.eq-rol-rep b{color:#1F4E79}
+.eq-rol-vbtn{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:7px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
+.eq-rol-vbtn.on{background:#fff;color:#1F4E79;border-color:#fff}
+.eq-org-card{margin-bottom:10px}
+.eq-org-scroll{overflow-x:auto;padding-bottom:6px}
+.eq-org{display:flex;justify-content:center;min-width:max-content;margin:0 auto}
+.eq-org ul{display:flex;justify-content:center;padding:18px 0 0;margin:0;position:relative;list-style:none}
+.eq-org>ul{padding-top:0}
+.eq-org li{position:relative;padding:18px 6px 0;text-align:center;list-style:none}
+.eq-org>ul>li{padding-top:0}
+.eq-org li::before,.eq-org li::after{content:'';position:absolute;top:0;right:50%;width:50%;height:18px;border-top:2px solid #BDD7EE}
+.eq-org li::after{right:auto;left:50%;border-left:2px solid #BDD7EE}
+.eq-org li:only-child::before,.eq-org li:only-child::after{border-top:none}
+.eq-org li:only-child::after{border-left:2px solid #BDD7EE}
+.eq-org>ul>li::before,.eq-org>ul>li::after{display:none}
+.eq-org li:first-child::before,.eq-org li:last-child::after{border:0 none}
+.eq-org li:last-child::before{border-right:2px solid #BDD7EE;border-radius:0 6px 0 0}
+.eq-org li:first-child::after{border-radius:6px 0 0 0}
+.eq-org li:only-child::after{border-radius:0}
+.eq-org ul ul::before{content:'';position:absolute;top:0;left:50%;height:18px;border-left:2px solid #BDD7EE}
+.eq-org-node{display:inline-flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:1.5px solid #e8e6e0;border-top:3px solid #1F4E79;border-radius:10px;padding:10px 12px;min-width:130px;max-width:170px;cursor:pointer;transition:.2s}
+.eq-org-node:hover{box-shadow:0 3px 10px rgba(0,0,0,.11);border-color:#2E75B6}
+.eq-org-node .eq-rol-av{margin-bottom:4px}
+.eq-org-name{font-size:12px;font-weight:700;color:#1a1a18}
+.eq-org-meta{font-size:9px;color:#aaa;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.eq-org-sueltos{display:flex;flex-wrap:wrap;gap:6px}
+.eq-org-chip{display:inline-flex;align-items:center;gap:6px;background:#f9f9f7;border:1.5px solid #e8e6e0;border-radius:20px;padding:4px 12px 4px 4px;font-size:12px;color:#1a1a18;cursor:pointer;font-family:inherit}
+.eq-org-chip:hover{border-color:#2E75B6;background:#E6F1FB}
 .eq-rol-head{display:flex;align-items:center;gap:10px}
 .eq-rol-av{width:34px;height:34px;font-size:11px;flex-shrink:0}
 .eq-rol-who{flex:1;min-width:0}
@@ -3480,6 +3516,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 @media(max-width:680px){
   .eq-rol-grid{grid-template-columns:1fr}
   .eq-rol-lider{width:auto;justify-self:stretch}
+  .eq-org-node{min-width:104px;max-width:130px;padding:8px}
+  .eq-org-name{font-size:11px}
+  .eq-org li{padding-left:3px;padding-right:3px}
   .eq-rol-row{grid-template-columns:1fr 1fr;padding:8px;border:1px solid #e8e6e0;border-radius:8px}
   .eq-rol-row .eq-ri-txt{grid-column:1/-1}
   .eq-rol-row-btns{grid-column:1/-1;justify-content:flex-end}
