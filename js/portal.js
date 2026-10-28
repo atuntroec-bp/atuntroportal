@@ -847,12 +847,188 @@
   }
   function toggleAlertBell() {
     var panel = document.getElementById('alert-bell-panel');
+    ['reu-bell-panel','ev-bell-panel'].forEach(function(id){ var o = document.getElementById(id); if (o) o.classList.remove('open'); });
     if (panel) panel.classList.toggle('open');
   }
   // Cerrar el panel al hacer clic fuera
   document.addEventListener('click', function(e){
     var wrap = document.getElementById('alert-bell-wrap');
     var panel = document.getElementById('alert-bell-panel');
+    if (wrap && panel && !wrap.contains(e.target)) panel.classList.remove('open');
+  });
+
+  // ══ AVISO DE REUNIONES (al lado de la campana) ═══════════════════════════
+  // Lee solo las reuniones a las que la persona fue convocada (índice
+  // atuntro_reuniones/porUsuario/<id>). Las convocatorias que aún no ha visto
+  // se marcan como NUEVAS; se dan por vistas al abrir el panel (por navegador).
+  var REU_BELL = { items: {}, refs: {}, on: false, pid: null };
+  function reuVistasKey() { return 'atuntro_reu_vistas_' + (REU_BELL.pid || ''); }
+  function reuVistasGet() { try { return JSON.parse(localStorage.getItem(reuVistasKey()) || '{}') || {}; } catch(e) { return {}; } }
+  function reuVistasSet(v) { try { localStorage.setItem(reuVistasKey(), JSON.stringify(v)); } catch(e) {} }
+  function reuHoyIso() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+  function startReuBell() {
+    var sess = null; try { sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null'); } catch(e) {}
+    var pid = sess && sess.id, wrap = document.getElementById('reu-bell-wrap');
+    if (!pid || !wrap) return;
+    // En "Ver como" las reuniones son privadas: no se muestra el aviso.
+    if (AUTH.realId && AUTH.realId !== pid) { wrap.style.display = 'none'; return; }
+    wrap.style.display = '';
+    if (REU_BELL.on) return;
+    REU_BELL.on = true; REU_BELL.pid = pid;
+    var db = firebase.database();
+    db.ref('atuntro_reuniones/porUsuario/' + pid).on('value', function(s) {
+      var ids = Object.keys(s.val() || {});
+      Object.keys(REU_BELL.refs).forEach(function(id) {
+        if (ids.indexOf(id) < 0) { db.ref('atuntro_reuniones/items/' + id).off('value', REU_BELL.refs[id]); delete REU_BELL.refs[id]; delete REU_BELL.items[id]; }
+      });
+      ids.forEach(function(id) {
+        if (REU_BELL.refs[id]) return;
+        REU_BELL.refs[id] = db.ref('atuntro_reuniones/items/' + id).on('value', function(rs) {
+          var v = rs.val();
+          if (v) { v.id = id; REU_BELL.items[id] = v; } else delete REU_BELL.items[id];
+          renderReuBell();
+        }, function() { delete REU_BELL.items[id]; renderReuBell(); });
+      });
+      renderReuBell();
+    }, function() { REU_BELL.on = false; });
+  }
+  function reuProximas() {
+    var hoy = reuHoyIso();
+    return Object.keys(REU_BELL.items).map(function(k){ return REU_BELL.items[k]; })
+      .filter(function(r){ return r && r.fecha && r.fecha >= hoy; })
+      .sort(function(a,b){ return (a.fecha + (a.hora||'')).localeCompare(b.fecha + (b.hora||'')); });
+  }
+  function reuEsNueva(r, vistas) { return r.convoca !== REU_BELL.pid && !vistas[r.id]; }
+  function renderReuBell() {
+    var btn = document.getElementById('reu-bell'), badge = document.getElementById('reu-bell-count'), panel = document.getElementById('reu-bell-panel');
+    if (!btn || !badge) return;
+    var prox = reuProximas(), vistas = reuVistasGet();
+    var nuevas = prox.filter(function(r){ return reuEsNueva(r, vistas); }).length;
+    badge.textContent = nuevas || prox.length;
+    badge.style.display = prox.length ? 'flex' : 'none';
+    badge.classList.toggle('nuevas', nuevas > 0);
+    btn.classList.toggle('has-alerts', nuevas > 0);
+    btn.title = nuevas ? (nuevas + (nuevas > 1 ? ' convocatorias nuevas' : ' convocatoria nueva')) : (prox.length ? prox.length + ' reunión(es) próximas' : 'Sin reuniones próximas');
+    if (!panel) return;
+    if (!prox.length) { panel.innerHTML = '<div class="bell-empty">📭 No tienes reuniones próximas.</div>'; return; }
+    var hoy = reuHoyIso(), DOW = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    var manana = (function(){ var d = new Date(); d.setDate(d.getDate()+1); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); })();
+    panel.innerHTML =
+      '<div class="bell-panel-title">🤝 ' + prox.length + ' reunión' + (prox.length > 1 ? 'es' : '') + ' próxima' + (prox.length > 1 ? 's' : '') +
+        (nuevas ? ' · <span class="reu-nueva-txt">' + nuevas + ' nueva' + (nuevas > 1 ? 's' : '') + '</span>' : '') + '</div>' +
+      prox.slice(0, 8).map(function(r) {
+        var d = new Date(r.fecha + 'T12:00:00'), p = r.fecha.split('-');
+        var cuando = r.fecha === hoy ? 'Hoy' : r.fecha === manana ? 'Mañana' : DOW[d.getDay()] + ' ' + p[2] + '/' + p[1];
+        var conv = (AUTH.users[r.convoca] || {}).name || '';
+        return '<div class="bell-item reu-item" onclick="openReuniones()">' +
+          '<span class="reu-when' + (r.fecha === hoy ? ' hoy' : '') + '">' + escHtml(cuando) + '<b>' + escHtml(r.hora || '') + '</b></span>' +
+          '<span class="reu-body"><span class="bell-item-txt" title="' + escHtml(r.tema || '') + '">' + escHtml(r.tema || '') + '</span>' +
+          '<span class="reu-sub">📍 ' + escHtml(r.lugar || 'Lugar por definir') + (conv ? ' · Convoca: ' + escHtml(conv) : '') + '</span></span>' +
+          (reuEsNueva(r, vistas) ? '<span class="reu-tag-nueva">NUEVA</span>' : '') +
+        '</div>';
+      }).join('') +
+      (prox.length > 8 ? '<div class="bell-more" onclick="openReuniones()">+ ' + (prox.length - 8) + ' más — ver todas</div>' : '') +
+      '<div class="bell-cta" onclick="openReuniones()">Abrir Reuniones →</div>';
+  }
+  function toggleReuBell() {
+    var panel = document.getElementById('reu-bell-panel');
+    if (!panel) return;
+    var abrir = !panel.classList.contains('open');
+    ['alert-bell-panel','ev-bell-panel'].forEach(function(id){ var o = document.getElementById(id); if (o) o.classList.remove('open'); });
+    panel.classList.toggle('open', abrir);
+    if (abrir) {
+      renderReuBell();   // muestra las NUEVAS en esta apertura…
+      var v = reuVistasGet();
+      reuProximas().forEach(function(r){ v[r.id] = 1; });
+      reuVistasSet(v);   // …y quedan vistas para la próxima vez
+      setTimeout(function(){
+        var b = document.getElementById('reu-bell'), c = document.getElementById('reu-bell-count');
+        if (b) b.classList.remove('has-alerts');
+        if (c) { c.classList.remove('nuevas'); c.textContent = reuProximas().length; }
+      }, 0);
+    }
+  }
+  function openReuniones() {
+    var panel = document.getElementById('reu-bell-panel'); if (panel) panel.classList.remove('open');
+    openGestor();
+    setTimeout(function(){ if (typeof EQ !== 'undefined') { try { EQ.showTab('reuniones'); } catch(e){} } }, 150);
+  }
+  document.addEventListener('click', function(e){
+    var wrap = document.getElementById('reu-bell-wrap'), panel = document.getElementById('reu-bell-panel');
+    if (wrap && panel && !wrap.contains(e.target)) panel.classList.remove('open');
+  });
+
+  // ══ AVISO DE PRÓXIMOS EVENTOS (Agenda, próximos 7 días) ══════════════════
+  // Zarpes, arribos y otros eventos de la Agenda + vencimientos de Control
+  // Documental. Las tareas y reuniones ya tienen su propio aviso.
+  var EV_BELL = { eventos: {}, docs: [], on: false, DIAS: 7 };
+  function evSumar(n) { var d = new Date(); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+  function startEvBell() {
+    if (EV_BELL.on) return;
+    EV_BELL.on = true;
+    var db = firebase.database();
+    db.ref('atuntro_agenda/eventos').on('value', function(s){ EV_BELL.eventos = s.val() || {}; renderEvBell(); }, function(){ EV_BELL.eventos = {}; renderEvBell(); });
+    db.ref('atuntro_documentos/data').on('value', function(s){ var v = s.val(); EV_BELL.docs = (v && Array.isArray(v.rows)) ? v.rows.filter(Boolean) : []; renderEvBell(); }, function(){ EV_BELL.docs = []; renderEvBell(); });
+  }
+  function evProximos() {
+    var hoy = reuHoyIso(), fin = evSumar(EV_BELL.DIAS), out = [];
+    Object.keys(EV_BELL.eventos).forEach(function(id){
+      var e = EV_BELL.eventos[id];
+      if (e && e.fecha >= hoy && e.fecha <= fin) out.push({ fecha: e.fecha, txt: e.txt || 'Evento', sub: e.area || '', tipo: e.tipo === 'op' ? 'op' : 'otro' });
+    });
+    var grp = {};
+    EV_BELL.docs.forEach(function(r){
+      if (!r.ven || +String(r.ven).slice(0,4) >= 2090 || r.ven < hoy || r.ven > fin) return;
+      var k = String(r.nom || '').toLowerCase() + '|' + (r.barco || '') + '|' + r.ven;
+      if (grp[k]) grp[k].n++; else grp[k] = { nom: r.nom || 'Documento', barco: r.barco || '', ven: r.ven, n: 1 };
+    });
+    Object.keys(grp).forEach(function(k){
+      var g = grp[k], nom = g.nom.charAt(0).toUpperCase() + g.nom.slice(1) + (g.n > 1 ? ' (x' + g.n + ')' : '');
+      out.push({ fecha: g.ven, txt: 'Vence: ' + nom, sub: g.barco, tipo: 'doc' });
+    });
+    return out.sort(function(a,b){ return a.fecha.localeCompare(b.fecha); });
+  }
+  function renderEvBell() {
+    var btn = document.getElementById('ev-bell'), badge = document.getElementById('ev-bell-count'), panel = document.getElementById('ev-bell-panel');
+    if (!btn || !badge) return;
+    var prox = evProximos(), hoy = reuHoyIso(), manana = evSumar(1);
+    var hoyN = prox.filter(function(i){ return i.fecha === hoy; }).length;
+    badge.textContent = prox.length;
+    badge.style.display = prox.length ? 'flex' : 'none';
+    badge.classList.toggle('hoy', hoyN > 0);
+    btn.classList.toggle('has-alerts', hoyN > 0);
+    btn.title = prox.length ? prox.length + ' evento(s) en los próximos 7 días' + (hoyN ? ' · ' + hoyN + ' hoy' : '') : 'Sin eventos en los próximos 7 días';
+    if (!panel) return;
+    if (!prox.length) { panel.innerHTML = '<div class="bell-empty">📭 Nada en los próximos 7 días.</div><div class="bell-cta" onclick="openAgenda()">Abrir Agenda →</div>'; return; }
+    var DOW = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'], LAB = { op: 'Operación', doc: 'Documento', otro: 'Otro' };
+    panel.innerHTML =
+      '<div class="bell-panel-title">📅 ' + prox.length + ' evento' + (prox.length > 1 ? 's' : '') + ' · próximos 7 días</div>' +
+      prox.slice(0, 10).map(function(i){
+        var d = new Date(i.fecha + 'T12:00:00'), p = i.fecha.split('-');
+        var cuando = i.fecha === hoy ? 'Hoy' : i.fecha === manana ? 'Mañana' : DOW[d.getDay()];
+        return '<div class="bell-item reu-item" onclick="openAgenda()">' +
+          '<span class="reu-when ev-when' + (i.fecha === hoy ? ' hoy' : '') + '">' + cuando + '<b>' + p[2] + '/' + p[1] + '</b></span>' +
+          '<span class="reu-body"><span class="bell-item-txt" title="' + escHtml(i.txt) + '">' + escHtml(i.txt) + '</span>' +
+          (i.sub ? '<span class="reu-sub">' + escHtml(i.sub) + '</span>' : '') + '</span>' +
+          '<span class="ev-tag ev-' + i.tipo + '">' + LAB[i.tipo] + '</span>' +
+        '</div>';
+      }).join('') +
+      (prox.length > 10 ? '<div class="bell-more" onclick="openAgenda()">+ ' + (prox.length - 10) + ' más — ver Agenda</div>' : '') +
+      '<div class="bell-cta" onclick="openAgenda()">Abrir Agenda →</div>';
+  }
+  function toggleEvBell() {
+    var panel = document.getElementById('ev-bell-panel'); if (!panel) return;
+    ['alert-bell-panel','reu-bell-panel'].forEach(function(id){ var o = document.getElementById(id); if (o) o.classList.remove('open'); });
+    renderEvBell();
+    panel.classList.toggle('open');
+  }
+  function openAgenda() {
+    var panel = document.getElementById('ev-bell-panel'); if (panel) panel.classList.remove('open');
+    openGestor();
+    setTimeout(function(){ if (typeof EQ !== 'undefined') { try { EQ.showTab('agenda'); } catch(e){} } }, 150);
+  }
+  document.addEventListener('click', function(e){
+    var wrap = document.getElementById('ev-bell-wrap'), panel = document.getElementById('ev-bell-panel');
     if (wrap && panel && !wrap.contains(e.target)) panel.classList.remove('open');
   });
 
@@ -872,6 +1048,8 @@
     try {
       if (typeof firebase === 'undefined' || !firebase.apps.length) { setTimeout(startPendingLiveSync, 1500); return; }
       _pendingSyncOn = true;
+      try { startReuBell(); } catch(e) {}
+      try { startEvBell(); } catch(e) {}
       firebase.database().ref('atuntro_gestor/data').on('value', function(){
         // solo re-render si el dashboard está visible
         var dash = document.getElementById('screen-dashboard');
