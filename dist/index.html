@@ -16490,6 +16490,8 @@ function openModal(el) {
 
 function applyStatus(statusId) {
   if (!activeCell) return;
+  /* Si estaba escribiendo un detalle y eligió el color sin pulsar ✓, guardar el texto primero */
+  if (editingText) saveTextEdit();
   var id = activeCell.dataset.id;
   var antes = getStatus(id, getDefaultStatus(id));
   bucket().estados[id] = statusId;
@@ -16522,6 +16524,7 @@ function clearCellDate() {
 }
 
 function closeModal() {
+  if (editingText && activeCell) saveTextEdit();   /* no perder el detalle escrito al cerrar */
   resetEditBtn();
   document.getElementById('pr-overlay').classList.add('pr-hidden');
   if (activeCell) activeCell.focus();
@@ -17086,8 +17089,10 @@ function buildSheet() {
         if (p === 0) {
           sec.panels.forEach(function (pl, pi) {
             var id = sec.id + '_vert_' + pi;
-            put(firstPano, c0 + pi, sec.divider ? '' : cellText(id, pl.t),
-                sec.divider ? XF.DIV : xfFor(getStatus(id, pl.s), true));
+            /* Las líneas divisorias van oscuras salvo que tengan un detalle escrito o un color asignado */
+            var divCon = sec.divider && (bucket().textos[id] || getStatus(id, pl.s) !== 'sin_asignar');
+            put(firstPano, c0 + pi, (sec.divider && !divCon) ? '' : cellText(id, pl.t),
+                (sec.divider && !divCon) ? XF.DIV : xfFor(getStatus(id, pl.s), true));
             merge(firstPano, c0 + pi, firstPano + NUM - 1, c0 + pi);
           });
         }
