@@ -5852,15 +5852,22 @@ const EQ = (() => {
     d.ref(P_ROLES).on('value', s => { roles = s.val() || {}; renderRoles(); },
       () => { rolesOn = false; roles = {}; renderRoles('No se pudieron leer los roles (falta publicar la regla de Firebase de atuntro_roles).'); });
   }
+  // Solo para la vista de Roles: área en la que aparece cada persona y quién va
+  // primero dentro de su área. NO cambia permisos ni el rol de acceso al portal.
+  const AREA_ROL = { ricardo_baida_d: 'Gerencia', ricardo_baida_t: 'Administración' };
+  const PRIMERO_ROL = ['romulo_perez', 'ricardo_mendoza'];
   function grupoDe(pid) {
+    if (AREA_ROL[pid]) return AREA_ROL[pid];
     const r = (users()[pid] || {}).role;
     const g = GRUPOS.filter(x => x.roles.indexOf(r) >= 0)[0];
     return g ? g.lab : 'Otros';
   }
   function personasOrdenadas() {
     const us = users(), orden = GRUPOS.map(g => g.lab).concat(['Otros']);
+    const prio = id => { const i = PRIMERO_ROL.indexOf(id); return i < 0 ? 99 : i; };
     return Object.keys(us).filter(id => us[id]).sort((a, b) =>
-      (orden.indexOf(grupoDe(a)) - orden.indexOf(grupoDe(b))) || String(us[a].name).localeCompare(String(us[b].name)));
+      (orden.indexOf(grupoDe(a)) - orden.indexOf(grupoDe(b))) || (prio(a) - prio(b)) ||
+      String(us[a].name).localeCompare(String(us[b].name)));
   }
   function itemsDe(pid) { const r = roles[pid]; return (r && Array.isArray(r.items)) ? r.items.filter(i => i && i.txt) : []; }
 
