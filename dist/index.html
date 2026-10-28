@@ -3141,6 +3141,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
   <button type="button" class="eq-tab on" data-tab="tareas" onclick="EQ.showTab('tareas')">📋 Tareas</button>
   <button type="button" class="eq-tab" data-tab="agenda" onclick="EQ.showTab('agenda')">📅 Agenda <span class="eq-cnt" id="eq-cnt-agenda">0</span></button>
   <button type="button" class="eq-tab" data-tab="reuniones" onclick="EQ.showTab('reuniones')">🤝 Reuniones <span class="eq-cnt" id="eq-cnt-reu">0</span></button>
+  <button type="button" class="eq-tab" data-tab="roles" onclick="EQ.showTab('roles')" style="display:none" title="Solo visible para master">🧭 Roles <span class="eq-cnt" id="eq-cnt-roles">0</span></button>
 </div>
 <div class="eq-panel on" id="eq-p-tareas">
 <!-- ════════ GESTOR DE TAREAS — bloque integrable ════════ -->
@@ -3290,6 +3291,64 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
   </div>
 </div>
 
+<!-- ════════ ROLES (solo master por ahora) ════════ -->
+<div class="eq-panel" id="eq-p-roles">
+  <div class="gt-header">
+    <div class="gt-header-left">
+      <h2>🧭 Roles y responsabilidades</h2>
+      <p>Lo que cada persona tiene a su cargo de forma permanente · 🔒 Visible solo para master</p>
+    </div>
+  </div>
+  <div class="gt-kpis">
+    <div class="gt-kpi gt-kpi-total"><div class="gt-kpi-n" id="eq-rk-pers">0</div><div class="gt-kpi-lbl">Equipo</div><div class="gt-kpi-sub">personas con acceso</div></div>
+    <div class="gt-kpi gt-kpi-comp"><div class="gt-kpi-n" id="eq-rk-def">0</div><div class="gt-kpi-lbl">Con rol definido</div><div class="gt-kpi-sub" id="eq-rk-def-sub">—</div></div>
+    <div class="gt-kpi gt-kpi-inc"><div class="gt-kpi-n" id="eq-rk-tot">0</div><div class="gt-kpi-lbl">Responsabilidades</div><div class="gt-kpi-sub">en total</div></div>
+    <div class="gt-kpi gt-kpi-pend"><div class="gt-kpi-n" id="eq-rk-sin">0</div><div class="gt-kpi-lbl">Sin respaldo</div><div class="gt-kpi-sub">nadie las cubre si falta el titular</div></div>
+  </div>
+  <div class="gt-filters">
+    <input class="gt-search" id="eq-rol-search" type="text" placeholder="🔍 Buscar persona, cargo o responsabilidad…" oninput="EQ.renderRoles()">
+    <select class="gt-sel" id="eq-rol-area" onchange="EQ.renderRoles()">
+      <option value="">Todas las áreas</option>
+      <option value="Gerencia">Gerencia</option>
+      <option value="Administración">Administración</option>
+      <option value="Operaciones">Operaciones</option>
+      <option value="Contabilidad">Contabilidad</option>
+    </select>
+    <select class="gt-sel" id="eq-rol-frec" onchange="EQ.renderRoles()">
+      <option value="">Todas las frecuencias</option>
+      <option value="diaria">Diaria</option>
+      <option value="semanal">Semanal</option>
+      <option value="mensual">Mensual</option>
+      <option value="viaje">Por viaje</option>
+      <option value="evento">Cuando ocurra</option>
+      <option value="permanente">Permanente</option>
+    </select>
+    <span class="gt-clear-btn" onclick="EQ.limpiarRoles()">✕ Limpiar</span>
+  </div>
+  <div class="eq-rol-grid" id="eq-rol-list"></div>
+  <div class="eq-nota">El respaldo es quien cubre esa responsabilidad cuando el titular no está (vacaciones, a bordo, enfermedad).</div>
+</div>
+
+<!-- ── Modal: Editar rol ── -->
+<div id="eq-ro-modal" class="gt-modal-overlay" onclick="EQ.cerrarRolBg(event)">
+  <div class="gt-modal" style="max-width:720px;max-height:92vh;overflow-y:auto">
+    <div class="gt-modal-title" id="eq-ro-title">🧭 Rol</div>
+    <div class="gt-modal-row"><label>Cargo</label><input id="eq-ro-cargo" type="text" placeholder="Ej.: Jefe de Operaciones"></div>
+    <div class="gt-modal-row"><label>Misión del puesto (una frase)</label><textarea id="eq-ro-mision" placeholder="Ej.: Garantizar que cada zarpe salga a tiempo, completo y con la documentación en regla."></textarea></div>
+    <div class="gt-modal-row">
+      <label>Responsabilidades permanentes</label>
+      <div class="eq-rol-row eq-rol-row-head"><span>Responsabilidad</span><span>Frecuencia</span><span>Respaldo</span><span></span></div>
+      <div id="eq-ro-items"></div>
+      <button type="button" class="eq-rol-add" onclick="EQ.agregarItem()">+ Agregar responsabilidad</button>
+    </div>
+    <div class="eq-err" id="eq-ro-err"></div>
+    <div class="gt-modal-actions">
+      <button class="gt-btn-cancel" onclick="EQ.cerrarRol()">Cancelar</button>
+      <button class="gt-btn-save" onclick="EQ.guardarRol()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Modal: Nuevo evento ── -->
 <div id="eq-ev-modal" class="gt-modal-overlay" onclick="EQ.cerrarEventoBg(event)">
   <div class="gt-modal" style="max-width:440px">
@@ -3383,6 +3442,47 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .eq-yo{font-size:10px;color:#999}
 .eq-sel-cnt{float:right;color:#2E75B6;text-transform:none;letter-spacing:0}
 .eq-err{color:#C0392B;font-size:11px;min-height:14px;margin-top:6px}
+/* Roles */
+.eq-rol-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.eq-rol-grp{grid-column:1/-1;font-size:10px;font-weight:700;color:#1F4E79;text-transform:uppercase;letter-spacing:.6px;margin:8px 0 -2px}
+.eq-rol-card{display:flex;flex-direction:column;gap:8px}
+.eq-rol-head{display:flex;align-items:center;gap:10px}
+.eq-rol-av{width:34px;height:34px;font-size:11px;flex-shrink:0}
+.eq-rol-who{flex:1;min-width:0}
+.eq-rol-name{font-size:13px;font-weight:700;color:#1a1a18}
+.eq-rol-cargo{font-size:11px;color:#2E75B6;font-weight:600}
+.eq-rol-edit{background:none;border:1.5px solid rgba(0,0,0,.12);border-radius:7px;padding:5px 10px;font-size:11px;color:#1F4E79;font-weight:600;cursor:pointer;font-family:inherit}
+.eq-rol-edit:hover{border-color:#2E75B6;background:#E6F1FB}
+.eq-rol-mision{font-size:11px;color:#555;font-style:italic;background:#f9f9f7;border-left:3px solid #2E75B6;padding:6px 10px;border-radius:0 6px 6px 0}
+.eq-rol-items{margin:0;padding-left:18px;font-size:12px;color:#1a1a18}
+.eq-rol-items li{padding:5px 0;border-bottom:1px solid rgba(0,0,0,.05)}
+.eq-rol-items li:last-child{border-bottom:none}
+.eq-rol-items li{display:list-item}
+.eq-rol-items li>.eq-rol-it-txt{display:inline-block;width:calc(100% - 92px);vertical-align:top}
+.eq-rol-items li>.gt-badge{float:right}
+.eq-rol-sinresp{color:#D85A30}
+.eq-rol-vacio{padding:10px 0}
+.eq-f-diaria{background:#FAECE7;color:#712B13}
+.eq-f-semanal{background:#FAEEDA;color:#412402}
+.eq-f-mensual{background:#E6F1FB;color:#042C53}
+.eq-f-viaje{background:#E1F5EE;color:#085041}
+.eq-f-evento{background:#EEEDFE;color:#26215C}
+.eq-f-permanente{background:#EFEFED;color:#4A4A47}
+.eq-rol-row{display:grid;grid-template-columns:minmax(0,1fr) 120px 150px 74px;gap:6px;align-items:center;margin-bottom:6px}
+.gt-modal-row .eq-rol-row input,.gt-modal-row .eq-rol-row select{padding:6px 8px}
+.eq-rol-row-head{font-size:9px;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.eq-rol-row-btns{display:flex;gap:2px}
+.eq-rol-row-btns button{background:none;border:none;color:#aaa;cursor:pointer;font-size:11px;padding:3px 5px;border-radius:5px}
+.eq-rol-row-btns button:hover{background:#f0ede8;color:#1F4E79}
+.eq-rol-add{background:none;border:1.5px dashed #BDD7EE;border-radius:7px;padding:7px 12px;font-size:11px;font-weight:600;color:#2E75B6;cursor:pointer;width:100%;font-family:inherit;margin-top:2px}
+.eq-rol-add:hover{background:#E6F1FB}
+@media(max-width:680px){
+  .eq-rol-grid{grid-template-columns:1fr}
+  .eq-rol-row{grid-template-columns:1fr 1fr;padding:8px;border:1px solid #e8e6e0;border-radius:8px}
+  .eq-rol-row .eq-ri-txt{grid-column:1/-1}
+  .eq-rol-row-btns{grid-column:1/-1;justify-content:flex-end}
+  .eq-rol-row-head{display:none}
+}
 .gt-done-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 14px;background:#f9f9f7;border-top:1px solid rgba(0,0,0,.06);border-bottom:1px solid rgba(0,0,0,.05);font-size:11px;font-weight:700;color:#1D9E75;cursor:pointer;user-select:none}
 .gt-done-toggle:hover{background:#f1f0ec}
 .gt-done-del{color:#C0392B;font-weight:600;padding:3px 8px;border-radius:6px}
@@ -5401,11 +5501,12 @@ const GT = (() => {
 <script>
 // ════════════════════════════════════════════════════════════
 //  EQ — Gestión de Equipo ATUNTRO S.A.
-//  Pestañas: Tareas (Gestor GT existente) · Agenda · Reuniones
+//  Pestañas: Tareas (Gestor GT existente) · Agenda · Reuniones · Roles (solo master)
 //  Firebase:
 //    atuntro_agenda/eventos/{id}            eventos manuales (zarpes, arribos, otros)
 //    atuntro_reuniones/items/{id}           reunión (solo la leen sus convocados)
 //    atuntro_reuniones/porUsuario/{pid}/{id} índice de reuniones de cada persona
+//    atuntro_roles/personas/{pid}           rol permanente de cada persona (solo master por ahora)
 //  Lee además: atuntro_gestor/data (tareas) y atuntro_documentos/data (vencimientos)
 // ════════════════════════════════════════════════════════════
 const EQ = (() => {
@@ -5415,6 +5516,7 @@ const EQ = (() => {
   const P_REU_IDX  = 'atuntro_reuniones/porUsuario';
   const P_TAREAS   = 'atuntro_gestor/data';
   const P_DOCS     = 'atuntro_documentos/data';
+  const P_ROLES    = 'atuntro_roles/personas';
   const HORIZONTE  = 90;   // días que mira la Agenda hacia adelante
   const PROXIMOS   = 7;    // días de "Próximos"
 
@@ -5439,6 +5541,16 @@ const EQ = (() => {
     { lab: 'Operaciones',       roles: ['operaciones_master','operaciones'] },
     { lab: 'Contabilidad',      roles: ['contabilidad'] },
   ];
+  // Frecuencia de cada responsabilidad del rol (value fijo, texto visible aparte)
+  const FRECS = [
+    { v: 'diaria',     lab: 'Diaria',        cls: 'eq-f-diaria' },
+    { v: 'semanal',    lab: 'Semanal',       cls: 'eq-f-semanal' },
+    { v: 'mensual',    lab: 'Mensual',       cls: 'eq-f-mensual' },
+    { v: 'viaje',      lab: 'Por viaje',     cls: 'eq-f-viaje' },
+    { v: 'evento',     lab: 'Cuando ocurra', cls: 'eq-f-evento' },
+    { v: 'permanente', lab: 'Permanente',    cls: 'eq-f-permanente' },
+  ];
+  function frec(v) { return FRECS.filter(f => f.v === v)[0] || FRECS[FRECS.length - 1]; }
   const DOW = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   const MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
@@ -5450,6 +5562,9 @@ const EQ = (() => {
   let reus = {};             // id → reunión (solo las mías)
   let reuRefs = {};          // id → handler activo
   let reuError = '';
+  let roles = {};            // pid → { cargo, mision, items[], actualizado, por }
+  let rolesOn = false;       // listener de roles activo
+  let rolEdit = null;        // pid que se está editando
 
   /* ── Utilidades ─────────────────────────────────────── */
   function db() { try { return firebase.database(); } catch (e) { return null; } }
@@ -5472,6 +5587,7 @@ const EQ = (() => {
 
   /* ── Arranque ───────────────────────────────────────── */
   function init() {
+    aplicarVisibilidadRoles();
     showTab('tareas');   // al entrar siempre se abre en Tareas
     if (started) { renderAll(); return; }
     const d = db();
@@ -5494,6 +5610,7 @@ const EQ = (() => {
     }, () => {});
 
     escucharMisReuniones();
+    escucharRoles();
   }
 
   // Lee el índice de reuniones de la persona y se suscribe a cada una.
@@ -5522,12 +5639,13 @@ const EQ = (() => {
 
   /* ── Pestañas ───────────────────────────────────────── */
   function showTab(t) {
+    if (t === 'roles' && !esMaster()) t = 'tareas';
     tab = t;
     document.querySelectorAll('.eq-tab').forEach(b => b.classList.toggle('on', b.getAttribute('data-tab') === t));
     document.querySelectorAll('.eq-panel').forEach(p => p.classList.toggle('on', p.id === 'eq-p-' + t));
   }
 
-  function renderAll() { renderAgenda(); renderReus(); }
+  function renderAll() { renderAgenda(); renderReus(); renderRoles(); }
 
   /* ══════════ AGENDA ══════════ */
   function itemsAgenda() {
@@ -5713,7 +5831,148 @@ const EQ = (() => {
     d.ref().update(upd).catch(() => alert('No se pudo cancelar.'));
   }
 
+
+  /* ══════════ ROLES (solo master, por ahora) ══════════ */
+  // Cuenta real del dueño (no la persona simulada en "Ver como").
+  function esMaster() {
+    if (typeof AUTH === 'undefined' || !AUTH.realId || viendoComo()) return false;
+    const u = users()[AUTH.realId];
+    return !!(u && u.role === 'master');
+  }
+  function aplicarVisibilidadRoles() {
+    const b = document.querySelector('.eq-tab[data-tab="roles"]');
+    if (b) b.style.display = esMaster() ? '' : 'none';
+    if (!esMaster() && tab === 'roles') showTab('tareas');
+    escucharRoles();
+  }
+  function escucharRoles() {
+    const d = db();
+    if (!d || rolesOn || !esMaster()) return;
+    rolesOn = true;
+    d.ref(P_ROLES).on('value', s => { roles = s.val() || {}; renderRoles(); },
+      () => { rolesOn = false; roles = {}; renderRoles('No se pudieron leer los roles (falta publicar la regla de Firebase de atuntro_roles).'); });
+  }
+  function grupoDe(pid) {
+    const r = (users()[pid] || {}).role;
+    const g = GRUPOS.filter(x => x.roles.indexOf(r) >= 0)[0];
+    return g ? g.lab : 'Otros';
+  }
+  function personasOrdenadas() {
+    const us = users(), orden = GRUPOS.map(g => g.lab).concat(['Otros']);
+    return Object.keys(us).filter(id => us[id]).sort((a, b) =>
+      (orden.indexOf(grupoDe(a)) - orden.indexOf(grupoDe(b))) || String(us[a].name).localeCompare(String(us[b].name)));
+  }
+  function itemsDe(pid) { const r = roles[pid]; return (r && Array.isArray(r.items)) ? r.items.filter(i => i && i.txt) : []; }
+
+  function renderRoles(msgError) {
+    const cont = $('eq-rol-list');
+    if (!cont) return;
+    const c = $('eq-cnt-roles');
+    const pers = personasOrdenadas();
+    const conRol = pers.filter(p => itemsDe(p).length);
+    let total = 0, sinResp = 0;
+    pers.forEach(p => itemsDe(p).forEach(i => { total++; if (!i.resp) sinResp++; }));
+    if (c) c.textContent = conRol.length + '/' + pers.length;
+    const k = (id, v) => { const e = $(id); if (e) e.textContent = v; };
+    k('eq-rk-pers', pers.length); k('eq-rk-def', conRol.length);
+    k('eq-rk-def-sub', pers.length ? Math.round(conRol.length * 100 / pers.length) + '% del equipo' : '—');
+    k('eq-rk-tot', total); k('eq-rk-sin', sinResp);
+    if (msgError) { cont.innerHTML = '<div class="gt-empty">' + esc(msgError) + '</div>'; return; }
+
+    const q = (($('eq-rol-search') || {}).value || '').toLowerCase().trim();
+    const fa = ($('eq-rol-area') || {}).value || '';
+    const ff = ($('eq-rol-frec') || {}).value || '';
+    let html = '', ultimoGrupo = '', visibles = 0;
+    pers.forEach(pid => {
+      const u = users()[pid], r = roles[pid] || {}, g = grupoDe(pid);
+      if (fa && g !== fa) return;
+      let items = itemsDe(pid);
+      if (ff) items = items.filter(i => i.frec === ff);
+      const textoPersona = (u.name + ' ' + (r.cargo || '') + ' ' + (r.mision || '')).toLowerCase();
+      if (q && textoPersona.indexOf(q) < 0) items = items.filter(i => (i.txt + ' ' + nombre(i.resp || '')).toLowerCase().indexOf(q) >= 0);
+      if ((ff || q) && !items.length && !(q && !ff && textoPersona.indexOf(q) >= 0)) return;
+      visibles++;
+      if (g !== ultimoGrupo) { html += '<div class="eq-rol-grp">' + esc(g) + '</div>'; ultimoGrupo = g; }
+      const lista = items.length ? '<ol class="eq-rol-items">' + items.map(i =>
+          '<li><div class="eq-rol-it-txt">' + esc(i.txt) +
+          (i.resp ? '<div class="eq-ev-sub">Respaldo: ' + esc(nombre(i.resp)) + '</div>' : '<div class="eq-ev-sub eq-rol-sinresp">Sin respaldo</div>') +
+          '</div><span class="gt-badge ' + frec(i.frec).cls + '">' + frec(i.frec).lab + '</span></li>').join('') + '</ol>'
+        : '<div class="gt-empty eq-rol-vacio">Sin responsabilidades definidas todavía.</div>';
+      html += '<div class="gt-card eq-rol-card">' +
+        '<div class="eq-rol-head"><span class="eq-av eq-rol-av">' + esc(iniciales(u.name)) + '</span>' +
+          '<div class="eq-rol-who"><div class="eq-rol-name">' + esc(u.name) + '</div>' +
+          '<div class="eq-rol-cargo">' + esc(r.cargo || 'Cargo por definir') + '</div></div>' +
+          '<button type="button" class="eq-rol-edit" onclick="EQ.abrirRol(\'' + esc(pid) + '\')">✎ Editar</button></div>' +
+        (r.mision ? '<div class="eq-rol-mision">' + esc(r.mision) + '</div>' : '') +
+        lista +
+        (r.actualizado ? '<div class="eq-nota">Actualizado ' + dmy(iso(new Date(r.actualizado))) + (r.por ? ' por ' + esc(nombre(r.por)) : '') + '</div>' : '') +
+        '</div>';
+    });
+    cont.innerHTML = visibles ? html : '<div class="gt-empty">Sin personas que coincidan con los filtros.</div>';
+  }
+  function limpiarRoles() { $('eq-rol-search').value = ''; $('eq-rol-area').value = ''; $('eq-rol-frec').value = ''; renderRoles(); }
+
+  // ── Modal de edición del rol de una persona ──
+  function opcionesFrec(sel) { return FRECS.map(f => '<option value="' + f.v + '"' + (f.v === sel ? ' selected' : '') + '>' + f.lab + '</option>').join(''); }
+  function opcionesResp(pid, sel) {
+    return '<option value="">— Sin respaldo —</option>' + personasOrdenadas().filter(id => id !== pid)
+      .map(id => '<option value="' + esc(id) + '"' + (id === sel ? ' selected' : '') + '>' + esc(nombre(id)) + '</option>').join('');
+  }
+  function filaItem(i) {
+    return '<div class="eq-rol-row">' +
+      '<input type="text" class="eq-ri-txt" placeholder="Ej.: Revisar y aprobar pedidos de zarpe" value="' + esc(i.txt || '') + '">' +
+      '<select class="eq-ri-frec">' + opcionesFrec(i.frec || 'permanente') + '</select>' +
+      '<select class="eq-ri-resp">' + opcionesResp(rolEdit, i.resp || '') + '</select>' +
+      '<div class="eq-rol-row-btns"><button type="button" title="Subir" onclick="EQ.moverItem(this,-1)">▲</button>' +
+      '<button type="button" title="Bajar" onclick="EQ.moverItem(this,1)">▼</button>' +
+      '<button type="button" class="eq-del" title="Quitar" onclick="EQ.quitarItem(this)">✕</button></div>' +
+      '</div>';
+  }
+  function abrirRol(pid) {
+    if (!esMaster() || !users()[pid]) return;
+    rolEdit = pid;
+    const r = roles[pid] || {};
+    $('eq-ro-title').textContent = '🧭 Rol de ' + nombre(pid);
+    $('eq-ro-cargo').value = r.cargo || '';
+    $('eq-ro-mision').value = r.mision || '';
+    const its = itemsDe(pid);
+    $('eq-ro-items').innerHTML = (its.length ? its : [{}]).map(filaItem).join('');
+    $('eq-ro-err').textContent = '';
+    $('eq-ro-modal').classList.add('gt-show');
+    setTimeout(() => $('eq-ro-cargo').focus(), 50);
+  }
+  function agregarItem() {
+    const box = $('eq-ro-items');
+    box.insertAdjacentHTML('beforeend', filaItem({}));
+    const ins = box.querySelectorAll('.eq-ri-txt'); ins[ins.length - 1].focus();
+  }
+  function quitarItem(btn) { const f = btn.closest('.eq-rol-row'); if (f) f.remove(); }
+  function moverItem(btn, dir) {
+    const f = btn.closest('.eq-rol-row'); if (!f) return;
+    const o = dir < 0 ? f.previousElementSibling : f.nextElementSibling;
+    if (!o) return;
+    if (dir < 0) f.parentNode.insertBefore(f, o); else f.parentNode.insertBefore(o, f);
+  }
+  function cerrarRol() { $('eq-ro-modal').classList.remove('gt-show'); rolEdit = null; }
+  function cerrarRolBg(ev) { if (ev.target === $('eq-ro-modal')) cerrarRol(); }
+  function guardarRol() {
+    const err = $('eq-ro-err'), pid = rolEdit;
+    if (!pid || !esMaster()) return;
+    const items = Array.prototype.map.call(document.querySelectorAll('#eq-ro-items .eq-rol-row'), f => ({
+      txt: f.querySelector('.eq-ri-txt').value.trim(),
+      frec: f.querySelector('.eq-ri-frec').value,
+      resp: f.querySelector('.eq-ri-resp').value,
+    })).filter(i => i.txt);
+    const cargo = $('eq-ro-cargo').value.trim(), mision = $('eq-ro-mision').value.trim();
+    const d = db(); if (!d) { err.textContent = 'Sin conexión con la base de datos.'; return; }
+    const ref = d.ref(P_ROLES + '/' + pid);
+    const op = (!cargo && !mision && !items.length) ? ref.remove()
+      : ref.set({ cargo: cargo, mision: mision, items: items, actualizado: Date.now(), por: myId() || '' });
+    op.then(cerrarRol).catch(() => { err.textContent = 'No se pudo guardar (falta publicar la regla de Firebase de atuntro_roles).'; });
+  }
+
   return { init, showTab, renderReus, limpiarReus,
+           renderRoles, limpiarRoles, abrirRol, agregarItem, quitarItem, moverItem, cerrarRol, cerrarRolBg, guardarRol,
            abrirEvento, cerrarEvento, cerrarEventoBg, guardarEvento, borrarEvento,
            abrirReunion, cerrarReunion, cerrarReunionBg, guardarReunion, cancelarReunion, contarSel };
 })();
