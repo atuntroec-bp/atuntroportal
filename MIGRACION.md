@@ -2,6 +2,11 @@
 
 Fecha: 2026-08-11
 
+> **Documento histórico.** Describe la recuperación de agosto de 2026. La lista de
+> módulos y la forma de trabajar actuales están en `README.md`. La carpeta
+> `js/_respaldo_fuentes_anteriores/` mencionada abajo se eliminó del repo en
+> noviembre de 2026.
+
 ## Qué pasaba
 
 Durante meses los cambios se hicieron directamente sobre `dist/index.html`.
@@ -45,8 +50,8 @@ Las fuentes anteriores (julio) quedaron archivadas en
 **Nunca editar `dist/index.html` a mano.**
 
 1. Editar el módulo en `js/`
-2. Correr `python3 build.py`
-3. Subir el `dist/index.html` generado a GitHub Pages
+2. Correr `python3 build.py` (hoy genera `index.html` y `dist/index.html`)
+3. Subir los archivos cambiados y los generados a `main`
 
 ## Verificación de seguridad
 
