@@ -236,12 +236,12 @@ let pinVisible=false;
 const VESSEL_INFO={fatima:'María Fátima (180 TM · ~20 tripulantes)',gracia:'María de Gracia (215 TM · ~21 tripulantes)'};
 
 const DEFAULT_PEOPLE=[
-  {name:'Rubén Vera',      pin:'1111'},
-  {name:'Ricardo Baida D', pin:'2222'},
-  {name:'Ricardo Baida T', pin:'3333'},
-  {name:'Rómulo Pérez',    pin:'4444'},
-  {name:'David Pérez',     pin:'5555'},
-  {name:'Fernando Farfán', pin:'6666'},
+  {name:'Rubén Vera'},
+  {name:'Ricardo Baida D'},
+  {name:'Ricardo Baida T'},
+  {name:'Rómulo Pérez'},
+  {name:'David Pérez'},
+  {name:'Fernando Farfán'},
 ];
 
 function lsKey(v){return 'atuntro_ops_v3_'+v;}
@@ -483,7 +483,7 @@ function openPeople(){
 }
 function renderPeopleModal(){
   document.getElementById('ckops-peopleList').innerHTML=people.map((p,i)=>
-    `<div class="prow"><span>${escH(p.name)}</span><span class="prow-pin">${escH(p.pin)}</span>
+    `<div class="prow"><span>${escH(p.name)}</span><span class="prow-pin">${escH(p.pin||"")}</span>
      <button class="prow-del" onclick="removePerson(${i})">✕</button></div>`
   ).join('')||'<p style="font-size:12px;color:#aaa;padding:8px 0">Sin personas.</p>';
 }

@@ -7,15 +7,15 @@ var CKADM = (function() {
    USUARIOS
 ════════════════════════════════ */
 const USERS_DEF = [
-  {key:'ricky',     name:'Ricky',          pin:'1234', isAdmin:true},
-  {key:'capitan1',  name:'Capitán Fátima', pin:'2001', isAdmin:false},
-  {key:'capitan2',  name:'Capitán Gracia', pin:'2002', isAdmin:false},
-  {key:'operador1', name:'Operador 1',     pin:'3001', isAdmin:false},
-  {key:'operador2', name:'Operador 2',     pin:'3002', isAdmin:false},
-  {key:'conta',     name:'Contabilidad',   pin:'4001', isAdmin:false},
-  {key:'gerencia',  name:'Gerencia',       pin:'5001', isAdmin:false},
-  {key:'proveedor', name:'Proveedor',      pin:'6001', isAdmin:false},
-  {key:'tripulac',  name:'Tripulación',    pin:'7001', isAdmin:false},
+  {key:'ricky',     name:'Ricky',          isAdmin:true},
+  {key:'capitan1',  name:'Capitán Fátima', isAdmin:false},
+  {key:'capitan2',  name:'Capitán Gracia', isAdmin:false},
+  {key:'operador1', name:'Operador 1',     isAdmin:false},
+  {key:'operador2', name:'Operador 2',     isAdmin:false},
+  {key:'conta',     name:'Contabilidad',   isAdmin:false},
+  {key:'gerencia',  name:'Gerencia',       isAdmin:false},
+  {key:'proveedor', name:'Proveedor',      isAdmin:false},
+  {key:'tripulac',  name:'Tripulación',    isAdmin:false},
 ];
 function loadUsers(){ try{const r=localStorage.getItem('atuntro_users_v8');return r?JSON.parse(r):JSON.parse(JSON.stringify(USERS_DEF));}catch(e){return JSON.parse(JSON.stringify(USERS_DEF));} }
 function persistUsers(u){ localStorage.setItem('atuntro_users_v8',JSON.stringify(u)); }
