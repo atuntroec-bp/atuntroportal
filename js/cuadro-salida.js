@@ -136,7 +136,9 @@ function render(){
   const body = document.getElementById('csal-body');
   if (!c) {
     bar.style.display = 'none';
-    tabsEl.innerHTML = '';
+    if (st.tab!=='prov') st.tab='resumen';
+    tabsEl.innerHTML = [['resumen','Viajes'],['prov','Proveedores',provs().length]].map(t=>`<button class="csal-tab ${st.tab===t[0]?'active':''}" onclick="CSAL.tab('${t[0]}')">${t[1]}${t[2]!=null?`<span class="n">${t[2]}</span>`:''}</button>`).join('');
+    if (st.tab==='prov') { body.innerHTML = vProv(); return; }
     body.innerHTML = `<div class="csal-card"><div class="csal-empty" style="padding:40px 20px">
       <div style="font-size:30px">🧾</div><b style="color:#1F4E79;font-size:15px">No hay cuadros de salida de ${BARCOS[st.barco]}</b>
       <p style="margin:8px 0 14px">Crea el cuadro del próximo viaje para empezar a registrar trabajos, repuestos y materiales.</p>
