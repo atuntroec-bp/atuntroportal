@@ -43,6 +43,19 @@
         linkLabel: 'Abrir proyectos',
       },
       {
+        id: 'cuadro-salida',
+        title: 'Cuadro de Salida',
+        desc: 'Presupuesto de cada salida por barco y viaje: trabajos por área, repuestos y materiales/servicios, con retenciones por proveedor, aprobación y registro de quién llenó cada línea.',
+        icon: '🧾',
+        iconColor: 'blue',
+        color: 'color-blue',
+        status: 'active',
+        roles: ['operaciones','operaciones_master','admin','contabilidad','master'],
+        vessels: ['María Fátima','María de Gracia'],
+        onclick: 'openCuadro()',
+        linkLabel: 'Abrir cuadro',
+      },
+      {
         id: 'documentos',
         title: 'Control Documental',
         desc: 'Vigencias de documentos y certificados por embarcación: vencimientos, alertas por estado y línea de tiempo. Base compartida en tiempo real.',
@@ -219,7 +232,7 @@
 
   // ── Navigation ──────────────────────────────────────────────────────────────
   function hideAllScreens() {
-    ['screen-login','screen-dashboard','screen-gestor','screen-checklist-ops','screen-checklist-adm','screen-equipos','screen-simulador','screen-documentos','screen-boyas','screen-proyectos','screen-plano','screen-contable'].forEach(function(id){
+    ['screen-login','screen-dashboard','screen-gestor','screen-checklist-ops','screen-checklist-adm','screen-equipos','screen-simulador','screen-documentos','screen-boyas','screen-proyectos','screen-plano','screen-contable','screen-cuadro'].forEach(function(id){
       var el = document.getElementById(id);
       if (el) el.classList.remove('active');
     });
@@ -339,6 +352,22 @@
     setTimeout(function(){
       if (typeof CONT !== 'undefined') { try { CONT.init({ name: u.name, key: sess.id, role: u.role }); } catch(e){} }
     }, 100);
+  }
+  function openCuadro() {
+    var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
+    if (!sess) { logout(); return; }
+    var u = AUTH.users[sess.id];
+    if (!u) { logout(); return; }
+    hideAllScreens();
+    document.getElementById('screen-cuadro').classList.add('active');
+    window.scrollTo(0,0);
+    setTimeout(function(){
+      if (typeof CSAL !== 'undefined') { try { CSAL.init({ name: u.name, key: sess.id, role: u.role }); } catch(e){ console.error(e); } }
+    }, 100);
+  }
+  function goBackFromCuadro() {
+    var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
+    if (sess && AUTH.users[sess.id]) { enterDashboard(AUTH.users[sess.id].role); } else { logout(); }
   }
   function goBackFromContable() {
     var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');

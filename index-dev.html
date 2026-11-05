@@ -5948,6 +5948,144 @@ table.boy-tabla td.num{color:#000080;font-weight:bold;white-space:nowrap}
 <!-- =============== FIN MÓDULO PLANO DE RED =============== -->
 </div>
 
+<div id="screen-cuadro" class="screen">
+<!-- ================= MÓDULO CUADRO DE SALIDA (CSAL) v1 ================= -->
+<style>
+.csal-wrap{max-width:1200px;margin:0 auto;padding:14px}
+.csal-header{background:#1F4E79;border-radius:12px;padding:14px 20px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.csal-header h2{font-size:15px;font-weight:600;color:#fff;margin-bottom:1px}
+.csal-header p{font-size:11px;color:#a8c4e0}
+.csal-hr{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.csal-vtab{padding:6px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.75);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit}
+.csal-vtab.active{background:#fff;color:#1F4E79;border-color:#fff;font-weight:600}
+.csal-viaje{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border-radius:20px;padding:4px 6px 4px 12px;color:#fff;font-size:11px}
+.csal-viaje select{background:#fff;border:none;border-radius:14px;padding:3px 8px;font-size:11px;color:#1F4E79;font-weight:700}
+.csal-hbtn{font-size:11px;padding:5px 11px;border-radius:14px;border:1px solid rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.85);cursor:pointer;font-family:inherit}
+.csal-hbtn:hover{background:rgba(255,255,255,.18)}
+.csal-bar{background:#fff;border-radius:10px;padding:12px 18px;margin-bottom:10px;display:flex;gap:18px;flex-wrap:wrap;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.csal-df{display:flex;flex-direction:column;gap:3px;flex:1;min-width:140px}
+.csal-df label{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.6px}
+.csal-df input,.csal-df select{border:none;background:transparent;font-size:13px;font-weight:500;color:#1a1a18;outline:none;border-bottom:1.5px solid #e0e0e0;font-family:inherit;padding:2px 0}
+.csal-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.csal-tab{padding:7px 14px;border-radius:20px;border:1.5px solid #C8D6E5;background:#fff;color:#1F4E79;font-size:12px;cursor:pointer;font-family:inherit}
+.csal-tab.active{background:#1F4E79;color:#fff;border-color:#1F4E79;font-weight:600}
+.csal-tab .n{font-size:10px;background:rgba(0,0,0,.08);border-radius:8px;padding:1px 6px;margin-left:4px}
+.csal-tab.active .n{background:rgba(255,255,255,.2)}
+.csal-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px}
+.csal-kpi{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #2E75B6}
+.csal-kpi .l{font-size:10px;font-weight:700;color:#7A96B2;text-transform:uppercase;letter-spacing:.5px}
+.csal-kpi .v{font-size:20px;font-weight:700;color:#1F4E79;margin-top:4px}
+.csal-kpi .s{font-size:10px;color:#999;margin-top:2px}
+.csal-card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:10px;overflow:hidden}
+.csal-card-h{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#F4F7FB;border-bottom:1px solid #e3eaf2;cursor:pointer;gap:8px;flex-wrap:wrap}
+.csal-card-h h3{font-size:12px;color:#1F4E79;text-transform:uppercase;letter-spacing:.4px}
+.csal-card-h .t{font-size:12px;color:#1F4E79;font-weight:700}
+.csal-card-h .meta{font-size:10px;color:#7A96B2;font-weight:400;margin-left:6px;text-transform:none}
+.csal-scroll{overflow-x:auto}
+table.csal-t{width:100%;border-collapse:collapse;font-size:12px}
+.csal-t th{text-align:left;font-size:10px;color:#7A96B2;text-transform:uppercase;letter-spacing:.4px;padding:7px 10px;border-bottom:1px solid #eef2f7;white-space:nowrap}
+.csal-t td{padding:7px 10px;border-bottom:1px solid #f3f5f8;vertical-align:middle}
+.csal-t td.r,.csal-t th.r{text-align:right;white-space:nowrap}
+.csal-t tr.tot td{font-weight:700;background:#fafbfd;color:#1F4E79}
+.csal-empty{padding:14px;font-size:12px;color:#aaa;text-align:center}
+.csal-st{font-size:10px;font-weight:700;border-radius:8px;padding:2px 8px;display:inline-block;white-space:nowrap}
+.st-registrado{background:#f0efec;color:#777}
+.st-aprobado{background:#E1F5EE;color:#085041}
+.st-orden{background:#E3F0FB;color:#1F4E79}
+.st-pagado{background:#2E7D32;color:#fff}
+.st-rechazado{background:#FFE5D9;color:#8B2E0A}
+.csal-btn{font-size:11px;padding:5px 10px;border-radius:7px;border:1px solid #C8D6E5;background:#fff;color:#1F4E79;cursor:pointer;font-family:inherit;white-space:nowrap}
+.csal-btn:hover{background:#F4F7FB}
+.csal-btn.pri{background:#1F4E79;color:#fff;border-color:#1F4E79}
+.csal-btn.ok{background:#2E7D32;color:#fff;border-color:#2E7D32}
+.csal-btn.warn{color:#8B2E0A;border-color:#f3c3b0}
+.csal-btn:disabled{opacity:.4;cursor:not-allowed}
+.csal-acts{display:flex;gap:4px;justify-content:flex-end}
+.csal-tool{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.csal-tool input,.csal-tool select{font-size:12px;padding:6px 10px;border:1.5px solid #dde4ec;border-radius:7px;font-family:inherit}
+.csal-note{font-size:11px;color:#7A96B2}
+.csal-ovl{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;align-items:center;justify-content:center;padding:12px}
+.csal-ovl.show{display:flex}
+.csal-modal{background:#fff;border-radius:14px;padding:22px;width:100%;max-width:560px;max-height:92vh;overflow:auto;box-shadow:0 8px 40px rgba(0,0,0,.22)}
+.csal-modal h4{font-size:15px;color:#1F4E79;margin-bottom:16px}
+.csal-row{margin-bottom:12px}
+.csal-row label{display:block;font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.csal-row input,.csal-row select,.csal-row textarea{width:100%;border:1.5px solid rgba(0,0,0,.12);border-radius:7px;padding:8px 10px;font-size:12px;font-family:inherit;background:#f9f9f7}
+.csal-row input:focus,.csal-row select:focus,.csal-row textarea:focus{border-color:#2E75B6;background:#fff;outline:none}
+.csal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.csal-calc{background:#F4F7FB;border-radius:8px;padding:10px 12px;font-size:12px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;margin-bottom:6px}
+.csal-calc b{color:#1F4E79}
+.csal-mact{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.csal-op{border:1.5px solid #e3eaf2;border-radius:10px;margin:10px 14px;overflow:hidden}
+.csal-op-h{display:flex;justify-content:space-between;gap:8px;padding:10px 12px;background:#fafbfd;flex-wrap:wrap;align-items:center}
+.csal-op-h b{color:#1F4E79;font-size:13px}
+.csal-prog{height:6px;background:#eef2f7;border-radius:4px;overflow:hidden;margin-top:4px;width:160px}
+.csal-prog i{display:block;height:100%;background:#2E7D32}
+.csal-hist{font-size:10px;color:#999}
+.csal-modal.wide{max-width:980px}
+.csal-grid3{display:grid;grid-template-columns:1fr 1.3fr 1.6fr;gap:10px;align-items:start}
+.csal-row label input[type=checkbox]{width:auto;margin-right:4px;vertical-align:middle}
+.csal-mt td{padding:4px 5px}
+.csal-mt input,.csal-mt select{width:100%;border:1.5px solid rgba(0,0,0,.12);border-radius:6px;padding:6px 8px;font-size:12px;font-family:inherit;background:#f9f9f7;min-width:70px}
+.csal-mt input:focus,.csal-mt select:focus{border-color:#2E75B6;background:#fff;outline:none}
+.csal-mt .m-det{min-width:200px}
+.csal-mt .m-sub{width:100px;text-align:right}
+.csal-mt select{max-width:220px}
+@media(max-width:640px){.csal-grid3{grid-template-columns:1fr}}
+@media(max-width:640px){.csal-grid{grid-template-columns:1fr}.csal-header{padding:12px}.csal-t{font-size:11px}.csal-hide-m{display:none}}
+
+#screen-cuadro.screen.active{display:block;padding:0;min-height:100vh;background:#f0f2f5;overflow-y:auto}
+#screen-cuadro{color:#1a1a18;font-family:Arial,sans-serif}
+#screen-cuadro input,#screen-cuadro select,#screen-cuadro textarea,#screen-cuadro button{font-family:inherit}
+.csal-header{position:sticky;top:0;z-index:50}
+.csal-hl h2{font-size:15px;font-weight:600;color:#fff;margin:0 0 1px}
+.csal-hl p{font-size:11px;color:#a8c4e0;margin:0}
+.csal-back{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:7px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer}
+.csal-back:hover{background:rgba(255,255,255,.25)}
+.csal-sync{display:inline-flex;align-items:center;gap:5px;font-size:10px;color:#a8c4e0;background:rgba(255,255,255,.1);border-radius:10px;padding:3px 9px}
+.csal-sync .sync-dot{width:6px;height:6px;border-radius:50%;background:#999;display:inline-block}
+.csal-sync .sync-dot.ok{background:#4AE3A8}.csal-sync .sync-dot.local{background:#F5B942}.csal-sync .sync-dot.saving{background:#4AE3A8;opacity:.6}
+.csal-val{font-size:13px;font-weight:500;padding:2px 0}
+.csal-user{color:#7A96B2;font-size:.9em;font-weight:400}
+.csal-chips{display:flex;flex-wrap:wrap;gap:4px;padding-top:2px}
+.csal-chip{background:#F4F7FB;border:1px solid #e3eaf2;border-radius:12px;padding:2px 9px;font-size:11px}
+.csal-df .csal-hist{margin-top:2px}
+.csal-lock{background:#FFF3E0;color:#8a4b00;border:1px solid #ffd59a;border-radius:9px;padding:9px 14px;font-size:12px;margin-bottom:10px}
+.csal-tool-r{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.csal-chkl{display:flex;align-items:center;gap:6px;cursor:pointer}
+.csal-search{flex:1;max-width:340px}
+.csal-barrow{display:flex;align-items:center;gap:10px;margin-bottom:7px;font-size:12px}
+.csal-barrow .nm{width:170px;color:#555}.csal-barrow .tr{flex:1;background:#eef2f7;border-radius:4px;height:12px;overflow:hidden}
+.csal-barrow .tr i{display:block;height:100%;background:#2E75B6;border-radius:4px}.csal-barrow b{width:100px;text-align:right;color:#1F4E79}
+.csal-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1F4E79;color:#fff;padding:9px 18px;border-radius:20px;font-size:12px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.csal-toast.err{background:#8B2E0A}
+.csal-row label input[type=checkbox]{width:auto}
+@media(max-width:640px){.csal-barrow .nm{width:110px}.csal-barrow b{width:80px}}
+</style>
+<div class="csal-wrap">
+  <div class="csal-header">
+    <div class="csal-hl"><h2>🧾 Cuadro de Salida</h2><p>Presupuesto y aprobación de la salida</p></div>
+    <div class="csal-hr">
+      <button class="csal-vtab active" data-b="MF" onclick="CSAL.setBarco('MF')">María Fátima</button>
+      <button class="csal-vtab" data-b="MG" onclick="CSAL.setBarco('MG')">María de Gracia</button>
+      <span class="csal-viaje">Viaje <select id="csal-viaje" onchange="CSAL.setViaje(this.value)"></select></span>
+      <button class="csal-hbtn" id="csal-newv" onclick="CSAL.nuevoViaje()">+ Nuevo viaje</button>
+      <span class="csal-sync"><span class="sync-dot" id="csal-syncDot"></span><span id="csal-syncLbl">—</span></span>
+      <button class="csal-back" onclick="goBackFromCuadro()">← Volver</button>
+    </div>
+  </div>
+  <div id="csal-root">
+    <div class="csal-bar" id="csal-bar"></div>
+    <div class="csal-tabs" id="csal-tabs"></div>
+    <div id="csal-body"></div>
+  </div>
+  <input type="file" id="csal-imp" accept=".json,application/json" hidden onchange="CSAL.importar(this)">
+</div>
+<div class="csal-ovl" id="csal-ovl"><div class="csal-modal" id="csal-modal"></div></div>
+<script src="js/cuadro-salida.js"></script>
+<!-- =============== FIN MÓDULO CUADRO DE SALIDA =============== -->
+</div>
+
 
 <!-- ═══════════════════════════════════════════════════════════════════
      IMPRESIÓN — GLOBAL. Debe ir al FINAL del documento.
