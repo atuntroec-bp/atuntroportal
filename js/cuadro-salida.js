@@ -110,6 +110,14 @@ function contratosDe(itemId){
     return o && o.barco===st.barco && String(o.viaje)===String(st.viaje) && (o.items||[]).indexOf(itemId)>-1; })
     .map(tk => ({tk:tk, numero:CT[tk].contrato.numero, e:ctEstado(CT[tk])}));
 }
+function abrirCT(qs, titulo){
+  const o = document.getElementById('csal-ctov'); const fr = document.getElementById('csal-ctfr');
+  if (!o || !fr) { location.href = CT_PAGE + qs; return; }
+  document.getElementById('csal-cttit').textContent = titulo || 'Contratos';
+  document.getElementById('csal-ctsub').textContent = BARCOS[st.barco] + ' · viaje ' + st.viaje;
+  fr.src = CT_PAGE + qs + '&embed=1';
+  o.classList.add('show'); document.body.style.overflow='hidden';
+}
 function fallo(e){
   const permiso = e && /permission/i.test(String(e.code||e.message||''));
   toast(permiso ? 'No se guardó: no tienes permiso para este cambio' : 'No se guardó: sin conexión', true);
@@ -279,7 +287,7 @@ function tablaGrupo(titulo, L, b, key, ix){
     const canEdit = editable() && ((P.registrar(role()) && i.estado==='registrado') || role()==='master');
     const histTxt = (i.hist||[]).map(x=>x.a+' · '+quienTxt(x)+' · '+x.f).join('\n');
     const cts = b==='trab' ? contratosDe(i.id) : [];
-    const ctHtml = cts.map(x=>`<a class="csal-ct ct-${x.e.k}" href="${CT_PAGE}?ver=${x.tk}" target="_blank" title="Abrir contrato">📄 ${esc(x.numero)} · ${esc(x.e.l)}</a>`).join('');
+    const ctHtml = cts.map(x=>`<a class="csal-ct ct-${x.e.k}" href="#" onclick="CSAL.ctVer('${x.tk}');return false" title="Abrir contrato">📄 ${esc(x.numero)} · ${esc(x.e.l)}</a>`).join('');
     h+=`<tr${b==='mat'&&!(Number(i.sub)>0)&&i.estado!=='rechazado'?' class="csal-vacio"':''}><td>${esc(i.detalle)}${reg?`<div class="csal-hist">por ${quien(reg)}</div>`:''}${ctHtml?`<div class="csal-cts">${ctHtml}</div>`:''}</td><td style="font-size:11px">${esc(p.nombre)}</td><td class="r">${$(r.sub)}</td><td class="r">${$(r.iva)} <span class="csal-note">${esc(i.iva)}%</span></td><td class="r"><b>${$(r.total)}</b></td><td class="r csal-hide-m">${$(r.pagar)}</td>
       <td><span class="csal-st st-${esc(i.estado)}" title="${esc(histTxt)}">${ESTADOS[i.estado]||esc(i.estado)}</span></td><td class="csal-hide-m" style="font-size:11px;color:#777">${esc(i.obs)}</td>
       <td><div class="csal-acts">${b==='trab'&&P.contrato(role())&&i.estado!=='rechazado'?`<button class="csal-btn" title="Crear contrato con el proveedor" onclick="CSAL.contrato('${i.id}')">📄 Contrato</button>`:''}${P.aprobar(role())&&i.estado==='registrado'&&editable()?`<button class="csal-btn ok" onclick="CSAL.aprobar('${i.id}')">Aprobar</button>`:''}${P.aprobar(role())&&(i.estado==='aprobado'||i.estado==='rechazado')&&editable()?`<button class="csal-btn" title="Volver a Registrado" onclick="CSAL.revertir(['${i.id}'])">↩ Revertir</button>`:''}${canEdit?`<button class="csal-btn" onclick="CSAL.editar('${i.id}')">Editar</button>`:''}${canEdit?`<button class="csal-btn warn" title="Eliminar línea" onclick="CSAL.borrar('${i.id}')">✕</button>`:''}</div></td></tr>`; });
@@ -693,8 +701,14 @@ const api = {
       origen:{ modulo:'cuadro_salida', barco:st.barco, viaje:String(st.viaje), area:base.area, items:L.map(i=>i.id) } };
     try { localStorage.setItem('atuntro_ct_prefill', JSON.stringify(pf)); } catch(e){ toast('No se pudo preparar el contrato', true); return; }
     closeM();
-    const w = window.open(CT_PAGE+'?nuevo=1', '_blank');
-    if (!w) location.href = CT_PAGE+'?nuevo=1';
+    abrirCT('?nuevo=1', 'Nuevo contrato · ' + (p.nombre||''));
+  },
+  ctVer(tk){ if(/^[0-9a-f]{48}$/.test(tk)) abrirCT('?ver='+tk, 'Contrato'); },
+  ctCerrar(){
+    const o = document.getElementById('csal-ctov'); if(!o) return;
+    o.classList.remove('show'); document.body.style.overflow='';
+    const fr = document.getElementById('csal-ctfr'); if (fr) fr.src = 'about:blank';
+    render();
   },
   close: closeM
 };

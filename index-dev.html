@@ -6071,6 +6071,12 @@ table.csal-t{width:100%;border-collapse:collapse;font-size:12px}
 .csal-ct.ct-pend{background:#FFF3E0;color:#8a4b00}
 .csal-ct.ct-ok{background:#E1F5EE;color:#085041}
 .csal-ct.ct-off{background:#f0efec;color:#888}
+.csal-ctov{display:none;position:fixed;inset:0;z-index:9500;background:#F4F7FB;flex-direction:column}
+.csal-ctov.show{display:flex}
+.csal-ctbar{background:#1F4E79;display:flex;align-items:center;gap:14px;padding:10px 16px;flex-wrap:wrap}
+.csal-cth{display:flex;flex-direction:column;color:#fff;font-size:14px;min-width:0}
+.csal-cth span{font-size:11px;color:#a8c4e0}
+.csal-ctov iframe{flex:1;width:100%;border:0;background:#F4F7FB}
 .csal-row label input[type=checkbox]{width:auto}
 @media(max-width:640px){.csal-barrow .nm{width:110px}.csal-barrow b{width:80px}}
 </style>
@@ -6094,6 +6100,13 @@ table.csal-t{width:100%;border-collapse:collapse;font-size:12px}
   <input type="file" id="csal-imp" accept=".json,application/json" hidden onchange="CSAL.importar(this)">
 </div>
 <div class="csal-ovl" id="csal-ovl"><div class="csal-modal" id="csal-modal"></div></div>
+<div class="csal-ctov" id="csal-ctov">
+  <div class="csal-ctbar">
+    <button class="csal-back" onclick="CSAL.ctCerrar()">← Volver al Cuadro de Salida</button>
+    <div class="csal-cth"><b id="csal-cttit">Contratos</b><span id="csal-ctsub"></span></div>
+  </div>
+  <iframe id="csal-ctfr" title="Contratos" src="about:blank"></iframe>
+</div>
 <script src="js/cuadro-salida.js"></script>
 <!-- =============== FIN MÓDULO CUADRO DE SALIDA =============== -->
 </div>

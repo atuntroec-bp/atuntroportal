@@ -11,6 +11,9 @@
 :root{--navy-dark:#0D2137;--navy:#1F4E79;--blue:#2E75B6;--accent:#F0A500;--gray-100:#F4F7FB;--gray-300:#C8D6E5;--gray-500:#5F7A94;--ink:#1a2b3c;--green:#2E7D32;--green-bg:#E8F5E9;--orange:#B84300;--orange-bg:#FFF3E0;--red:#B3261E;--red-bg:#FBE6E4;--blue-bg:#E6F1FB}
 html{-webkit-text-size-adjust:100%}
 [hidden]{display:none!important}
+body.ct-embed .ct-head{display:none!important}
+body.ct-embed .ct-wrap{padding-top:14px}
+.ct-doc .cl{white-space:pre-line}
 body{font-family:Arial,sans-serif;background:var(--gray-100);color:var(--ink);font-size:14px;line-height:1.5;min-height:100vh}
 button,input,select,textarea{font:inherit}
 .ct-head{background:linear-gradient(135deg,#0D2137,#1A3A5C);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -363,6 +366,8 @@ document.addEventListener('change',function(ev){var t=ev.target;
 });
 
 /* ── enlace con el Cuadro de Salida del portal ── */
+var EMBED=new URLSearchParams(location.search).get('embed')==='1'&&window.parent!==window;
+if(EMBED)document.body.classList.add('ct-embed');
 function desdePortal(){
   var q=new URLSearchParams(location.search);
   if(q.get('nuevo')==='1'){
@@ -371,7 +376,7 @@ function desdePortal(){
     if(pf&&pf.v===1){var b=nuevoBase();['tipo','buque','descripcion','lugar','provNombre','provId','valor'].forEach(function(k){if(pf[k]!=null&&pf[k]!=='')b[k]=String(pf[k])});
       b.origen=pf.origen||null;S.form=b;S.tab='nuevo';S.detalle=null}
   }else if(/^[0-9a-f]{48}$/.test(q.get('ver')||'')){S.tab='lista';S.detalle=q.get('ver')}
-  if(q.get('nuevo')||q.get('ver'))history.replaceState(null,'',location.pathname);
+  if(q.get('nuevo')||q.get('ver'))history.replaceState(null,'',location.pathname+(EMBED?'?embed=1':''));
 }
 /* ── arranque ── */
 function iniciar(){
