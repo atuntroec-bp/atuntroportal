@@ -17395,6 +17395,11 @@ table.csal-t{width:100%;border-collapse:collapse;font-size:12px}
 .csal-llen-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px;color:#1F4E79}
 .csal-llen-p{font-size:20px}
 .csal-t tr.csal-vacio td{background:#FFFBF2}
+.csal-cts{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.csal-ct{display:inline-block;font-size:10px;font-weight:700;border-radius:8px;padding:2px 8px;text-decoration:none;white-space:nowrap}
+.csal-ct.ct-pend{background:#FFF3E0;color:#8a4b00}
+.csal-ct.ct-ok{background:#E1F5EE;color:#085041}
+.csal-ct.ct-off{background:#f0efec;color:#888}
 .csal-row label input[type=checkbox]{width:auto}
 @media(max-width:640px){.csal-barrow .nm{width:110px}.csal-barrow b{width:80px}}
 </style>
@@ -17441,8 +17446,13 @@ const P = {
   aprobar:    r => ['admin','master'].includes(r),
   catalogo:   r => ['admin','master'].includes(r),
   crearViaje: r => ['operaciones','operaciones_master','admin','master'].includes(r),
-  estado:     r => r === 'master'
+  estado:     r => r === 'master',
+  contrato:   r => ['admin','master'].includes(r)
 };
+const CT_ROOT = 'atuntro_contratos';
+const CT_PAGE = 'contratos.html';
+let CT = {};            // contratos por token (solo Master/Admin)
+let ctListening = false;
 
 let user = null;            // {name, key, role}
 let st = { barco:'MF', viaje:null, tab:'resumen', open:{}, filtroProv:'', ocultarVacias:false };
@@ -17504,6 +17514,27 @@ function initFirebase(){
       if (modalAbierto() || hasFocusInside()) pendingRender = true; else render();
     }, function(){ setSync('local','Sin acceso'); });
   } catch(e){ fbReady = false; setSync('local','Sin conexión'); }
+}
+function escucharContratos(){
+  if (ctListening || !fbReady || !P.contrato(role())) return;
+  ctListening = true;
+  db.ref(CT_ROOT+'/docs').on('value', function(snap){
+    CT = snap.val() || {};
+    if (modalAbierto() || hasFocusInside()) pendingRender = true; else render();
+  }, function(){ ctListening = false; CT = {}; });
+}
+function ctEstado(D){
+  const c = D.contrato || {};
+  if (c.anulado) return {k:'off', l:'Anulado'};
+  if (D.aceptacion) return {k:'ok', l:'Aceptado'};
+  if (Date.now() > (c.aceptarHasta||0)) return {k:'off', l:'Enlace vencido'};
+  return {k:'pend', l:'Falta aceptar'};
+}
+function contratosDe(itemId){
+  if (!P.contrato(role())) return [];
+  return Object.keys(CT).filter(tk => { const o = CT[tk] && CT[tk].contrato && CT[tk].contrato.origen;
+    return o && o.barco===st.barco && String(o.viaje)===String(st.viaje) && (o.items||[]).indexOf(itemId)>-1; })
+    .map(tk => ({tk:tk, numero:CT[tk].contrato.numero, e:ctEstado(CT[tk])}));
 }
 function fallo(e){
   const permiso = e && /permission/i.test(String(e.code||e.message||''));
@@ -17673,9 +17704,11 @@ function tablaGrupo(titulo, L, b, key, ix){
   L.forEach(i=>{ const r=calc(i); const p=prov(i.prov); const reg=(i.hist||[])[0];
     const canEdit = editable() && ((P.registrar(role()) && i.estado==='registrado') || role()==='master');
     const histTxt = (i.hist||[]).map(x=>x.a+' · '+quienTxt(x)+' · '+x.f).join('\n');
-    h+=`<tr${b==='mat'&&!(Number(i.sub)>0)&&i.estado!=='rechazado'?' class="csal-vacio"':''}><td>${esc(i.detalle)}${reg?`<div class="csal-hist">por ${quien(reg)}</div>`:''}</td><td style="font-size:11px">${esc(p.nombre)}</td><td class="r">${$(r.sub)}</td><td class="r">${$(r.iva)} <span class="csal-note">${esc(i.iva)}%</span></td><td class="r"><b>${$(r.total)}</b></td><td class="r csal-hide-m">${$(r.pagar)}</td>
+    const cts = b==='trab' ? contratosDe(i.id) : [];
+    const ctHtml = cts.map(x=>`<a class="csal-ct ct-${x.e.k}" href="${CT_PAGE}?ver=${x.tk}" target="_blank" title="Abrir contrato">📄 ${esc(x.numero)} · ${esc(x.e.l)}</a>`).join('');
+    h+=`<tr${b==='mat'&&!(Number(i.sub)>0)&&i.estado!=='rechazado'?' class="csal-vacio"':''}><td>${esc(i.detalle)}${reg?`<div class="csal-hist">por ${quien(reg)}</div>`:''}${ctHtml?`<div class="csal-cts">${ctHtml}</div>`:''}</td><td style="font-size:11px">${esc(p.nombre)}</td><td class="r">${$(r.sub)}</td><td class="r">${$(r.iva)} <span class="csal-note">${esc(i.iva)}%</span></td><td class="r"><b>${$(r.total)}</b></td><td class="r csal-hide-m">${$(r.pagar)}</td>
       <td><span class="csal-st st-${esc(i.estado)}" title="${esc(histTxt)}">${ESTADOS[i.estado]||esc(i.estado)}</span></td><td class="csal-hide-m" style="font-size:11px;color:#777">${esc(i.obs)}</td>
-      <td><div class="csal-acts">${P.aprobar(role())&&i.estado==='registrado'&&editable()?`<button class="csal-btn ok" onclick="CSAL.aprobar('${i.id}')">Aprobar</button>`:''}${P.aprobar(role())&&(i.estado==='aprobado'||i.estado==='rechazado')&&editable()?`<button class="csal-btn" title="Volver a Registrado" onclick="CSAL.revertir(['${i.id}'])">↩ Revertir</button>`:''}${canEdit?`<button class="csal-btn" onclick="CSAL.editar('${i.id}')">Editar</button>`:''}${canEdit?`<button class="csal-btn warn" title="Eliminar línea" onclick="CSAL.borrar('${i.id}')">✕</button>`:''}</div></td></tr>`; });
+      <td><div class="csal-acts">${b==='trab'&&P.contrato(role())&&i.estado!=='rechazado'?`<button class="csal-btn" title="Crear contrato con el proveedor" onclick="CSAL.contrato('${i.id}')">📄 Contrato</button>`:''}${P.aprobar(role())&&i.estado==='registrado'&&editable()?`<button class="csal-btn ok" onclick="CSAL.aprobar('${i.id}')">Aprobar</button>`:''}${P.aprobar(role())&&(i.estado==='aprobado'||i.estado==='rechazado')&&editable()?`<button class="csal-btn" title="Volver a Registrado" onclick="CSAL.revertir(['${i.id}'])">↩ Revertir</button>`:''}${canEdit?`<button class="csal-btn" onclick="CSAL.editar('${i.id}')">Editar</button>`:''}${canEdit?`<button class="csal-btn warn" title="Eliminar línea" onclick="CSAL.borrar('${i.id}')">✕</button>`:''}</div></td></tr>`; });
   return h + `</table></div></div>`;
 }
 
@@ -17838,6 +17871,7 @@ const api = {
       document.addEventListener('keydown', e=>{ if(e.key==='Escape' && modalAbierto()) closeM(); });
       initFirebase();
     }
+    escucharContratos();
     elegirViaje(); render();
   },
   setBarco(b){ st.barco=b; st.viaje=null; elegirViaje(); render(); },
@@ -18049,6 +18083,44 @@ const api = {
       sub:r.sub||0, iva:r.iva, obs:'', estado:'registrado', hist:[firma('Registrado')] }));
     closeM(); st.tab=bloque; wItems(list);
     toast(list.length+' línea'+(list.length>1?'s':'')+' agregada'+(list.length>1?'s':''));
+  },
+  contrato(id){
+    if (!P.contrato(role())) return;
+    const c = cur(); const it = its(c).find(i=>i.id===id); if(!it) return;
+    const p = prov(it.prov);
+    if (!p.id) { toast('Esta línea no tiene proveedor', true); return; }
+    const mismos = its(c).filter(i=>i.bloque==='trab' && i.area===it.area && i.prov===it.prov && i.estado!=='rechazado');
+    openM(`<h4>Contrato · ${esc(p.nombre)}</h4>
+      <p class="csal-note" style="margin-bottom:10px">Elige los trabajos de ${esc(it.area)} que entran en el contrato. Se abrirá la página de contratos con el detalle, el proveedor, el barco y el valor ya llenos; ahí completas fechas, multa y contacto, y envías el enlace.</p>
+      <div class="csal-scroll"><table class="csal-t"><tr><th></th><th>Trabajo</th><th class="r">Subtotal</th><th class="r">Total con IVA</th><th>Contrato</th></tr>
+      ${mismos.map(i=>{ const ya=contratosDe(i.id).filter(x=>x.e.k!=='off'); return `<tr><td><input type="checkbox" class="csm-ctk" value="${i.id}" ${i.id===id?'checked':''} onchange="CSAL.ctTot()"></td><td>${esc(i.detalle)}${i.obs?`<div class="csal-hist">${esc(i.obs)}</div>`:''}</td><td class="r">${$(calc(i).sub)}</td><td class="r">${$(calc(i).total)}</td><td>${ya.length?ya.map(x=>`<span class="csal-ct ct-${x.e.k}">${esc(x.numero)}</span>`).join(' '):'<span class="csal-note">—</span>'}</td></tr>`; }).join('')}
+      </table></div>
+      <div class="csal-calc" id="csm-cttot" style="margin-top:10px"></div>
+      ${p.ruc?'':'<div class="csal-lock">Este proveedor no tiene RUC en el catálogo: tendrás que escribirlo en el contrato.</div>'}
+      <div class="csal-mact"><button class="csal-btn" onclick="CSAL.close()">Cancelar</button><button class="csal-btn pri" onclick="CSAL.ctAbrir('${id}')">Continuar al contrato →</button></div>`, true);
+    api.ctTot();
+  },
+  ctTot(){
+    const ids = Array.prototype.map.call(document.querySelectorAll('#csal-modal .csm-ctk:checked'), x=>x.value);
+    const L = its(cur()).filter(i=>ids.indexOf(i.id)>-1);
+    const el = document.getElementById('csm-cttot');
+    if (el) el.innerHTML = `<span>Trabajos seleccionados</span><b>${L.length}</b><span>Valor del contrato (total con IVA)</span><b>${$(sum(L,'total'))}</b>`;
+  },
+  ctAbrir(id){
+    const c = cur(); const base = its(c).find(i=>i.id===id); if(!base) return;
+    const ids = Array.prototype.map.call(document.querySelectorAll('#csal-modal .csm-ctk:checked'), x=>x.value);
+    const L = its(c).filter(i=>ids.indexOf(i.id)>-1);
+    if (!L.length) { toast('Marca al menos un trabajo', true); return; }
+    const p = prov(base.prov);
+    const desc = `Trabajos de ${base.area.toLowerCase()} en el buque ${BARCOS[st.barco]}, según el Cuadro de Salida del viaje ${st.viaje}:\n` +
+      L.map((i,k)=>`${k+1}. ${i.detalle}${i.obs?' ('+i.obs+')':''}: ${$(calc(i).sub)} + IVA ${i.iva}%`).join('\n');
+    const pf = { v:1, tipo:'reparacion', buque: st.barco==='MF'?'mf':'mg', descripcion:desc, lugar:'',
+      provNombre:p.nombre||'', provId:p.ruc||'', valor: Math.round(sum(L,'total')*100)/100,
+      origen:{ modulo:'cuadro_salida', barco:st.barco, viaje:String(st.viaje), area:base.area, items:L.map(i=>i.id) } };
+    try { localStorage.setItem('atuntro_ct_prefill', JSON.stringify(pf)); } catch(e){ toast('No se pudo preparar el contrato', true); return; }
+    closeM();
+    const w = window.open(CT_PAGE+'?nuevo=1', '_blank');
+    if (!w) location.href = CT_PAGE+'?nuevo=1';
   },
   close: closeM
 };

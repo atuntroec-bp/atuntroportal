@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Contratos · Atún Tropical</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy-dark:#0D2137;--navy:#1F4E79;--blue:#2E75B6;--accent:#F0A500;--gray-100:#F4F7FB;--gray-300:#C8D6E5;--gray-500:#5F7A94;--ink:#1a2b3c;--green:#2E7D32;--green-bg:#E8F5E9;--orange:#B84300;--orange-bg:#FFF3E0;--red:#B3261E;--red-bg:#FBE6E4;--blue-bg:#E6F1FB}
+html{-webkit-text-size-adjust:100%}
+body{font-family:Arial,sans-serif;background:var(--gray-100);color:var(--ink);font-size:14px;line-height:1.5;min-height:100vh}
+button,input,select,textarea{font:inherit}
+.ct-head{background:linear-gradient(135deg,#0D2137,#1A3A5C);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.ct-logo svg{height:42px;width:auto;display:block}
+.ct-head h1{font-size:15px;letter-spacing:.5px;font-weight:700}
+.ct-head small{display:block;color:var(--gray-300);font-size:11px;font-weight:400;letter-spacing:1.5px;text-transform:uppercase}
+.ct-head .sp{flex:1}
+.ct-user{font-size:12px;color:var(--gray-300)}
+.ct-wrap{max-width:1040px;margin:0 auto;padding:20px 16px 48px}
+.ct-narrow{max-width:760px}
+.ct-tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:2px solid var(--gray-300);overflow-x:auto}
+.ct-tab{background:none;border:0;padding:10px 16px;cursor:pointer;color:var(--gray-500);font-weight:700;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.ct-tab.on{color:var(--navy);border-bottom-color:var(--accent)}
+.ct-card{background:#fff;border:1px solid #DCE5EF;border-radius:8px;padding:18px;margin-bottom:14px}
+.ct-card h2{font-size:15px;color:var(--navy);margin-bottom:12px}
+.ct-card h3{font-size:12px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.6px;margin:16px 0 8px}
+.ct-card h3:first-child{margin-top:0}
+.ct-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.ct-f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ct-f.full{grid-column:1/-1}
+.ct-f label{font-size:12px;font-weight:700;color:var(--navy)}
+.ct-f .hint{font-size:11px;color:var(--gray-500)}
+.ct-f input,.ct-f select,.ct-f textarea{width:100%;padding:9px 10px;border:1px solid var(--gray-300);border-radius:6px;background:#fff;color:var(--ink);font-size:16px}
+@media(min-width:700px){.ct-f input,.ct-f select,.ct-f textarea{font-size:14px}}
+.ct-f input:focus,.ct-f select:focus,.ct-f textarea:focus{outline:2px solid var(--blue);border-color:var(--blue)}
+.ct-btn{border:1px solid var(--gray-300);background:#fff;color:var(--navy);padding:9px 14px;border-radius:6px;cursor:pointer;font-weight:700;font-size:13px;text-decoration:none;display:inline-block;text-align:center}
+.ct-btn:hover{background:var(--gray-100)}
+.ct-btn.pri{background:var(--navy);border-color:var(--navy);color:#fff}
+.ct-btn.pri:hover{background:var(--blue)}
+.ct-btn.dan{color:var(--red);border-color:#E3B5B1}
+.ct-btn:disabled{opacity:.45;cursor:not-allowed}
+.ct-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.ct-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.ct-kpi{background:#fff;border:1px solid #DCE5EF;border-radius:8px;padding:12px 14px}
+.ct-kpi b{display:block;font-size:22px;color:var(--navy)}
+.ct-kpi span{font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.4px}
+.ct-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.ct-toolbar input,.ct-toolbar select{padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;background:#fff;min-width:0}
+.ct-toolbar input{flex:1 1 200px}
+.ct-tw{overflow-x:auto}
+table.ct-t{width:100%;border-collapse:collapse;background:#fff}
+.ct-t th{background:var(--navy);color:#fff;text-align:left;padding:9px 10px;font-size:11px;letter-spacing:.3px;white-space:nowrap}
+.ct-t td{padding:9px 10px;border-bottom:1px solid #E8EEF4;vertical-align:top;font-size:13px}
+.ct-t tbody tr{cursor:pointer}
+.ct-t tbody tr:hover{background:var(--gray-100)}
+.ct-b{display:inline-block;align-self:flex-start;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap}
+.b-pend{background:var(--orange-bg);color:var(--orange)}
+.b-curso{background:var(--blue-bg);color:var(--navy)}
+.b-atr{background:var(--red-bg);color:var(--red)}
+.b-ok{background:var(--green-bg);color:var(--green)}
+.b-off{background:#EEF1F4;color:#55636F}
+.ct-empty{text-align:center;color:var(--gray-500);padding:32px 12px}
+.ct-msg{padding:10px 12px;border-radius:6px;font-size:13px;margin-bottom:12px}
+.ct-msg.err{background:var(--red-bg);color:var(--red)}
+.ct-msg.ok{background:var(--green-bg);color:var(--green)}
+.ct-msg.warn{background:var(--orange-bg);color:var(--orange)}
+.ct-commit{border-left:4px solid var(--accent);background:#FFF9EA;padding:14px;border-radius:0 6px 6px 0;margin-bottom:14px}
+.ct-commit .big{font-size:20px;font-weight:700;color:var(--navy-dark);display:block;margin:2px 0 6px}
+.ct-doc h2{text-align:center;font-size:16px;color:var(--navy-dark);margin-bottom:2px}
+.ct-doc .num{text-align:center;color:var(--gray-500);font-size:12px;margin-bottom:16px}
+.ct-doc .cl{margin-bottom:12px;overflow-wrap:anywhere}
+.ct-doc .cl b{display:block;color:var(--navy);margin-bottom:2px}
+.ct-kv{display:grid;grid-template-columns:minmax(120px,190px) 1fr;gap:5px 12px;font-size:13px}
+.ct-kv dt{color:var(--gray-500)}
+.ct-kv dd{overflow-wrap:anywhere}
+.ct-kv+.no-print{margin-top:16px}
+.ct-hash{font-family:monospace;font-size:11px;word-break:break-all}
+.ct-check{display:flex;gap:10px;align-items:flex-start;padding:12px;background:var(--gray-100);border-radius:6px;margin:14px 0;cursor:pointer;font-size:13px}
+.ct-check input{width:20px;height:20px;flex:none;margin-top:1px}
+.ct-login{max-width:380px;margin:48px auto}
+.ct-link{display:flex;gap:8px;flex-wrap:wrap}
+.ct-link input{flex:1 1 220px;padding:9px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:12px;min-width:0;background:var(--gray-100)}
+.ct-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--navy-dark);color:#fff;padding:10px 16px;border-radius:6px;z-index:50;font-size:13px;max-width:90vw}
+@media print{.ct-head,.ct-tabs,.ct-actions,.no-print,.ct-toast{display:none!important}body{background:#fff;font-size:12px}.ct-wrap{max-width:none;padding:0}.ct-card{border:0;padding:0 0 10px}.ct-commit{background:none}}
+</style>
+</head>
+<body>
+<header class="ct-head">
+  <div class="ct-logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 80">
+  <defs>
+    <linearGradient id="atLg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0D2E4F"/>
+      <stop offset="100%" style="stop-color:#1A4E79"/>
+    </linearGradient>
+  </defs>
+  <rect width="220" height="80" rx="14" fill="url(#atLg)"/>
+  <rect x="1" y="1" width="218" height="78" rx="13" fill="none" stroke="rgba(65,168,232,0.3)" stroke-width="1.5"/>
+  <text x="110" y="31" font-family="Arial,sans-serif" font-weight="900" font-size="26" fill="#41A8E8" text-anchor="middle" letter-spacing="2">ATÚN</text>
+  <text x="110" y="52" font-family="Arial,sans-serif" font-weight="700" font-size="14" fill="#FFFFFF" text-anchor="middle" letter-spacing="5">TROPICAL</text>
+  <text x="110" y="68" font-family="Arial,sans-serif" font-size="8" fill="rgba(255,255,255,0.4)" text-anchor="middle" letter-spacing="3">ATUNTRO S.A.</text>
+  <line x1="30" y1="58" x2="190" y2="58" stroke="rgba(65,168,232,0.2)" stroke-width="1"/>
+</svg></div>
+  <h1>ATÚN TROPICAL<small>Contratos de proveedores</small></h1>
+  <span class="sp"></span>
+  <span class="ct-user" id="ct-user"></span>
+  <button class="ct-btn" id="ct-out" data-a="salir" hidden>Salir</button>
+</header>
+<main class="ct-wrap" id="ct-app"><div class="ct-empty">Cargando…</div></main>
+<div id="ct-toast" class="ct-toast" hidden></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+window.CT=(function(){
+'use strict';
+var CFG={apiKey:"AIzaSyDT0hq4WYxcAxxKvGNmTlH9Ha2lp6fW3y0",authDomain:"atuntro-portal.firebaseapp.com",databaseURL:"https://atuntro-portal-default-rtdb.firebaseio.com",projectId:"atuntro-portal",storageBucket:"atuntro-portal.firebasestorage.app",messagingSenderId:"390090673795",appId:"1:390090673795:web:e01a5d03e5543c8dc415b6"};
+var ROOT='atuntro_contratos',AUTH='atuntro_portal_auth_v2',TZ='America/Guayaquil';
+var TIPOS={reparacion:'Reparación en barco',mantenimiento:'Mantenimiento de equipos',bienes:'Entrega de bienes'};
+var BUQUES={mf:'María Fátima',mg:'María de Gracia',na:'No aplica'};
+var EMPRESA={razon:'Atún Tropical Atuntro S.A.',ruc:'',rep:'Rubén Eduardo Vera Intriago',cargo:'Gerente General',ciudad:''};
+var app=document.getElementById('ct-app'),db=null;
+var S={tab:'lista',docs:{},seg:{},cfg:null,user:null,detalle:null,form:null,q:'',f:''};
+
+/* ── utilidades ── */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function $(id){return document.getElementById(id)}
+function usd(n){return '$'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function hoy(){return new Date().toLocaleDateString('en-CA',{timeZone:TZ})}
+function fDate(s){if(!s)return '—';var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
+function fLarga(s){var d=new Date(s+'T12:00:00Z');return d.toLocaleDateString('es-EC',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'})}
+function fTs(t){return new Date(t).toLocaleString('es-EC',{timeZone:TZ,dateStyle:'long',timeStyle:'medium'})+' (hora de Ecuador)'}
+function dias(a,b){var x=a.split('-'),y=b.split('-');return Math.round((Date.UTC(y[0],y[1]-1,y[2])-Date.UTC(x[0],x[1]-1,x[2]))/864e5)}
+function sumar(s,n){var p=s.split('-'),d=new Date(Date.UTC(p[0],p[1]-1,+p[2]+n));return d.toISOString().slice(0,10)}
+function r2(n){return Math.round(n*100)/100}
+function toast(m){var t=$('ct-toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(function(){t.hidden=true},3000)}
+function token(){var b=new Uint8Array(24);crypto.getRandomValues(b);return Array.prototype.map.call(b,function(x){return('0'+x.toString(16)).slice(-2)}).join('')}
+function linkDe(t){return location.origin+location.pathname+'?c='+t}
+function canon(o){if(Array.isArray(o))return '['+o.map(canon).join(',')+']';if(o&&typeof o==='object')return '{'+Object.keys(o).sort().map(function(k){return JSON.stringify(k)+':'+canon(o[k])}).join(',')+'}';return JSON.stringify(o)}
+function huella(c){var x={};Object.keys(c).forEach(function(k){if(k!=='hash'&&k!=='anulado')x[k]=c[k]});
+  return crypto.subtle.digest('SHA-256',new TextEncoder().encode(canon(x))).then(function(b){return Array.prototype.map.call(new Uint8Array(b),function(v){return('0'+v.toString(16)).slice(-2)}).join('')})}
+function tieneFoco(){var e=document.activeElement;return e&&/INPUT|TEXTAREA|SELECT/.test(e.tagName)}
+
+/* ── texto del contrato ── */
+function txtMulta(c){return c.multaModo==='fijo'?usd(c.multaValor)+' por cada día':c.multaValor+'% del valor del contrato por cada día'}
+function clausulas(d,e){
+  var E=e.razon,P=d.provNombre,t=d.tipo,bq=d.buque!=='na'?' para la embarcación '+BUQUES[d.buque]:'';
+  var verbo=t==='bienes'?'entregar':'terminar', obra=t==='bienes'?'la entrega completa de los bienes':'el trabajo';
+  var tope=r2(d.valor*d.topePct/100);
+  var c=[
+  ['Comparecientes',E+', RUC '+e.ruc+', representada por '+e.rep+' en calidad de '+e.cargo+' (en adelante, "la Contratante"); y '+P+', con RUC o cédula '+d.provId+(d.provRep?', representado por '+d.provRep:'')+' (en adelante, "el Proveedor").'],
+  ['Objeto',(t==='reparacion'?'El Proveedor se obliga a ejecutar la siguiente reparación':t==='mantenimiento'?'El Proveedor se obliga a ejecutar el siguiente mantenimiento':'El Proveedor se obliga a vender y entregar los siguientes bienes')+bq+': '+d.descripcion+'. Lugar: '+d.lugar+'.'],
+  ['Plazo','El Proveedor se obliga a '+verbo+' a más tardar el '+fLarga(d.fechaLimite)+' (plazo de '+d.plazoDias+' días calendario contados desde el '+fDate(d.fechaInicio)+'). Este plazo es determinante para la Contratante, porque su incumplimiento puede afectar la operación de sus embarcaciones.'],
+  ['Recepción',(t==='bienes'?'La entrega se considera cumplida cuando la Contratante recibe la totalidad de los bienes conformes.':'El trabajo se considera terminado cuando está completo, probado y recibido a conformidad por la Contratante.')+' La fecha de cumplimiento es la de esa recepción. La Contratante no negará la recepción sin motivo y comunicará por escrito cualquier observación. El tiempo de corregir una observación imputable al Proveedor se cuenta dentro del plazo.'],
+  ['Precio y pago','El precio total es de '+usd(d.valor)+' (dólares de los Estados Unidos de América), más impuestos cuando correspondan. Forma de pago: '+d.formaPago+'.'],
+  ['Multa por atraso','Si el Proveedor no cumple dentro del plazo, pagará a la Contratante, por el simple retardo, una multa de '+txtMulta(d)+' calendario de atraso, hasta un máximo de '+usd(tope)+' ('+d.topePct+'% del valor del contrato). El Proveedor queda en mora por el solo vencimiento del plazo, sin necesidad de requerimiento. La Contratante podrá descontar la multa de los valores pendientes de pago, informando el cálculo al Proveedor. La multa no libera al Proveedor de cumplir el contrato.'],
+  ['Atrasos justificados','No se aplicará multa por los días de atraso causados por fuerza mayor o caso fortuito, o por hechos imputables a la Contratante, como la falta de acceso a la embarcación. El Proveedor deberá avisar por escrito dentro de las 48 horas siguientes al hecho, indicando su causa y su efecto en el plazo. Cualquier nueva fecha deberá constar en una prórroga aceptada por ambas partes.'],
+  ['Garantía',t==='bienes'?'El Proveedor garantiza que los bienes son nuevos, conformes a lo pedido y libres de defectos por '+d.garantiaDias+' días desde su recepción, y los reemplazará sin costo si presentan defectos.':'El Proveedor garantiza el trabajo y los repuestos que instale por '+d.garantiaDias+' días desde la recepción, y corregirá sin costo cualquier defecto que le sea imputable.']];
+  if(t==='bienes')c.push(['Transporte y riesgo','El transporte hasta el lugar de entrega corre por cuenta y riesgo del Proveedor, salvo que la forma de pago indicada disponga otra cosa. El riesgo de los bienes pasa a la Contratante con su recepción.']);
+  else c.push(['Seguridad y personal','El Proveedor cumplirá las normas de seguridad de la embarcación o instalación. Es el único responsable de su personal, de las obligaciones laborales y de seguridad social de este, y de los daños que cause por su culpa. Este contrato no crea relación laboral entre la Contratante y el Proveedor o su personal.']);
+  c.push(['Datos personales','Los datos de quien acepta se usan solo para celebrar, ejecutar y probar este contrato, y se conservan con ese fin.'],
+  ['Aceptación electrónica','Las partes celebran este contrato por medios electrónicos, conforme a la Ley de Comercio Electrónico, Firmas Electrónicas y Mensajes de Datos. Quien acepta declara tener facultad para obligar al Proveedor. Su aceptación expresa en esta página, junto con su registro de fecha y hora, constituye su consentimiento, aunque no se use firma manuscrita ni firma electrónica certificada.'],
+  ['Ley y controversias','Este contrato se rige por las leyes de la República del Ecuador. Las controversias que no se resuelvan de mutuo acuerdo se someterán a los jueces competentes de '+e.ciudad+'.']);
+  return c.map(function(x){return{t:x[0],b:x[1]}});
+}
+function docHtml(c){return '<div class="ct-doc"><h2>'+esc(TIPOS[c.tipo]==='Entrega de bienes'?'CONTRATO DE ENTREGA DE BIENES':'CONTRATO DE SERVICIOS — '+TIPOS[c.tipo].toUpperCase())+'</h2><p class="num">N.º '+esc(c.numero)+(c.prorrogaDe?' · Prórroga del contrato '+esc(c.prorrogaDe):'')+'</p>'+
+  c.clausulas.map(function(x,i){return '<div class="cl"><b>'+(i+1)+'. '+esc(x.t)+'</b>'+esc(x.b)+'</div>'}).join('')+'</div>'}
+function constancia(c,a,ok){return '<h2>Constancia de aceptación</h2><dl class="ct-kv"><dt>Contrato</dt><dd>'+esc(c.numero)+'</dd><dt>Proveedor</dt><dd>'+esc(c.provNombre)+' ('+esc(c.provId)+')</dd><dt>Aceptado por</dt><dd>'+esc(a.nombre)+'</dd><dt>Cédula</dt><dd>'+esc(a.identificacion)+'</dd><dt>Cargo</dt><dd>'+esc(a.cargo)+'</dd><dt>Fecha y hora</dt><dd>'+esc(fTs(a.aceptadoEn))+'</dd><dt>Fecha comprometida</dt><dd><b>'+esc(fDate(c.fechaLimite))+'</b></dd><dt>Huella del texto (SHA-256)</dt><dd class="ct-hash">'+esc(a.hash)+'</dd>'+(ok===undefined?'':'<dt>Verificación</dt><dd>'+(ok?'<span class="ct-b b-ok">El texto coincide con lo aceptado</span>':'<span class="ct-b b-atr">El texto no coincide</span>')+'</dd>')+'</dl>'}
+
+/* ── cálculo de estado y multa ── */
+function multa(c,s,ref){
+  var d=Math.max(0,dias(c.fechaLimite,ref)-(+(s&&s.diasJustificados)||0));
+  var porDia=c.multaModo==='fijo'?+c.multaValor:c.valor*c.multaValor/100;
+  var tope=c.valor*c.topePct/100;
+  return{dias:d,monto:r2(Math.min(d*porDia,tope)),tope:r2(tope),topado:d*porDia>tope};
+}
+function estado(tk){
+  var D=S.docs[tk],c=D.contrato,a=D.aceptacion,s=S.seg[tk]||{},h=hoy();
+  if(c.anulado)return{k:'off',l:'Anulado',m:0};
+  if(s.terminado&&a){var r=multa(c,s,s.fechaReal);return r.dias>0?{k:'atr',l:'Terminado con atraso',m:r.monto,x:r}:{k:'ok',l:'Terminado a tiempo',m:0,x:r}}
+  if(!a)return Date.now()>c.aceptarHasta?{k:'off',l:'Enlace vencido',m:0}:{k:'pend',l:'Falta aceptar',m:0};
+  var y=multa(c,s,h);
+  if(dias(c.fechaLimite,h)>0)return{k:'atr',l:'Atrasado '+dias(c.fechaLimite,h)+' d',m:y.monto,x:y};
+  return{k:'curso',l:'En curso',m:0,x:y};
+}
+
+/* ── proveedor ── */
+function provMsg(t,m){app.className='ct-wrap ct-narrow';app.innerHTML='<div class="ct-card ct-empty"><h2>'+esc(t)+'</h2><p>'+esc(m)+'</p></div>'}
+function abrirProveedor(tk){
+  S.modoProv=true;
+  app.className='ct-wrap ct-narrow';app.innerHTML='<div class="ct-empty">Cargando contrato…</div>';
+  db.ref(ROOT+'/docs/'+tk).once('value').then(function(sn){
+    var D=sn.val();
+    if(!D||!D.contrato)return provMsg('Contrato no disponible','Este enlace no es válido. Pide uno nuevo a Atún Tropical.');
+    var c=D.contrato;
+    return huella(c).then(function(h){
+      if(h!==c.hash)return provMsg('Contrato no disponible','No se pudo validar este contrato. Comunícate con Atún Tropical.');
+      if(D.aceptacion){app.innerHTML='<div class="ct-msg ok no-print">Este contrato ya fue aceptado. Puedes guardar esta constancia.</div><div class="ct-card">'+constancia(c,D.aceptacion)+'</div><div class="ct-card">'+docHtml(c)+'</div><div class="ct-actions"><button class="ct-btn pri" data-a="print">Imprimir o guardar PDF</button></div>';return}
+      if(c.anulado)return provMsg('Contrato anulado','Atún Tropical anuló este contrato. Ya no se puede aceptar.');
+      if(Date.now()>c.aceptarHasta)return provMsg('Enlace vencido','El tiempo para aceptar este contrato terminó. Pide uno nuevo a Atún Tropical.');
+      S.pv={tk:tk,c:c};
+      app.innerHTML='<div class="ct-commit"><span>'+(c.tipo==='bienes'?'Te comprometes a entregar hasta el':'Te comprometes a terminar hasta el')+'</span><span class="big">'+esc(fLarga(c.fechaLimite))+'</span>Multa por atraso: '+esc(txtMulta(c))+' calendario, hasta '+usd(c.valor*c.topePct/100)+'.</div>'+
+      '<div class="ct-card">'+docHtml(c)+'</div>'+
+      '<div class="ct-card no-print"><h2>Aceptar contrato</h2><div id="pv-msg"></div><div class="ct-grid"><div class="ct-f"><label for="pv-n">Nombres y apellidos</label><input id="pv-n" maxlength="120" autocomplete="name"></div><div class="ct-f"><label for="pv-i">Cédula</label><input id="pv-i" maxlength="20" inputmode="numeric"></div><div class="ct-f full"><label for="pv-c">Cargo o relación con '+esc(c.provNombre)+'</label><input id="pv-c" maxlength="80" placeholder="Ej.: propietario, gerente, representante"></div></div>'+
+      '<label class="ct-check"><input type="checkbox" id="pv-k"><span>He leído este contrato y lo acepto. Me comprometo a cumplir hasta el <b>'+esc(fDate(c.fechaLimite))+'</b> y conozco la multa por atraso. Declaro que puedo obligar a '+esc(c.provNombre)+'.</span></label>'+
+      '<button class="ct-btn pri" id="pv-b" data-a="aceptar" style="width:100%;padding:13px">Aceptar contrato</button><p class="ct-f"><span class="hint" style="margin-top:8px">Si no estás de acuerdo con la fecha o con el contenido, no aceptes y comunícate con '+esc(c.contacto)+'.</span></p></div>';
+    });
+  }).catch(function(){provMsg('No se pudo cargar','Revisa tu conexión e intenta otra vez.')});
+}
+function aceptar(){
+  var n=$('pv-n').value.trim(),i=$('pv-i').value.trim(),g=$('pv-c').value.trim(),m=$('pv-msg');
+  function err(t){m.innerHTML='<div class="ct-msg err">'+esc(t)+'</div>'}
+  if(n.length<5)return err('Escribe tus nombres y apellidos.');
+  if(!/^[0-9A-Za-z-]{6,20}$/.test(i))return err('Escribe un número de cédula válido.');
+  if(g.length<3)return err('Escribe tu cargo o relación con el proveedor.');
+  if(!$('pv-k').checked)return err('Marca la casilla para aceptar el contrato.');
+  var b=$('pv-b');b.disabled=true;b.textContent='Registrando…';
+  var tk=S.pv.tk;
+  db.ref(ROOT+'/docs/'+tk+'/aceptacion').set({nombre:n,identificacion:i,cargo:g,hash:S.pv.c.hash,aceptadoEn:firebase.database.ServerValue.TIMESTAMP,navegador:navigator.userAgent.slice(0,300)})
+  .then(function(){abrirProveedor(tk)})
+  .catch(function(){b.disabled=false;b.textContent='Aceptar contrato';err('No se pudo registrar. Es posible que el contrato ya no esté disponible. Recarga la página e intenta otra vez.')});
+}
+
+/* ── acceso interno ── */
+function vistaLogin(msg){
+  $('ct-out').hidden=true;$('ct-user').textContent='';
+  app.className='ct-wrap';
+  app.innerHTML='<form class="ct-card ct-login" id="lg"><h2>Ingresar</h2><p class="ct-f" style="margin-bottom:12px"><span class="hint">Usa tu cuenta del Portal Operativo. Solo para Master y Admin.</span></p>'+(msg?'<div class="ct-msg err">'+esc(msg)+'</div>':'')+'<div class="ct-f"><label for="lg-e">Correo</label><input id="lg-e" type="email" autocomplete="username" required></div><div class="ct-f" style="margin-top:10px"><label for="lg-p">Contraseña</label><input id="lg-p" type="password" autocomplete="current-password" required></div><div class="ct-actions"><button class="ct-btn pri" style="width:100%">Entrar</button></div></form>';
+  $('lg').onsubmit=function(ev){ev.preventDefault();firebase.auth().signInWithEmailAndPassword($('lg-e').value.trim(),$('lg-p').value).catch(function(){vistaLogin('Correo o contraseña incorrectos.')})};
+}
+function resolver(u){
+  if(!u)return vistaLogin();
+  if(!u.emailVerified){firebase.auth().signOut();return vistaLogin('Verifica tu correo desde el Portal Operativo antes de entrar.')}
+  db.ref(AUTH+'/uids/'+u.uid).once('value').then(function(s){var id=s.val();if(!id)throw 0;return db.ref(AUTH+'/users/'+id).once('value')}).then(function(s){
+    var p=s.val();if(!p||(p.role!=='master'&&p.role!=='admin')){firebase.auth().signOut();return vistaLogin('Tu usuario no tiene acceso a Contratos.')}
+    S.user=p;$('ct-user').textContent=p.name;$('ct-out').hidden=false;desdePortal();escuchar();
+  }).catch(function(){firebase.auth().signOut();vistaLogin('No se pudo validar tu usuario.')});
+}
+function escuchar(){
+  var pend=3;function listo(){if(pend>0)pend--;if(pend===0&&!S.modoProv&&!tieneFoco())pintar()}
+  db.ref(ROOT+'/docs').on('value',function(s){S.docs=s.val()||{};listo()},errPermiso);
+  db.ref(ROOT+'/seguimiento').on('value',function(s){S.seg=s.val()||{};listo()},errPermiso);
+  db.ref(ROOT+'/config').on('value',function(s){S.cfg=s.val();listo()},errPermiso);
+}
+function errPermiso(){app.innerHTML='<div class="ct-msg err">Firebase no permitió leer los contratos. Revisa que las reglas de <b>atuntro_contratos</b> estén publicadas.</div>'}
+
+/* ── pantallas internas ── */
+function pintar(){
+  app.className='ct-wrap';
+  var tabs='<nav class="ct-tabs no-print">'+[['lista','Contratos'],['nuevo','Nuevo contrato'],['empresa','Datos de la empresa']].map(function(t){return '<button class="ct-tab'+(S.tab===t[0]?' on':'')+'" data-a="tab" data-v="'+t[0]+'">'+t[1]+'</button>'}).join('')+'</nav>';
+  app.innerHTML=tabs+'<div id="ct-v"></div>';
+  var v=$('ct-v');
+  if(S.tab==='lista')v.innerHTML=S.detalle&&S.docs[S.detalle]?vDetalle(S.detalle):vLista();
+  else if(S.tab==='nuevo')vNuevo(v);
+  else v.innerHTML=vEmpresa();
+  if(S.detalle&&S.tab==='lista')verificar(S.detalle);
+}
+function vLista(){
+  var ks=Object.keys(S.docs).filter(function(k){return S.docs[k].contrato}).sort(function(a,b){return S.docs[b].contrato.creadoEn-S.docs[a].contrato.creadoEn});
+  var pe=0,cu=0,at=0,mu=0;ks.forEach(function(k){var e=estado(k);if(e.k==='pend')pe++;if(e.k==='curso')cu++;if(e.k==='atr'&&!(S.seg[k]||{}).terminado)at++;mu+=e.m||0});
+  var q=S.q.toLowerCase();
+  var fs=ks.filter(function(k){var c=S.docs[k].contrato,e=estado(k);return(!S.f||S.f===e.k)&&(!q||(c.numero+' '+c.provNombre+' '+c.descripcion).toLowerCase().indexOf(q)>=0)});
+  return '<div class="ct-kpis"><div class="ct-kpi"><b>'+pe+'</b><span>Faltan aceptar</span></div><div class="ct-kpi"><b>'+cu+'</b><span>En curso</span></div><div class="ct-kpi"><b style="color:var(--red)">'+at+'</b><span>Atrasados</span></div><div class="ct-kpi"><b>'+usd(mu)+'</b><span>Multas calculadas</span></div></div>'+
+  '<div class="ct-toolbar no-print"><input id="ct-q" placeholder="Buscar por número, proveedor o trabajo" value="'+esc(S.q)+'"><select id="ct-f"><option value="">Todos los estados</option>'+[['pend','Falta aceptar'],['curso','En curso'],['atr','Con atraso'],['ok','Terminado a tiempo'],['off','Anulado o vencido']].map(function(o){return '<option value="'+o[0]+'"'+(S.f===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div>'+
+  (fs.length?'<div class="ct-tw"><table class="ct-t"><thead><tr><th>N.º</th><th>Proveedor</th><th>Trabajo</th><th>Buque</th><th>Fecha límite</th><th>Estado</th><th>Multa</th></tr></thead><tbody>'+fs.map(function(k){var c=S.docs[k].contrato,e=estado(k);return '<tr data-a="ver" data-v="'+k+'"><td style="white-space:nowrap">'+esc(c.numero)+'</td><td>'+esc(c.provNombre)+'</td><td>'+esc(c.descripcion.length>60?c.descripcion.slice(0,60)+'…':c.descripcion)+'</td><td>'+esc(BUQUES[c.buque])+'</td><td style="white-space:nowrap">'+fDate(c.fechaLimite)+'</td><td><span class="ct-b b-'+e.k+'">'+esc(e.l)+'</span></td><td>'+(e.m?usd(e.m):'—')+'</td></tr>'}).join('')+'</tbody></table></div>':'<div class="ct-card ct-empty">'+(ks.length?'Ningún contrato coincide con la búsqueda.':'Todavía no hay contratos. Crea el primero en "Nuevo contrato".')+'</div>');
+}
+function vDetalle(tk){
+  var D=S.docs[tk],c=D.contrato,a=D.aceptacion,s=S.seg[tk]||{},e=estado(tk),l=linkDe(tk);
+  var msgW=encodeURIComponent('Hola. Atún Tropical te envía el contrato '+c.numero+' para que revises la fecha comprometida y lo aceptes: '+l);
+  var tel=(c.provTel||'').replace(/\D/g,'');if(tel[0]==='0')tel='593'+tel.slice(1);
+  var h='<div class="ct-actions no-print" style="margin:0 0 12px"><button class="ct-btn" data-a="volver">← Volver</button></div>';
+  h+='<div class="ct-card"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><h2>'+esc(c.numero)+' · '+esc(c.provNombre)+'</h2><span class="ct-b b-'+e.k+'">'+esc(e.l)+'</span></div><dl class="ct-kv"><dt>Trabajo</dt><dd>'+esc(TIPOS[c.tipo])+' · '+esc(BUQUES[c.buque])+'</dd>'+(c.origen?'<dt>Cuadro de Salida</dt><dd>Viaje '+esc(c.origen.viaje)+(c.origen.area?' · '+esc(c.origen.area):'')+'</dd>':'')+'<dt>Fecha límite</dt><dd><b>'+fDate(c.fechaLimite)+'</b></dd><dt>Valor</dt><dd>'+usd(c.valor)+'</dd><dt>Multa</dt><dd>'+esc(txtMulta(c))+', hasta '+usd(c.valor*c.topePct/100)+'</dd>'+(!a?'<dt>Aceptar hasta</dt><dd>'+esc(fTs(c.aceptarHasta))+'</dd>':'')+'</dl>';
+  if(!c.anulado){h+='<div class="no-print"><h3>Enlace para el proveedor</h3><div class="ct-link"><input id="ct-l" readonly value="'+esc(l)+'"><button class="ct-btn" data-a="copiar">Copiar</button>'+(tel?'<a class="ct-btn" target="_blank" rel="noopener" href="https://wa.me/'+tel+'?text='+msgW+'">WhatsApp</a>':'')+(c.provEmail?'<a class="ct-btn" href="mailto:'+esc(c.provEmail)+'?subject='+encodeURIComponent('Contrato '+c.numero+' — Atún Tropical')+'&body='+msgW+'">Correo</a>':'')+'</div></div>'}
+  h+='</div>';
+  if(a){
+    var ref=s.fechaReal||hoy(),m=multa(c,s,ref);
+    h+='<div class="ct-card" id="ct-cons">'+constancia(c,a,false)+'</div>';
+    h+='<div class="ct-card no-print"><h2>Cumplimiento y multa</h2><div class="ct-grid"><div class="ct-f"><label for="sg-f">Fecha real de recepción</label><input type="date" id="sg-f" value="'+esc(s.fechaReal||'')+'" max="'+hoy()+'"><span class="hint">Déjala vacía si aún no termina</span></div><div class="ct-f"><label for="sg-j">Días justificados</label><input type="number" id="sg-j" min="0" step="1" value="'+esc(s.diasJustificados||0)+'"><span class="hint">Por fuerza mayor o causa de Atún Tropical</span></div><div class="ct-f full"><label for="sg-n">Notas y respaldo</label><textarea id="sg-n" rows="2">'+esc(s.notas||'')+'</textarea></div></div><p style="margin-top:12px"><b>'+m.dias+'</b> días multables · Multa '+(s.fechaReal?'final':'a hoy')+': <b>'+usd(m.monto)+'</b>'+(m.topado?' (llegó al máximo)':'')+'</p><div class="ct-actions"><button class="ct-btn pri" data-a="guardarSeg" data-v="'+tk+'">Guardar</button></div></div>';
+  }
+  h+='<div class="ct-card">'+docHtml(c)+'</div><div class="ct-actions no-print"><button class="ct-btn" data-a="print">Imprimir o guardar PDF</button><button class="ct-btn" data-a="duplicar" data-v="'+tk+'">Duplicar</button>'+(a?'<button class="ct-btn" data-a="prorroga" data-v="'+tk+'">Crear prórroga</button>':'')+(!a&&!c.anulado?'<button class="ct-btn dan" data-a="anular" data-v="'+tk+'">Anular</button>':'')+'</div>';
+  return h;
+}
+function verificar(tk){var D=S.docs[tk];if(!D||!D.aceptacion)return;huella(D.contrato).then(function(h){var n=$('ct-cons');if(n)n.innerHTML=constancia(D.contrato,D.aceptacion,h===D.aceptacion.hash&&h===D.contrato.hash)})}
+function cfgOk(){var e=S.cfg;return e&&e.razon&&e.ruc&&e.rep&&e.cargo&&e.ciudad}
+function vEmpresa(){var e=S.cfg||EMPRESA;return '<div class="ct-card"><h2>Datos de la empresa</h2><p class="ct-f" style="margin-bottom:12px"><span class="hint">Estos datos entran en cada contrato nuevo. Los contratos ya creados no cambian.</span></p><div class="ct-grid">'+[['razon','Razón social'],['ruc','RUC'],['rep','Representante legal'],['cargo','Cargo del representante'],['ciudad','Ciudad de los jueces competentes']].map(function(f){return '<div class="ct-f"><label for="em-'+f[0]+'">'+f[1]+'</label><input id="em-'+f[0]+'" value="'+esc(e[f[0]]||'')+'"></div>'}).join('')+'</div><div class="ct-actions"><button class="ct-btn pri" data-a="guardarCfg">Guardar</button></div></div>'}
+function nuevoBase(){var h=hoy();return{tipo:'reparacion',buque:'mf',provNombre:'',provId:'',provRep:'',provEmail:'',provTel:'',descripcion:'',lugar:'',valor:'',formaPago:'',fechaInicio:h,plazoDias:7,fechaLimite:sumar(h,7),garantiaDias:90,multaModo:'pct',multaValor:1,topePct:10,aceptarHasta:sumar(h,7),contacto:(S.user&&S.user.name)||'',prorrogaDe:'',origen:null}}
+function vNuevo(v){
+  if(!cfgOk()){v.innerHTML='<div class="ct-msg warn">Antes de crear contratos, completa los datos de la empresa (RUC y ciudad).</div>'+vEmpresa();return}
+  var d=S.form||(S.form=nuevoBase());
+  function I(id,l,ty,x,h){return '<div class="ct-f'+(x||'')+'"><label for="n-'+id+'">'+l+'</label><input id="n-'+id+'" type="'+ty+'" value="'+esc(d[id])+'">'+(h?'<span class="hint">'+h+'</span>':'')+'</div>'}
+  function Sel(id,l,o){return '<div class="ct-f"><label for="n-'+id+'">'+l+'</label><select id="n-'+id+'">'+Object.keys(o).map(function(k){return '<option value="'+k+'"'+(d[id]===k?' selected':'')+'>'+o[k]+'</option>'}).join('')+'</select></div>'}
+  v.innerHTML='<div class="ct-card">'+(d.origen?'<div class="ct-msg ok">Datos traídos del Cuadro de Salida: viaje '+esc(d.origen.viaje)+' · '+esc(BUQUES[d.buque]||'')+(d.origen.area?' · '+esc(d.origen.area):'')+'. Completa contacto, fechas y lugar.</div>':'')+(d.prorrogaDe?'<div class="ct-msg warn">Prórroga del contrato '+esc(d.prorrogaDe)+'. El proveedor debe aceptarla de nuevo.</div>':'')+'<div id="n-msg"></div><h3>Trabajo</h3><div class="ct-grid">'+Sel('tipo','Tipo',TIPOS)+Sel('buque','Buque',BUQUES)+'<div class="ct-f full"><label for="n-descripcion">Qué debe hacer o entregar</label><textarea id="n-descripcion" rows="3">'+esc(d.descripcion)+'</textarea></div>'+I('lugar','Lugar','text',' full')+'</div>'+
+  '<h3>Proveedor</h3><div class="ct-grid">'+I('provNombre','Nombre o razón social','text')+I('provId','RUC o cédula','text')+I('provRep','Representante (si es empresa)','text')+I('provEmail','Correo','email')+I('provTel','Celular','tel')+'</div>'+
+  '<h3>Fecha comprometida</h3><div class="ct-grid">'+I('fechaInicio','Inicio','date')+I('plazoDias','Plazo en días calendario','number')+I('fechaLimite','Fecha límite','date')+I('aceptarHasta','Aceptar hasta','date','','Después de este día el enlace se cierra')+'</div>'+
+  '<h3>Precio y multa</h3><div class="ct-grid">'+I('valor','Valor total USD','number')+I('formaPago','Forma de pago','text','','Ej.: 50% anticipo y 50% contra entrega')+I('garantiaDias','Garantía en días','number')+Sel('multaModo','Multa por día',{pct:'Porcentaje del valor',fijo:'Monto fijo en USD'})+I('multaValor',d.multaModo==='fijo'?'USD por día':'% por día','number')+I('topePct','Máximo de multa (% del valor)','number')+I('contacto','Contacto de Atún Tropical','text')+'</div>'+
+  '<div class="ct-actions"><button class="ct-btn pri" data-a="crear">Crear contrato y generar enlace</button><button class="ct-btn" data-a="limpiar">Limpiar</button></div></div>';
+}
+function leerForm(){var d=S.form;Object.keys(d).forEach(function(k){var e=$('n-'+k);if(e)d[k]=e.value.trim?e.value.trim():e.value});return d}
+function crear(){
+  var d=leerForm(),m=$('n-msg');function err(t){m.innerHTML='<div class="ct-msg err">'+esc(t)+'</div>';m.scrollIntoView({block:'center'})}
+  var val=+d.valor,mv=+d.multaValor,tp=+d.topePct,pl=+d.plazoDias,ga=+d.garantiaDias;
+  if(d.descripcion.length<5)return err('Describe el trabajo o los bienes.');
+  if(!d.lugar)return err('Indica el lugar.');
+  if(!d.provNombre)return err('Escribe el nombre del proveedor.');
+  if(d.provId.length<5)return err('Escribe el RUC o la cédula del proveedor.');
+  if(!d.provEmail&&!d.provTel)return err('Escribe un correo o un celular del proveedor.');
+  if(d.provEmail&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.provEmail))return err('El correo del proveedor no es válido.');
+  if(!d.fechaInicio||!d.fechaLimite||dias(d.fechaInicio,d.fechaLimite)<0)return err('La fecha límite no puede ser anterior al inicio.');
+  if(dias(hoy(),d.fechaLimite)<0)return err('La fecha límite ya pasó.');
+  if(!d.aceptarHasta||dias(hoy(),d.aceptarHasta)<0||dias(d.aceptarHasta,d.fechaLimite)<0)return err('"Aceptar hasta" debe estar entre hoy y la fecha límite.');
+  if(!(val>0))return err('Escribe el valor total.');
+  if(!d.formaPago)return err('Escribe la forma de pago.');
+  if(!(mv>0))return err('Escribe la multa por día.');
+  if(d.multaModo==='pct'&&mv>5)return err('Revisa la multa: más de 5% por día es muy alta y más fácil de disputar.');
+  if(!(tp>0&&tp<=100))return err('El máximo de multa debe estar entre 1% y 100%.');
+  if(!(ga>=0))return err('Revisa los días de garantía.');
+  if(!d.contacto)return err('Escribe el contacto de Atún Tropical.');
+  var b=document.querySelector('[data-a=crear]');b.disabled=true;
+  var y=hoy().slice(0,4);
+  db.ref(ROOT+'/contador/'+y).transaction(function(n){return(n||0)+1}).then(function(r){
+    var c={numero:'CT-'+y+'-'+('000'+r.snapshot.val()).slice(-4),tipo:d.tipo,buque:d.buque,provNombre:d.provNombre,provId:d.provId,provRep:d.provRep,provEmail:d.provEmail,provTel:d.provTel,descripcion:d.descripcion,lugar:d.lugar,valor:val,formaPago:d.formaPago,fechaInicio:d.fechaInicio,plazoDias:dias(d.fechaInicio,d.fechaLimite),fechaLimite:d.fechaLimite,garantiaDias:ga,multaModo:d.multaModo,multaValor:mv,topePct:tp,aceptarHasta:Date.parse(d.aceptarHasta+'T23:59:59-05:00'),contacto:d.contacto,prorrogaDe:d.prorrogaDe,creadoEn:Date.now(),creadoPor:S.user.name};
+    if(d.origen)c.origen=d.origen;
+    c.clausulas=clausulas(c,S.cfg);
+    return huella(c).then(function(h){c.hash=h;var t=token();return db.ref(ROOT+'/docs/'+t+'/contrato').set(c).then(function(){return t})});
+  }).then(function(t){S.form=null;S.tab='lista';S.detalle=t;toast('Contrato creado. Envía el enlace al proveedor.');pintar()})
+  .catch(function(){b.disabled=false;err('No se pudo crear el contrato. Revisa tu conexión o tus permisos.')});
+}
+function copiarForm(tk,pr){var c=S.docs[tk].contrato,b=nuevoBase();Object.keys(b).forEach(function(k){if(c[k]!==undefined&&k!=='aceptarHasta')b[k]=c[k]});
+  b.fechaInicio=hoy();b.plazoDias=7;b.fechaLimite=sumar(hoy(),7);b.aceptarHasta=sumar(hoy(),7);b.prorrogaDe=pr?c.numero:'';if(pr){b.fechaInicio=c.fechaInicio;b.fechaLimite=sumar(hoy(),7);b.plazoDias=dias(c.fechaInicio,b.fechaLimite)}
+  b.origen=pr&&c.origen?c.origen:null;S.form=b;S.tab='nuevo';S.detalle=null;pintar()}
+
+/* ── acciones ── */
+document.addEventListener('click',function(ev){
+  var el=ev.target.closest('[data-a]');if(!el)return;var a=el.getAttribute('data-a'),v=el.getAttribute('data-v');
+  if(a==='tab'){if(S.tab==='nuevo'&&S.form&&$('n-tipo'))leerForm();S.tab=v;S.detalle=null;pintar()}
+  else if(a==='ver'){S.detalle=v;pintar();scrollTo(0,0)}
+  else if(a==='volver'){S.detalle=null;pintar()}
+  else if(a==='print')print();
+  else if(a==='salir'){firebase.auth().signOut().then(function(){location.reload()})}
+  else if(a==='aceptar')aceptar();
+  else if(a==='crear')crear();
+  else if(a==='limpiar'){S.form=null;pintar()}
+  else if(a==='duplicar')copiarForm(v,false);
+  else if(a==='prorroga')copiarForm(v,true);
+  else if(a==='copiar'){var i=$('ct-l');i.select();var done=function(){toast('Enlace copiado')};if(navigator.clipboard)navigator.clipboard.writeText(i.value).then(done,function(){document.execCommand('copy');done()});else{document.execCommand('copy');done()}}
+  else if(a==='anular'){if(el.dataset.ok){db.ref(ROOT+'/docs/'+v+'/contrato/anulado').set(true).then(function(){toast('Contrato anulado')}).catch(function(){toast('No se pudo anular: es posible que ya esté aceptado')})}else{el.dataset.ok='1';el.textContent='Confirmar: anular'}}
+  else if(a==='guardarCfg'){var e={};['razon','ruc','rep','cargo','ciudad'].forEach(function(k){e[k]=$('em-'+k).value.trim()});db.ref(ROOT+'/config').set(e).then(function(){S.cfg=e;toast('Datos guardados');pintar()}).catch(function(){toast('No se pudo guardar')})}
+  else if(a==='guardarSeg'){var f=$('sg-f').value,j=Math.max(0,parseInt($('sg-j').value,10)||0);if(f&&f>hoy())return toast('La fecha real no puede ser futura');var o={fechaReal:f||null,terminado:!!f,diasJustificados:j,notas:$('sg-n').value.trim(),por:S.user.name,en:Date.now()};db.ref(ROOT+'/seguimiento/'+v).set(o).then(function(){document.activeElement.blur();S.seg[v]=o;toast('Guardado');pintar()}).catch(function(){toast('No se pudo guardar')})}
+});
+document.addEventListener('input',function(ev){
+  var t=ev.target,d=S.form;
+  if(t.id==='ct-q'){S.q=t.value;var p=t.selectionStart;$('ct-v').innerHTML=vLista();var n=$('ct-q');n.focus();n.setSelectionRange(p,p);return}
+  if(!d)return;
+  if(t.id==='n-plazoDias'||t.id==='n-fechaInicio'){var i=$('n-fechaInicio').value,pl=parseInt($('n-plazoDias').value,10);if(i&&pl>=0)$('n-fechaLimite').value=sumar(i,pl)}
+  if(t.id==='n-fechaLimite'){var a=$('n-fechaInicio').value;if(a&&t.value)$('n-plazoDias').value=dias(a,t.value)}
+});
+document.addEventListener('change',function(ev){var t=ev.target;
+  if(t.id==='ct-f'){S.f=t.value;$('ct-v').innerHTML=vLista()}
+  if(t.id==='n-multaModo'){leerForm();S.form.multaValor=t.value==='fijo'?50:1;pintar()}
+});
+
+/* ── enlace con el Cuadro de Salida del portal ── */
+function desdePortal(){
+  var q=new URLSearchParams(location.search);
+  if(q.get('nuevo')==='1'){
+    var pf=null;try{pf=JSON.parse(localStorage.getItem('atuntro_ct_prefill')||'null')}catch(e){}
+    try{localStorage.removeItem('atuntro_ct_prefill')}catch(e){}
+    if(pf&&pf.v===1){var b=nuevoBase();['tipo','buque','descripcion','lugar','provNombre','provId','valor'].forEach(function(k){if(pf[k]!=null&&pf[k]!=='')b[k]=String(pf[k])});
+      b.origen=pf.origen||null;S.form=b;S.tab='nuevo';S.detalle=null}
+  }else if(/^[0-9a-f]{48}$/.test(q.get('ver')||'')){S.tab='lista';S.detalle=q.get('ver')}
+  if(q.get('nuevo')||q.get('ver'))history.replaceState(null,'',location.pathname);
+}
+/* ── arranque ── */
+function iniciar(){
+  try{if(!firebase.apps.length)firebase.initializeApp(CFG);db=firebase.database()}catch(e){return provMsg('No se pudo conectar','Revisa tu conexión e intenta otra vez.')}
+  var tk=new URLSearchParams(location.search).get('c');
+  if(tk){if(/^[0-9a-f]{48}$/.test(tk))abrirProveedor(tk);else provMsg('Contrato no disponible','Este enlace no es válido.');return}
+  firebase.auth().onAuthStateChanged(resolver);
+}
+iniciar();
+return{abrirProveedor:abrirProveedor,vistaInterna:function(){S.modoProv=false;pintar()}};
+})();
+</script>
+</body>
+</html>
