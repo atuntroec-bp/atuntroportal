@@ -17388,6 +17388,13 @@ table.csal-t{width:100%;border-collapse:collapse;font-size:12px}
 .csal-barrow .tr i{display:block;height:100%;background:#2E75B6;border-radius:4px}.csal-barrow b{width:100px;text-align:right;color:#1F4E79}
 .csal-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1F4E79;color:#fff;padding:9px 18px;border-radius:20px;font-size:12px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25)}
 .csal-toast.err{background:#8B2E0A}
+.csal-fill{height:6px;background:#eef2f7;border-radius:4px;overflow:hidden;margin-top:8px}
+.csal-fill.big{height:10px}
+.csal-fill i{display:block;height:100%;border-radius:4px;transition:width .3s}
+.csal-llen{padding:12px 14px}
+.csal-llen-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px;color:#1F4E79}
+.csal-llen-p{font-size:20px}
+.csal-t tr.csal-vacio td{background:#FFFBF2}
 .csal-row label input[type=checkbox]{width:auto}
 @media(max-width:640px){.csal-barrow .nm{width:110px}.csal-barrow b{width:80px}}
 </style>
@@ -17565,7 +17572,7 @@ function render(){
   const L = its(c);
   const cnt = b => L.filter(i=>i.bloque===b).length;
   const pend = L.filter(i=>i.estado==='registrado').length;
-  const tabs = [['resumen','Resumen'],['trab','Trabajos',cnt('trab')],['rep','Repuestos',cnt('rep')],['mat','Materiales y servicios',cnt('mat')],['aprob','Aprobación',pend],['prov','Proveedores',provs().length]];
+  const tabs = [['resumen','Resumen'],['trab','Trabajos',cnt('trab')],['rep','Repuestos',cnt('rep')],['mat','Materiales y servicios',cnt('mat')+((DATA.habituales[st.barco]||[]).length?' · '+llenado(c).pct+'%':'')],['aprob','Aprobación',pend],['prov','Proveedores',provs().length]];
   tabsEl.innerHTML = tabs.map(t=>`<button class="csal-tab ${st.tab===t[0]?'active':''}" onclick="CSAL.tab('${t[0]}')">${t[1]}${t[2]!=null?`<span class="n">${t[2]}</span>`:''}</button>`).join('');
   body.innerHTML = (cerrado()?`<div class="csal-lock">🔒 Cuadro cerrado${c.estadoPor?' por '+quien(c.estadoPor)+' · '+esc(c.estadoPor.f):''}. ${role()==='master'?'Como Master puedes seguir editando o reabrirlo.':'Solo el Master puede reabrirlo.'}</div>`:'') +
     ({resumen:vResumen, trab:()=>vBloque('trab'), rep:()=>vBloque('rep'), mat:()=>vBloque('mat'), aprob:vAprob, prov:vProv})[st.tab]();
@@ -17604,6 +17611,7 @@ function vResumen(){
     <div class="csal-kpi"><div class="l">Presupuesto total</div><div class="v">${$(sum(L,'total'))}</div><div class="s">${L.length} líneas · con IVA${prevTot!=null?` · viaje ${esc(prevKey)}: ${$(prevTot)}`:''}</div></div>
     <div class="csal-kpi" style="border-color:#F0A500"><div class="l">Por aprobar</div><div class="v">${$(sum(pen,'total'))}</div><div class="s">${pen.length} líneas pendientes</div></div>
     <div class="csal-kpi" style="border-color:#2E7D32"><div class="l">Aprobado</div><div class="v">${$(sum(apr,'total'))}</div><div class="s">${apr.length} líneas · neto a pagar ${$(sum(apr,'pagar'))}</div></div>
+    ${(()=>{ const ll=llenado(c); return ll.total?`<div class="csal-kpi" style="border-color:${colorLleno(ll.pct)};cursor:pointer" onclick="CSAL.tab('mat')"><div class="l">Habituales llenos</div><div class="v">${ll.pct}%</div><div class="s">${ll.llenos} de ${ll.total} rubros con valor</div><div class="csal-fill"><i style="width:${ll.pct}%;background:${colorLleno(ll.pct)}"></i></div></div>`:''; })()}
     <div class="csal-kpi" style="border-color:#8B2E0A"><div class="l">Anulado</div><div class="v">${$(sum(anul,'total'))}</div><div class="s">${anul.length} línea${anul.length===1?'':'s'} (no suman al presupuesto)</div></div>
   </div>`;
   h += `<div class="csal-card"><div class="csal-card-h"><h3>Resumen por bloque</h3></div><div class="csal-scroll"><table class="csal-t"><tr><th>Bloque</th><th class="r">Subtotal</th><th class="r">IVA</th><th class="r csal-hide-m">Ret. fuente</th><th class="r csal-hide-m">Ret. IVA</th><th class="r">Neto a pagar</th><th class="r">Aprobado</th><th class="r">Por aprobar</th></tr>`;
@@ -17625,7 +17633,17 @@ function vBloque(b){
   const canAdd = P.registrar(role()) && editable();
   let h = `<div class="csal-tool"><span class="csal-note">${b==='mat'?'Rubros de avituallamiento, consumibles y servicios de la salida.':'Agrupado por área. Al elegir el proveedor se aplican sus retenciones.'}</span>
     <span class="csal-tool-r">${b==='mat'&&P.catalogo(role())?`<button class="csal-btn" onclick="CSAL.habituales()">⚙ Editar habituales</button>`:''}${b==='mat'&&canAdd?`<button class="csal-btn" onclick="CSAL.cargarRubros()">Cargar rubros habituales</button>`:''}${canAdd?`<button class="csal-btn pri" onclick="CSAL.multi({bloque:'${b}'})">+ Agregar líneas</button>`:''}</span></div>`;
-  if (b==='mat') return h + tablaGrupo('Materiales, avituallamiento y servicios', L, b, 'mat');
+  if (b==='mat') {
+    const ll = llenado(c);
+    if (ll.total) {
+      const col = colorLleno(ll.pct);
+      h += `<div class="csal-card csal-llen"><div class="csal-llen-h"><div><b>Rubros habituales llenos</b><span class="csal-note"> · ${ll.llenos} de ${ll.total} con valor</span></div><b class="csal-llen-p" style="color:${col}">${ll.pct}%</b></div>
+        <div class="csal-fill big"><i style="width:${ll.pct}%;background:${col}"></i></div>
+        ${ll.pend.length?`<label class="csal-note csal-chkl" style="margin-top:8px"><input type="checkbox" ${st.soloPend?'checked':''} onchange="CSAL.soloPend(this.checked)"> Ver solo los ${ll.pend.length} pendientes (sin valor)</label>`:'<div class="csal-note" style="margin-top:6px">✓ Todos los rubros habituales tienen valor</div>'}</div>`;
+    }
+    const Lv = st.soloPend ? L.filter(i=>!(Number(i.sub)>0) && i.estado!=='rechazado') : L;
+    return h + tablaGrupo('Materiales, avituallamiento y servicios', Lv, b, 'mat');
+  }
   const grupos = {}; L.forEach(i=>{(grupos[i.area]=grupos[i.area]||[]).push(i);});
   const extra = Array.from(new Set((c.areasExtra||[]).concat(Object.keys(grupos).filter(a=>AREAS_TRAB.indexOf(a)<0))));
   let orden;
@@ -17655,7 +17673,7 @@ function tablaGrupo(titulo, L, b, key, ix){
   L.forEach(i=>{ const r=calc(i); const p=prov(i.prov); const reg=(i.hist||[])[0];
     const canEdit = editable() && ((P.registrar(role()) && i.estado==='registrado') || role()==='master');
     const histTxt = (i.hist||[]).map(x=>x.a+' · '+quienTxt(x)+' · '+x.f).join('\n');
-    h+=`<tr><td>${esc(i.detalle)}${reg?`<div class="csal-hist">por ${quien(reg)}</div>`:''}</td><td style="font-size:11px">${esc(p.nombre)}</td><td class="r">${$(r.sub)}</td><td class="r">${$(r.iva)} <span class="csal-note">${esc(i.iva)}%</span></td><td class="r"><b>${$(r.total)}</b></td><td class="r csal-hide-m">${$(r.pagar)}</td>
+    h+=`<tr${b==='mat'&&!(Number(i.sub)>0)&&i.estado!=='rechazado'?' class="csal-vacio"':''}><td>${esc(i.detalle)}${reg?`<div class="csal-hist">por ${quien(reg)}</div>`:''}</td><td style="font-size:11px">${esc(p.nombre)}</td><td class="r">${$(r.sub)}</td><td class="r">${$(r.iva)} <span class="csal-note">${esc(i.iva)}%</span></td><td class="r"><b>${$(r.total)}</b></td><td class="r csal-hide-m">${$(r.pagar)}</td>
       <td><span class="csal-st st-${esc(i.estado)}" title="${esc(histTxt)}">${ESTADOS[i.estado]||esc(i.estado)}</span></td><td class="csal-hide-m" style="font-size:11px;color:#777">${esc(i.obs)}</td>
       <td><div class="csal-acts">${P.aprobar(role())&&i.estado==='registrado'&&editable()?`<button class="csal-btn ok" onclick="CSAL.aprobar('${i.id}')">Aprobar</button>`:''}${P.aprobar(role())&&(i.estado==='aprobado'||i.estado==='rechazado')&&editable()?`<button class="csal-btn" title="Volver a Registrado" onclick="CSAL.revertir(['${i.id}'])">↩ Revertir</button>`:''}${canEdit?`<button class="csal-btn" onclick="CSAL.editar('${i.id}')">Editar</button>`:''}${canEdit?`<button class="csal-btn warn" title="Eliminar línea" onclick="CSAL.borrar('${i.id}')">✕</button>`:''}</div></td></tr>`; });
   return h + `</table></div></div>`;
@@ -17791,6 +17809,16 @@ function hRender(){
     <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="csal-btn" onclick="CSAL.hAdd()">+ Rubro</button><button class="csal-btn" onclick="CSAL.hCopiar()">Copiar lista del otro barco</button></div>
     <div class="csal-mact"><button class="csal-btn" onclick="CSAL.close()">Cancelar</button><button class="csal-btn pri" onclick="CSAL.hGuardar()">Guardar lista</button></div>`, true);
 }
+function llenado(c){ // % de rubros habituales del barco que ya tienen valor en el viaje
+  const lista = DATA.habituales[st.barco]||[];
+  const mat = its(c).filter(i=>i.bloque==='mat' && i.estado!=='rechazado');
+  const pend = [];
+  let llenos = 0;
+  lista.forEach(r=>{ const k=norm(r.detalle); if (mat.some(i=>norm(i.detalle)===k && (Number(i.sub)||0)>0)) llenos++; else pend.push(r.detalle); });
+  const total = lista.length;
+  return { total:total, llenos:llenos, pct: total ? Math.round(llenos/total*100) : 0, pend:pend };
+}
+function colorLleno(p){ return p>=100 ? '#2E7D32' : p>=50 ? '#2E75B6' : '#F0A500'; }
 function nuevasDesdeHabituales(){
   const c = cur(); const ya = new Set(its(c).filter(i=>i.bloque==='mat').map(i=>norm(i.detalle)));
   const base = Date.now();
@@ -17817,6 +17845,7 @@ const api = {
   tab(t){ st.tab=t; render(); },
   toggle(k){ st.open[k] = st.open[k]===false; render(); },
   ocultarVacias(v){ st.ocultarVacias=v; render(); },
+  soloPend(v){ st.soloPend=v; render(); },
   filtrar(v){ st.filtroProv=v; render(); const i=document.querySelector('#screen-cuadro .csal-search'); if(i){ i.focus(); i.setSelectionRange(v.length,v.length); } },
   setFecha(v){ wMeta({fecha:v}); },
   setEstado(v){
