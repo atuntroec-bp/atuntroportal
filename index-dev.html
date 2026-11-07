@@ -235,6 +235,8 @@
       display: none; max-height: 60vh; overflow-y: auto;
     }
     .alert-bell-panel.open { display: block; animation: fadeUp .2s ease both; }
+    /* El grupo con el panel abierto va por encima de los otros botones (🤝 📅) */
+    .alert-bell-wrap:has(.alert-bell-panel.open), .alert-bell-wrap.panel-open { z-index: 3005; }
     .bell-panel-title { font-size: 12px; font-weight: 700; color: #1F4E79; padding: 6px 8px 10px; border-bottom: 1px solid #eee; margin-bottom: 6px; }
     .bell-item { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 8px; cursor: pointer; transition: background .15s; }
     .bell-item:hover { background: #f4f7fb; }
