@@ -34,6 +34,7 @@ Nunca editar `index.html` ni `dist/index.html` a mano: se sobrescriben en cada b
 | `contable.js` | Dashboard Contable |
 | `boyas.js` | Control de Boyas |
 | `plano-red.js` | Plano de Red |
+| `pwa.js` | App instalable: registra el service worker y recarga sola con cada versión nueva |
 
 ## Cómo hacer un cambio
 
@@ -45,7 +46,27 @@ Nunca editar `index.html` ni `dist/index.html` a mano: se sobrescriben en cada b
 Para un módulo nuevo: crear `js/<nombre>.js`, agregar su `<script src="js/<nombre>.js"></script>`
 en `index-dev.html`, y si guarda datos en Firebase, agregar la regla de su nodo (ver abajo).
 
-## Firebase
+## App instalable (PWA)
+
+El portal se puede instalar en el teléfono como app **Atuntro**:
+Android → Chrome → menú → *Instalar app*; iPhone → Safari → Compartir → *Añadir a pantalla de inicio*.
+
+| Archivo | Qué es |
+|---|---|
+| `pwa/manifest.webmanifest` | Nombre, colores e íconos de la app |
+| `pwa/sw.template.js` | Plantilla del service worker (`build.py` genera `sw.js`) |
+| `pwa/offline.html` | Pantalla "Sin conexión" |
+| `pwa/icons/` | Íconos. Para cambiarlos: `python3 pwa/generar_iconos.py logo.png` |
+| `js/pwa.js` | Registro del service worker y recarga automática |
+
+- `build.py` copia todo esto junto a `index.html` y `dist/index.html`, y pone en `sw.js` una versión
+  que es el hash del portal: solo cambia cuando el portal cambia.
+- Con internet el portal siempre se carga del servidor (nunca una copia vieja). Sin internet al
+  abrir, muestra la pantalla "Sin conexión".
+- Al publicar una versión nueva, la app abierta se recarga sola; si alguien está escribiendo en un
+  campo, espera a que termine.
+- Al publicar, subir también `sw.js`, `manifest.webmanifest`, `offline.html` e `icons/` de la raíz.
+
 
 - **Inicio de sesión:** correo y contraseña (Firebase Authentication). El acceso anónimo está desactivado.
 - **Usuarios y roles:** `atuntro_portal_auth_v2` (`users`, `emails`, `uids`). Solo un master los cambia.
