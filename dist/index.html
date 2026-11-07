@@ -235,6 +235,8 @@
       display: none; max-height: 60vh; overflow-y: auto;
     }
     .alert-bell-panel.open { display: block; animation: fadeUp .2s ease both; }
+    /* El grupo con el panel abierto va por encima de los otros botones (🤝 📅) */
+    .alert-bell-wrap:has(.alert-bell-panel.open), .alert-bell-wrap.panel-open { z-index: 3005; }
     .bell-panel-title { font-size: 12px; font-weight: 700; color: #1F4E79; padding: 6px 8px 10px; border-bottom: 1px solid #eee; margin-bottom: 6px; }
     .bell-item { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 8px; cursor: pointer; transition: background .15s; }
     .bell-item:hover { background: #f4f7fb; }
@@ -4723,6 +4725,28 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     ['reu-bell-panel','ev-bell-panel'].forEach(function(id){ var o = document.getElementById(id); if (o) o.classList.remove('open'); });
     if (panel) panel.classList.toggle('open');
   }
+  // Paneles de 🔔 🤝 📅 en celular: se abren justo debajo del botón (no encima de la
+  // fila de botones) y su grupo queda por encima de los demás íconos.
+  function posBellPanels() {
+    var movil = window.innerWidth <= 600;
+    document.querySelectorAll('.alert-bell-wrap').forEach(function(w){
+      var p = w.querySelector('.alert-bell-panel'), btn = w.querySelector('.alert-bell');
+      var abierto = !!(p && p.classList.contains('open'));
+      w.classList.toggle('panel-open', abierto);
+      if (!p) return;
+      if (!movil || !abierto || !btn) { p.style.top = ''; p.style.maxHeight = ''; return; }
+      var t = Math.max(10, Math.round(btn.getBoundingClientRect().bottom + 10));
+      p.style.top = t + 'px';
+      // si un contenedor con animación desplaza el panel, se compensa
+      var d = Math.round(p.getBoundingClientRect().top) - t;
+      if (d) p.style.top = (t - d) + 'px';
+      p.style.maxHeight = Math.max(200, window.innerHeight - t - 16) + 'px';
+    });
+  }
+  document.addEventListener('click', function(){ setTimeout(posBellPanels, 0); });
+  window.addEventListener('resize', posBellPanels);
+  window.addEventListener('scroll', posBellPanels, { passive: true });
+
   // Cerrar el panel al hacer clic fuera
   document.addEventListener('click', function(e){
     var wrap = document.getElementById('alert-bell-wrap');
