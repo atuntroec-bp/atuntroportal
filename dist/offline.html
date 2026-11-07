@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0D2137" />
+  <title>Atuntro — Sin conexión</title>
+  <style>
+    html, body { margin: 0; height: 100%; }
+    body {
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(160deg, #0D2137 0%, #1F4E79 100%);
+      color: #fff; font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      padding: 24px; box-sizing: border-box; text-align: center;
+    }
+    .box { max-width: 340px; }
+    img { width: 88px; height: 88px; border-radius: 20px; margin-bottom: 20px; }
+    h1 { font-size: 22px; margin: 0 0 10px; }
+    p { font-size: 15px; line-height: 1.5; color: rgba(255,255,255,.75); margin: 0 0 24px; }
+    button {
+      background: #41A8E8; color: #0D2137; border: 0; border-radius: 10px;
+      padding: 13px 28px; font-size: 16px; font-weight: 700; cursor: pointer;
+    }
+    button:active { transform: scale(.97); }
+    small { display: block; margin-top: 18px; font-size: 12px; color: rgba(255,255,255,.45); }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <img src="icons/icon-192.png" alt="Atuntro" />
+    <h1>Sin conexión</h1>
+    <p>El portal necesita internet para abrir. Revisa la señal o el Starlink y vuelve a intentar.</p>
+    <button type="button" onclick="location.reload()">Reintentar</button>
+    <small>Se abrirá solo cuando vuelva la conexión.</small>
+  </div>
+  <script>
+    window.addEventListener('online', function () { location.reload(); });
+  </script>
+</body>
+</html>
