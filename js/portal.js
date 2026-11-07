@@ -879,6 +879,28 @@
     ['reu-bell-panel','ev-bell-panel'].forEach(function(id){ var o = document.getElementById(id); if (o) o.classList.remove('open'); });
     if (panel) panel.classList.toggle('open');
   }
+  // Paneles de 🔔 🤝 📅 en celular: se abren justo debajo del botón (no encima de la
+  // fila de botones) y su grupo queda por encima de los demás íconos.
+  function posBellPanels() {
+    var movil = window.innerWidth <= 600;
+    document.querySelectorAll('.alert-bell-wrap').forEach(function(w){
+      var p = w.querySelector('.alert-bell-panel'), btn = w.querySelector('.alert-bell');
+      var abierto = !!(p && p.classList.contains('open'));
+      w.classList.toggle('panel-open', abierto);
+      if (!p) return;
+      if (!movil || !abierto || !btn) { p.style.top = ''; p.style.maxHeight = ''; return; }
+      var t = Math.max(10, Math.round(btn.getBoundingClientRect().bottom + 10));
+      p.style.top = t + 'px';
+      // si un contenedor con animación desplaza el panel, se compensa
+      var d = Math.round(p.getBoundingClientRect().top) - t;
+      if (d) p.style.top = (t - d) + 'px';
+      p.style.maxHeight = Math.max(200, window.innerHeight - t - 16) + 'px';
+    });
+  }
+  document.addEventListener('click', function(){ setTimeout(posBellPanels, 0); });
+  window.addEventListener('resize', posBellPanels);
+  window.addEventListener('scroll', posBellPanels, { passive: true });
+
   // Cerrar el panel al hacer clic fuera
   document.addEventListener('click', function(e){
     var wrap = document.getElementById('alert-bell-wrap');
