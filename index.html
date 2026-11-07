@@ -3,6 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>
+    /* iPhone/iPad: evita el zoom automático al tocar un campo de texto con letra menor a 16px.
+       Solo en iOS (allí el usuario igual puede ampliar con dos dedos); Android no se toca. */
+    (function () {
+      var ios = /iP(hone|od|ad)/.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if (ios) document.querySelector('meta[name=viewport]')
+        .setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0');
+    })();
+  </script>
   <title>ATÚN TROPICAL — Portal Operativo</title>
   <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest" />
@@ -1342,6 +1352,16 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
   .login-logo-img svg { height:64px; width:auto; display:block; }
   .dash-logo-img { display:inline-block; }
   .dash-logo-img svg { height:48px; width:auto; display:block; }
+  /* Logo oficial sin fondo (login y encabezado) */
+  .logo-badge { display:inline-flex !important; align-items:center; justify-content:center;
+    background:none; filter:drop-shadow(0 2px 10px rgba(0,0,0,.35)) !important; }
+  .logo-badge img { display:block; width:100%; height:auto; }
+  .login-logo-img.logo-badge { width:150px; height:auto; margin-bottom:14px; }
+  .dash-logo-img.logo-badge { width:58px; height:auto; flex:0 0 58px; }
+  @media (max-width:480px) {
+    .login-logo-img.logo-badge { width:130px; }
+    .dash-logo-img.logo-badge { width:50px; flex-basis:50px; }
+  }
 
 
 /* ══════════════════════════════════════════════════════════════
@@ -3046,20 +3066,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 <!-- ══════════════════ LOGIN ══════════════════ -->
 <div id="screen-login" class="screen active">
   <div class="login-card">
-    <div class="login-logo-img"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 80">
-  <defs>
-    <linearGradient id="atLg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0D2E4F"/>
-      <stop offset="100%" style="stop-color:#1A4E79"/>
-    </linearGradient>
-  </defs>
-  <rect width="220" height="80" rx="14" fill="url(#atLg)"/>
-  <rect x="1" y="1" width="218" height="78" rx="13" fill="none" stroke="rgba(65,168,232,0.3)" stroke-width="1.5"/>
-  <text x="110" y="31" font-family="Arial,sans-serif" font-weight="900" font-size="26" fill="#41A8E8" text-anchor="middle" letter-spacing="2">ATÚN</text>
-  <text x="110" y="52" font-family="Arial,sans-serif" font-weight="700" font-size="14" fill="#FFFFFF" text-anchor="middle" letter-spacing="5">TROPICAL</text>
-  <text x="110" y="68" font-family="Arial,sans-serif" font-size="8" fill="rgba(255,255,255,0.4)" text-anchor="middle" letter-spacing="3">ATUNTRO S.A.</text>
-  <line x1="30" y1="58" x2="190" y2="58" stroke="rgba(65,168,232,0.2)" stroke-width="1"/>
-</svg></div>
+    <div class="login-logo-img logo-badge"><img src="icons/logo.png" alt="Atuntro S.A. — Atún Tropical" /></div>
     <div class="login-brand">ATÚN TROPICAL</div>
     <div class="login-sub">Portal Operativo</div>
 
@@ -3081,20 +3088,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     <!-- Header -->
     <div class="dash-header fade-up">
       <div class="dash-logo">
-        <div class="dash-logo-img"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 80">
-  <defs>
-    <linearGradient id="atLg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0D2E4F"/>
-      <stop offset="100%" style="stop-color:#1A4E79"/>
-    </linearGradient>
-  </defs>
-  <rect width="220" height="80" rx="14" fill="url(#atLg)"/>
-  <rect x="1" y="1" width="218" height="78" rx="13" fill="none" stroke="rgba(65,168,232,0.3)" stroke-width="1.5"/>
-  <text x="110" y="31" font-family="Arial,sans-serif" font-weight="900" font-size="26" fill="#41A8E8" text-anchor="middle" letter-spacing="2">ATÚN</text>
-  <text x="110" y="52" font-family="Arial,sans-serif" font-weight="700" font-size="14" fill="#FFFFFF" text-anchor="middle" letter-spacing="5">TROPICAL</text>
-  <text x="110" y="68" font-family="Arial,sans-serif" font-size="8" fill="rgba(255,255,255,0.4)" text-anchor="middle" letter-spacing="3">ATUNTRO S.A.</text>
-  <line x1="30" y1="58" x2="190" y2="58" stroke="rgba(65,168,232,0.2)" stroke-width="1"/>
-</svg></div>
+        <div class="dash-logo-img logo-badge"><img src="icons/logo.png" alt="Atuntro S.A." /></div>
         <div class="dash-logo-text">
           <h2>ATÚN TROPICAL</h2>
           <p>Portal Operativo</p>
