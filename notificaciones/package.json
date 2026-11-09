@@ -1,0 +1,12 @@
+{
+  "name": "atuntro-notificaciones",
+  "private": true,
+  "type": "module",
+  "description": "Enviador de notificaciones push del Portal ATUNTRO (GitHub Actions)",
+  "scripts": {
+    "enviar": "node enviar.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}
