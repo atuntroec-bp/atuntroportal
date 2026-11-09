@@ -235,6 +235,28 @@
       display: none; max-height: 60vh; overflow-y: auto;
     }
     .alert-bell-panel.open { display: block; animation: fadeUp .2s ease both; }
+    /* ─── AVISO PARA ACTIVAR NOTIFICACIONES ─────────── */
+    .notif-aviso { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      margin: 0 0 18px; padding: 14px 16px; border-radius: 14px;
+      background: rgba(65,168,232,0.10); border: 1px solid rgba(65,168,232,0.30); }
+    .notif-aviso-ico { font-size: 24px; line-height: 1; }
+    .notif-aviso-txt { flex: 1 1 220px; font-size: 13px; line-height: 1.45; color: rgba(255,255,255,0.78); }
+    .notif-aviso-txt b { display: block; color: #fff; font-size: 14px; margin-bottom: 2px; }
+    .notif-aviso-btns { display: flex; gap: 8px; }
+    .notif-btn-si, .notif-btn-no { border-radius: 10px; padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .notif-btn-si { background: #41A8E8; color: #0D2137; border: 0; }
+    .notif-btn-si:disabled { opacity: .6; cursor: default; }
+    .notif-btn-no { background: transparent; color: rgba(255,255,255,0.75); border: 1px solid rgba(255,255,255,0.22); }
+    @media (max-width: 600px) { .notif-aviso-btns { width: 100%; } .notif-aviso-btns button { flex: 1; } }
+    /* Vínculos de responsables (panel Usuarios) */
+    .notif-vinc { margin-top: 22px; }
+    .notif-vinc-help { font-size: 12px; color: rgba(255,255,255,0.55); margin: 0 0 10px; line-height: 1.45; }
+    .notif-vinc-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .notif-vinc-name { flex: 0 0 170px; font-size: 13px; font-weight: 600; color: #fff; }
+    .notif-vinc-row select { flex: 1 1 180px; }
+    .notif-vinc-st { font-size: 11px; font-weight: 600; }
+    .notif-vinc-st.ok { color: #6FCF97; } .notif-vinc-st.pend { color: #F2C94C; } .notif-vinc-st.no { color: #FF8A80; }
+    .notif-vinc-load { font-size: 12px; color: rgba(255,255,255,0.5); padding: 6px 0; }
     /* El grupo con el panel abierto va por encima de los otros botones (🤝 📅) */
     .alert-bell-wrap:has(.alert-bell-panel.open), .alert-bell-wrap.panel-open { z-index: 3005; }
     .bell-panel-title { font-size: 12px; font-weight: 700; color: #1F4E79; padding: 6px 8px 10px; border-bottom: 1px solid #eee; margin-bottom: 6px; }
@@ -3840,6 +3862,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 
@@ -6160,6 +6183,7 @@ table.csal-t{width:100%;border-collapse:collapse;font-size:12px}
 }
 </style>
 
+<script src="js/notificaciones.js"></script>
 <script src="js/pwa.js"></script>
 </body>
 </html>

@@ -8,7 +8,7 @@
  *  - Cada build cambia VERSION (hash de index.html); eso hace que los teléfonos
  *    detecten la versión nueva y la app se recargue sola (ver js/pwa.js).
  */
-var VERSION = 'b1188cd03b83';
+var VERSION = 'c9a1d5b9aa61';
 var CACHE = 'atuntro-shell-' + VERSION;
 var PRECACHE = [
   'offline.html',
@@ -31,6 +31,43 @@ self.addEventListener('activate', function (event) {
         return k.indexOf('atuntro-shell-') === 0 && k !== CACHE;
       }).map(function (k) { return caches.delete(k); }));
     }).then(function () { return self.clients.claim(); })
+  );
+});
+
+/* ── Notificaciones push (las envía notificaciones/enviar.mjs vía Firebase Cloud Messaging) ──
+ * Llegan como mensajes de datos: { title, body, url, tag }. Siempre se muestra una notificación
+ * (iPhone exige mostrar algo por cada push, o deja de entregarlos). */
+self.addEventListener('push', function (event) {
+  var d = {};
+  try {
+    var j = event.data ? event.data.json() : {};
+    d = j.data || j.notification || j;          // formato FCM o directo
+  } catch (e) {
+    d = { body: event.data ? event.data.text() : '' };
+  }
+  var title = d.title || 'Atuntro';
+  event.waitUntil(self.registration.showNotification(title, {
+    body: d.body || '',
+    icon: 'icons/icon-192.png',
+    tag: d.tag || undefined,
+    renotify: !!d.tag,
+    lang: 'es',
+    data: { url: d.url || './' }
+  }));
+});
+
+self.addEventListener('notificationclick', function (event) {
+  event.notification.close();
+  var destino = new URL((event.notification.data && event.notification.data.url) || './', self.registration.scope).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (ventanas) {
+      for (var i = 0; i < ventanas.length; i++) {
+        if (ventanas[i].url.indexOf(self.registration.scope) === 0 && 'focus' in ventanas[i]) {
+          return ventanas[i].focus();
+        }
+      }
+      return self.clients.openWindow(destino);
+    })
   );
 });
 
