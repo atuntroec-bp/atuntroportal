@@ -257,6 +257,71 @@
     .notif-vinc-st { font-size: 11px; font-weight: 600; }
     .notif-vinc-st.ok { color: #6FCF97; } .notif-vinc-st.pend { color: #F2C94C; } .notif-vinc-st.no { color: #FF8A80; }
     .notif-vinc-load { font-size: 12px; color: rgba(255,255,255,0.5); padding: 6px 0; }
+    .notif-vinc-sub { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.8); margin: 16px 0 6px; }
+    .notif-editar-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%;
+      background: rgba(65,168,232,0.12); border: 1px solid rgba(65,168,232,0.35); color: #fff; border-radius: 12px;
+      padding: 12px 14px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; text-align: left; }
+    .notif-editar-btn span { font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.6); }
+    .notif-editar-btn:hover { background: rgba(65,168,232,0.2); }
+    /* ─── VENTANA EDITAR NOTIFICACIONES ─────────── */
+    .notif-ed-overlay { z-index: 600; }
+    .notif-ed-overlay .notif-ed-panel { max-width: 920px; max-height: 92vh; }
+    .notif-ed-intro { font-size: 12px; line-height: 1.5; color: rgba(255,255,255,0.65); margin-bottom: 16px; }
+    .notif-ed-card { border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); border-radius: 12px; margin-bottom: 12px; }
+    .notif-ed-card.off .notif-ed-card-body { opacity: .4; pointer-events: none; }
+    .notif-ed-card-head { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .notif-ed-card-head b { display: block; color: #fff; font-size: 14px; }
+    .notif-ed-card-head small { display: block; color: rgba(255,255,255,0.55); font-size: 11px; margin-top: 2px; }
+    .notif-ed-card-body { padding: 12px 14px; }
+    .notif-ed-cols { display: grid; grid-template-columns: 1fr 300px; gap: 16px; }
+    .notif-ed-col { min-width: 0; }
+    .notif-ed-lbl { display: block; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.6); margin: 10px 0 4px; text-transform: uppercase; letter-spacing: .4px; }
+    .notif-ed-col > .notif-ed-lbl:first-child { margin-top: 0; }
+    .notif-ed-tpl { width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 8px; color: #fff; padding: 8px 10px; font-size: 13px; font-family: inherit; resize: vertical; outline: none; }
+    .notif-ed-tpl:focus, .notif-ed-num:focus, .notif-ed-dias:focus { border-color: #41A8E8; }
+    .notif-ed-chips { margin-top: 8px; font-size: 11px; color: rgba(255,255,255,0.5); display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .notif-ed-chip { background: rgba(65,168,232,0.14); border: 1px solid rgba(65,168,232,0.3); color: #9fd4f5; border-radius: 6px;
+      padding: 3px 7px; font-size: 11px; cursor: pointer; font-family: ui-monospace, Menlo, monospace; }
+    .notif-ed-chip:hover { background: rgba(65,168,232,0.28); }
+    .notif-ed-nota { display: block; font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 8px; }
+    .notif-ed-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0; color: rgba(255,255,255,0.75); font-size: 12px; }
+    .notif-ed-fila .notif-ed-lbl { margin: 0; text-transform: none; letter-spacing: 0; font-size: 12px; }
+    .notif-ed-num, .notif-ed-dias { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14); border-radius: 7px;
+      color: #fff; padding: 5px 8px; font-size: 12px; width: 70px; outline: none; font-family: inherit; }
+    .notif-ed-dias { width: 110px; }
+    .notif-ed-roles { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+    .notif-ed-chk { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: rgba(255,255,255,0.8); cursor: pointer; margin-top: 4px; }
+    .notif-ed-switch { position: relative; width: 40px; height: 22px; flex: 0 0 40px; cursor: pointer; }
+    .notif-ed-switch input { opacity: 0; width: 0; height: 0; }
+    .notif-ed-switch span { position: absolute; inset: 0; background: rgba(255,255,255,0.18); border-radius: 22px; transition: .2s; }
+    .notif-ed-switch span::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+    .notif-ed-switch input:checked + span { background: #41A8E8; }
+    .notif-ed-switch input:checked + span::before { transform: translateX(18px); }
+    .notif-ed-prev { margin-bottom: 8px; }
+    .notif-ed-ios { display: flex; gap: 10px; align-items: flex-start; background: rgba(245,245,247,0.92); color: #111;
+      border-radius: 16px; padding: 10px 12px; box-shadow: 0 6px 18px rgba(0,0,0,.3); font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+    .notif-ed-ios img { width: 34px; height: 34px; border-radius: 8px; flex: 0 0 34px; background: #fff; }
+    .notif-ed-ios > div { min-width: 0; flex: 1; }
+    .notif-ed-ios-top { display: flex; justify-content: space-between; font-size: 10px; color: #6b6b70; text-transform: uppercase; letter-spacing: .3px; }
+    .notif-ed-ios b { display: block; font-size: 13px; margin-top: 1px; overflow-wrap: anywhere; }
+    .notif-ed-ios p { margin: 2px 0 0; font-size: 12.5px; line-height: 1.35; color: #222; overflow-wrap: anywhere;
+      display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+    .notif-ed-acc { display: flex; gap: 6px; flex-wrap: wrap; }
+    .notif-ed-mini { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.16); color: rgba(255,255,255,0.85);
+      border-radius: 8px; padding: 6px 10px; font-size: 11px; cursor: pointer; font-family: inherit; }
+    .notif-ed-mini:hover { background: rgba(255,255,255,0.13); }
+    .notif-ed-foot { display: flex; align-items: center; gap: 8px; padding: 12px 22px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .notif-ed-foot #notif-ed-estado { flex: 1; font-size: 12px; color: rgba(255,255,255,0.65); }
+    @media (max-width: 700px) {
+      .notif-ed-cols { grid-template-columns: 1fr; }
+      .admin-overlay.notif-ed-overlay { padding: 0; }
+      .admin-overlay.notif-ed-overlay .notif-ed-panel { max-height: 100%; height: 100%; border-radius: 0; border: 0; }
+      .notif-ed-overlay .admin-panel-head { border-radius: 0; }
+      .notif-ed-foot { flex-wrap: wrap; padding: 10px 14px; }
+      .notif-ed-foot #notif-ed-estado { flex-basis: 100%; }
+      .notif-ed-foot button { flex: 1; }
+    }
     /* El grupo con el panel abierto va por encima de los otros botones (🤝 📅) */
     .alert-bell-wrap:has(.alert-bell-panel.open), .alert-bell-wrap.panel-open { z-index: 3005; }
     .bell-panel-title { font-size: 12px; font-weight: 700; color: #1F4E79; padding: 6px 8px 10px; border-bottom: 1px solid #eee; margin-bottom: 6px; }
@@ -528,6 +593,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .gt-status-cell:hover .gt-badge{filter:brightness(.92)}
 .gt-edit-icon{font-size:11px;color:#ddd;cursor:pointer;padding:2px 5px;border-radius:4px;transition:.15s;display:inline-block}
 .gt-edit-icon:hover{color:#2E75B6;background:#E6F1FB}
+.gt-vence{display:inline-block;margin-left:6px;font-size:10px;font-weight:600;color:#2E75B6;background:#E6F1FB;border-radius:4px;padding:1px 6px}
+.gt-vence-pronto{color:#7A4B00;background:#FFF1D6}
+.gt-vence-tarde{color:#fff;background:#D85A30}
+.gt-opt{font-weight:400;color:#999;text-transform:none;letter-spacing:0}
 /* Modo admin: columna extra para eliminar tareas una por una */
 .gt-table-wrap.gt-admin-mode .gt-table-head{grid-template-columns:34px 42px 1fr 110px 124px 100px 44px}
 .gt-table-wrap.gt-admin-mode .gt-task-row{grid-template-columns:34px 42px 1fr 110px 124px 100px 44px}
@@ -3623,8 +3692,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
         </select>
       </div>
       <div class="gt-modal-row">
-        <label>Fecha</label>
+        <label>Fecha de registro</label>
         <input type="date" id="gm-fecha">
+      </div>
+      <div class="gt-modal-row">
+        <label>Vence <span class="gt-opt">(opcional)</span></label>
+        <input type="date" id="gm-vence" title="Con fecha de vencimiento se envía el recordatorio y el aviso de tarea vencida">
       </div>
     </div>
     <div class="gt-modal-row">
@@ -6183,6 +6256,7 @@ table.csal-t{width:100%;border-collapse:collapse;font-size:12px}
 }
 </style>
 
+<script src="js/notif-plantillas.js"></script>
 <script src="js/notificaciones.js"></script>
 <script src="js/pwa.js"></script>
 </body>
