@@ -261,7 +261,9 @@
     document.getElementById('screen-login').classList.add('active');
     var lp = document.getElementById('login-pass'); if (lp) lp.value = '';
     document.getElementById('login-error').textContent = '';
-    try { if (firebase.auth().currentUser) firebase.auth().signOut(); } catch(e) {}
+    var cerrarSesion = function(){ try { if (firebase.auth().currentUser) firebase.auth().signOut(); } catch(e) {} };
+    // Antes de cerrar sesión, este dispositivo deja de recibir notificaciones de esta persona.
+    if (window.NOTIF && NOTIF.alSalir) NOTIF.alSalir().then(cerrarSesion, cerrarSesion); else cerrarSesion();
     window.scrollTo(0,0);
   }
   function goBack() { logout(); }
@@ -507,6 +509,7 @@
       authSetDashboard(id, u);
       enterDashboard(u.role);
       startPendingLiveSync();
+      try { if (window.NOTIF) NOTIF.iniciar(); } catch(e) {}
       db.ref(AUTH_PATH + '/users').on('value', function(s){ if (s.val()) AUTH.users = s.val(); });
     }).catch(function(e) {
       firebase.auth().signOut();
@@ -588,7 +591,7 @@
   }
 
   // ── Admin panel (solo master) ──────────────────────────────────────────────
-  function openAdminPanel() { renderAdminUsers(); document.getElementById('admin-overlay').classList.add('show'); }
+  function openAdminPanel() { renderAdminUsers(); try { if (window.NOTIF) NOTIF.renderVinculos(); } catch(e) {} document.getElementById('admin-overlay').classList.add('show'); }
   function closeAdminPanel() { document.getElementById('admin-overlay').classList.remove('show'); }
   function escAttr(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
   function renderAdminUsers() {
