@@ -367,7 +367,7 @@ const GT = (() => {
         <div>
           <div class="gt-task-text${done?' gt-struck':''}">${esc(t.tarea)}</div>
           ${t.obs?`<div class="gt-task-obs">📌 ${esc(t.obs)}</div>`:''}
-          <div class="gt-task-fecha">${t.fecha}
+          <div class="gt-task-fecha"><span title="Fecha de registro">${t.fecha}</span>${venceBadge(t)}
             <span class="gt-edit-icon" onclick="GT.openModal(${t.id})" title="Editar">✎</span>
           </div>
         </div>
@@ -377,6 +377,17 @@ const GT = (() => {
         ${adminUnlocked ? `<div class="gt-del-cell"><button class="gt-row-del" onclick="GT.deleteTask(${t.id})" title="Eliminar esta tarea">🗑</button></div>` : ''}
       </div>`;
     }).join('');
+  }
+
+  // Etiqueta de vencimiento: rojo si ya venció, ámbar si vence en 2 días o menos.
+  function venceBadge(t) {
+    if (!t.vence) return '';
+    const dd = t.vence.slice(8,10) + '/' + t.vence.slice(5,7) + '/' + t.vence.slice(0,4);
+    if (t.estado === 'COMPLETO') return ` <span class="gt-vence">⏳ vence ${dd}</span>`;
+    const dias = Math.round((new Date(t.vence + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 864e5);
+    const cls = dias < 0 ? ' gt-vence-tarde' : dias <= 2 ? ' gt-vence-pronto' : '';
+    const txt = dias < 0 ? `venció ${dd}` : dias === 0 ? 'vence hoy' : dias === 1 ? 'vence mañana' : `vence ${dd}`;
+    return ` <span class="gt-vence${cls}">⏳ ${txt}</span>`;
   }
 
   /* ── Completadas: plegar / borrar ───────────────────── */
@@ -429,6 +440,7 @@ const GT = (() => {
       document.getElementById('gm-dept').value   = t.dept;
       document.getElementById('gm-estado').value = t.estado;
       document.getElementById('gm-fecha').value  = t.fecha;
+      document.getElementById('gm-vence').value  = t.vence || '';
       document.getElementById('gm-obs').value    = t.obs || '';
     } else {
       buildModalRespSel('');
@@ -436,6 +448,7 @@ const GT = (() => {
       document.getElementById('gm-dept').value   = seesAll() ? 'Administrativo' : allowedDepts()[0];
       document.getElementById('gm-estado').value = 'PENDIENTE';
       document.getElementById('gm-fecha').value  = today();
+      document.getElementById('gm-vence').value  = '';
       document.getElementById('gm-obs').value    = '';
     }
     // Un rol de área solo puede crear/editar tareas de su propio departamento.
@@ -449,16 +462,22 @@ const GT = (() => {
   function saveTask() {
     const tarea = document.getElementById('gm-tarea').value.trim();
     if (!tarea) { alert('Ingrese la descripción de la tarea.'); return; }
-    const obj = {
+    const fecha = document.getElementById('gm-fecha').value || today();
+    const vence = document.getElementById('gm-vence').value || '';
+    if (vence && vence < fecha && !confirm('La fecha de vencimiento es anterior a la fecha de registro. ¿Guardar de todas formas?')) return;
+    const anterior = editingId ? (tasks.find(t => t.id === editingId) || {}) : {};
+    const obj = Object.assign({}, anterior, {   // conserva datos extra (rutina, buque, zarpe…)
       id:     editingId || nextId++,
-      fecha:  document.getElementById('gm-fecha').value  || today(),
+      fecha,
+      vence,
       tarea,
       dept:   document.getElementById('gm-dept').value,
       resp:   document.getElementById('gm-resp').value,
       estado: document.getElementById('gm-estado').value,
       obs:    document.getElementById('gm-obs').value.trim(),
       upd:    today(),
-    };
+    });
+    if (!obj.vence) delete obj.vence;
     if (editingId) {
       const idx = tasks.findIndex(t => t.id === editingId);
       if (idx > -1) tasks[idx] = obj;
@@ -775,6 +794,7 @@ const GT = (() => {
       tasks.push({
         id: nextId++,
         fecha: addDays(zarpe, it.offset),
+        vence: addDays(zarpe, it.offset),
         tarea: it.tarea,
         dept: it.dept,
         resp: it.resp,
