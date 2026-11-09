@@ -1,0 +1,33 @@
+name: Notificaciones del portal
+
+# Revisa cada 15 minutos si hay avisos que enviar (tareas, reuniones, eventos,
+# documentos por vencer y checklists vencidos). Ver notificaciones/enviar.mjs.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: notificaciones
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  enviar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Instalar
+        working-directory: notificaciones
+        run: npm install --no-audit --no-fund --loglevel=error
+      - name: Enviar avisos
+        working-directory: notificaciones
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node enviar.mjs
