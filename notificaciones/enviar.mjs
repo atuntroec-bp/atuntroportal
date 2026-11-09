@@ -101,6 +101,7 @@ async function cargar() {
   admin = (await import('firebase-admin')).default;
   const cred = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
   if (!cred.client_email) throw new Error('Falta el secreto FIREBASE_SERVICE_ACCOUNT');
+  console.log(`Cuenta de servicio del proyecto: ${cred.project_id}`);
   admin.initializeApp({ credential: admin.credential.cert(cred), databaseURL: DATABASE_URL });
   db = admin.database();
   const leer = async (p) => (await db.ref(p).once('value')).val();
@@ -322,7 +323,7 @@ async function enviarA(tokens, a) {
     if (resp.success) { bien++; return; }
     const code = resp.error && resp.error.code;
     if (['messaging/registration-token-not-registered', 'messaging/invalid-registration-token', 'messaging/invalid-argument'].includes(code)) invalidos.push(lst[i][0]);
-    else console.warn('  error de envío:', code);
+    else console.warn('  error de envío:', code, '—', resp.error && resp.error.message);
   });
   return { ok: bien > 0 || invalidos.length === lst.length, invalidos, enviados: bien };
 }
