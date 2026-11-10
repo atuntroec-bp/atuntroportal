@@ -343,15 +343,20 @@ async function main() {
   console.log(`[${HOY} ${String(h).padStart(2, '0')}:${String(local.getUTCMinutes()).padStart(2, '0')}] ` +
     `${avisos.length} aviso(s) pendiente(s) · ${EN_HORARIO ? 'en horario' : 'fuera de horario'} (${hIni}:00–${hFin}:00)`);
 
+  // El repositorio es público y el registro de GitHub Actions lo ve cualquiera:
+  // en producción solo se imprimen cantidades, nunca nombres, usuarios ni textos.
+  // Con --dry (pruebas locales) sí se muestra el detalle.
   let enviadosTotal = 0, errores = 0;
+  const personas = new Set(), porTipo = {};
   const enviarLista = async (u, lst) => {
     for (const a of lst) {
       try {
         const r = await enviarA(d.tokens[u], a);
         r.invalidos.forEach((id) => { upd[`atuntro_push/tokens/${u}/${id}`] = null; });
         if (r.ok) { marcar(a.claves); enviadosTotal += r.enviados; }
-        if (DRY || r.enviados) console.log(`  → ${(d.users[u] && d.users[u].name) || u} (${r.enviados} disp.): ${a.titulo} | ${a.cuerpo}`);
-      } catch (e) { errores++; console.warn('  fallo al enviar a', u, e.message); }
+        if (r.enviados) { personas.add(u); porTipo[a.tipo || 'otro'] = (porTipo[a.tipo || 'otro'] || 0) + 1; }
+        if (DRY) console.log(`  → ${(d.users[u] && d.users[u].name) || u} (${r.enviados} disp.): ${a.titulo} | ${a.cuerpo}`);
+      } catch (e) { errores++; console.warn('  fallo al enviar:', e.code || '', e.message); }
     }
   };
 
@@ -391,13 +396,16 @@ async function main() {
   Object.entries(d.enviados).forEach(([k, v]) => { if (typeof v === 'number' && v < corte) upd[`atuntro_push/enviados/${k}`] = null; });
   upd['atuntro_push/ultimaEjecucion'] = { ts, avisos: avisos.length, enviados: enviadosTotal, errores };
 
+  const detalle = Object.entries(porTipo).map(([t, n]) => `${t}: ${n}`).join(', ');
+  const resumen = `${enviadosTotal} notificación(es) entregada(s) a ${personas.size} persona(s)` +
+    (detalle ? ` (${detalle})` : '') + `, ${errores} error(es).`;
   if (DRY || SNAPSHOT) {
     if (opt('--salida')) writeFileSync(opt('--salida'), JSON.stringify({ avisos, upd }, null, 1));
-    console.log(`(prueba) ${Object.keys(upd).length} cambio(s) que se guardarían.`);
+    console.log(`(prueba) ${resumen} · ${Object.keys(upd).length} cambio(s) que se guardarían.`);
     return;
   }
   await db.ref().update(upd);
-  console.log(`Listo: ${enviadosTotal} notificación(es) entregada(s), ${errores} error(es).`);
+  console.log(`Listo: ${resumen}`);
   await admin.app().delete();
 }
 
