@@ -101,7 +101,7 @@ async function cargar() {
   admin = (await import('firebase-admin')).default;
   const cred = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
   if (!cred.client_email) throw new Error('Falta el secreto FIREBASE_SERVICE_ACCOUNT');
-  console.log(`Cuenta de servicio del proyecto: ${cred.project_id}`);
+  console.log(`Cuenta de servicio: ${cred.client_email} (proyecto ${cred.project_id})`);
   admin.initializeApp({ credential: admin.credential.cert(cred), databaseURL: DATABASE_URL });
   db = admin.database();
   const leer = async (p) => (await db.ref(p).once('value')).val();
