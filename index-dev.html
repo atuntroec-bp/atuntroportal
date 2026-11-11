@@ -1667,7 +1667,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
 .ckops-wrap .urg-config h4 {font-size:11px;font-weight:700;color:#1F4E79;margin-bottom:10px}
 
-.ckops-wrap .urg-row {display:flex;align-items:center;gap:10px;margin-bottom:7px;flex-wrap:wrap}
+.ckops-wrap .urg-row {display:flex;align-items:center;gap:10px;margin-bottom:7px;flex-wrap:wrap;color:#555}
 
 .ckops-wrap .urg-row label {font-size:11px;color:#555;min-width:220px}
 
@@ -2276,9 +2276,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
   /* TRIP BAR — dos columnas */
   
-.ckadm-wrap .trip-bar {padding:12px 14px;gap:12px;display:grid;grid-template-columns:1fr 1fr}
+.ckadm-wrap .trip-bar {padding:12px 14px;gap:12px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.ckadm-wrap .tf {min-width:0}
   
-.ckadm-wrap .tf input {font-size:14px;min-width:0}
+.ckadm-wrap .tf input {font-size:14px;min-width:0 !important;width:100%;box-sizing:border-box}
   
 .ckadm-wrap .tf label {font-size:10px}
 
@@ -2669,7 +2670,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
 /* Viajes panel */
 .equipos-wrap table.vjt{border-collapse:collapse;width:100%;max-width:520px;font-size:12px}
-@media(max-width:360px){
+@media(max-width:560px){
   .equipos-wrap table.vjt{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
 }
 .equipos-wrap table.vjt th{background:#245e93;color:#fff;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:6px 8px;text-align:left}
@@ -2786,7 +2787,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
 .simulador-wrap .sim-screen{display:none}.simulador-wrap .sim-screen.active{display:block}
 
-.simulador-wrap .card{background:#fff;border-radius:10px;padding:18px 20px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.simulador-wrap .card{background:#fff;color:#1a1a18;border-radius:10px;padding:18px 20px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .simulador-wrap .card-title{font-size:12px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 
 .simulador-wrap .grid-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
@@ -2807,7 +2808,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .simulador-wrap .carga-wrap{background:#fff;border-radius:10px;padding:16px 20px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .simulador-wrap .carga-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
 .simulador-wrap .carga-title{font-size:12px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.7px}
-.simulador-wrap .carga-nums{font-size:13px;font-weight:700}
+.simulador-wrap .carga-nums{font-size:13px;font-weight:700;color:#1a1a18}
 .simulador-wrap .carga-track{height:18px;background:#f0ece6;border-radius:9px;overflow:hidden;display:flex;gap:1px}
 .simulador-wrap .carga-seg{height:100%;transition:width .35s ease;border-radius:0}
 .simulador-wrap .carga-seg:first-child{border-radius:9px 0 0 9px}
@@ -2949,6 +2950,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .simulador-wrap .sem-dot.crit{background:#D85A30}
 
 @media(max-width:620px){
+/* tablas anchas: se deslizan dentro de su tarjeta en vez de ensanchar la pantalla */
+.simulador-wrap .card:has(> table.data-table){overflow-x:auto;-webkit-overflow-scrolling:touch}
+.simulador-wrap .data-table th, .simulador-wrap .data-table td{padding-left:8px;padding-right:8px}
 .simulador-wrap .grid-2, .simulador-wrap .grid-4{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .simulador-wrap .brkevn-grid, .simulador-wrap .cashflow{grid-template-columns:minmax(0,1fr)}
 }
@@ -3289,7 +3293,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     </div>
     <div class="gt-header-btns">
       <button class="gt-admin-btn" id="gt-rut-btn" onclick="GT.openRutinas()" title="Rutinas de tareas por viaje (solo admin)">🚢 Rutinas</button>
-      <button class="gt-admin-btn" onclick="GT.openPin()" title="Panel de administrador">🔒 Admin</button>
+      <button class="gt-admin-btn" id="gt-admin-btn" onclick="GT.openAdmin()" title="Panel de administrador (solo Administración y Gerencia)">⚙ Admin</button>
       <button class="gt-add-btn"   onclick="GT.openModal()">+ Nueva tarea</button>
     </div>
   </div>
@@ -3712,26 +3716,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 </div>
 
 
-<!-- ── Modal: PIN de administrador ── -->
-<div id="gt-pin-bg" class="gt-modal-overlay" onclick="GT.closePinBg(event)">
-  <div class="gt-modal" style="max-width:340px">
-    <div class="gt-pin-lock">🔒</div>
-    <div class="gt-modal-title" style="justify-content:center;margin-bottom:4px">Panel de Administrador</div>
-    <div class="gt-pin-subtitle">Ingrese la contraseña para continuar</div>
-    <div class="gt-modal-row">
-      <input class="gt-pin-input" type="password" id="gt-pin-input"
-        placeholder="••••••••"
-        onkeydown="if(event.key==='Enter')GT.checkPin()">
-    </div>
-    <div class="gt-pin-error" id="gt-pin-error"></div>
-    <div class="gt-modal-actions">
-      <button class="gt-btn-cancel" onclick="GT.closePin()">Cancelar</button>
-      <button class="gt-btn-save"   onclick="GT.checkPin()">Entrar</button>
-    </div>
-  </div>
-</div>
-
-
 <!-- ── Modal: Panel de admin ── -->
 <div id="gt-admin-bg" class="gt-modal-overlay" onclick="GT.closeAdminBg(event)">
   <div class="gt-modal" style="max-width:520px">
@@ -3770,17 +3754,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
           </div>
 
         </div>
-      </div>
-
-      <!-- SECCIÓN: Seguridad -->
-      <div class="gt-admin-section">
-        <div class="gt-admin-section-title">🔑 Contraseña de Admin</div>
-        <div class="gt-chpass-row">
-          <input class="gt-chpass-input" type="password" id="gt-pass-new"  placeholder="Nueva contraseña…">
-          <input class="gt-chpass-input" type="password" id="gt-pass-conf" placeholder="Confirmar…" style="margin-left:0">
-          <button class="gt-btn-neutral" onclick="GT.changePass()">Cambiar</button>
-        </div>
-        <div class="gt-chpass-msg" id="gt-pass-msg"></div>
       </div>
 
     </div><!-- /gt-admin-body -->
@@ -3951,36 +3924,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 ════════════════════════════════════════════ -->
 <div id="screen-checklist-ops" class="screen">
   <div class="ckops-wrap">
-<!-- ══ LOGIN ══ -->
-<div class="login-overlay" id="ckops-loginOverlay">
-  <div class="login-box">
-    <div class="login-logo">ATUNTRO S.A.</div>
-    <h2>Checklist de Operaciones</h2>
-    <p class="login-sub" id="ckops-loginSub">¿Quién eres?</p>
-
-    <!-- PASO 1: elegir nombre -->
-    <div class="name-step" id="ckops-nameStep">
-      <div class="login-section-title">Selecciona tu nombre</div>
-      <div class="person-grid" id="ckops-loginGrid"></div>
-    </div>
-
-    <!-- PASO 2: PIN -->
-    <div class="pin-step" id="ckops-pinStep" style="display:none">
-      <div class="pin-who" id="ckops-pinWho"></div>
-      <div class="pin-label">Ingresa tu PIN (4 dígitos)</div>
-      <div class="pin-input-wrap">
-        <input type="password" id="ckops-pinInput" class="pin-input" maxlength="4"
-          inputmode="numeric" pattern="[0-9]*" autocomplete="off"
-          placeholder="••••" oninput="onPinInput()" onkeydown="if(event.key==='Enter')tryLogin()">
-        <button class="pin-toggle" onclick="togglePinVis()" id="ckops-pinToggle" title="Mostrar/ocultar">👁</button>
-      </div>
-      <div class="login-err" id="ckops-loginErr"></div>
-      <button class="login-btn" onclick="tryLogin()">Ingresar →</button>
-      <span class="login-back" onclick="backToNames()">← Volver a seleccionar nombre</span>
-    </div>
-  </div>
-</div>
-
 <!-- ══ HISTORY MODAL ══ -->
 <div class="modal-bg" id="ckops-histModal" onclick="if(event.target===this)this.classList.remove('show')">
   <div class="modal">
@@ -3993,14 +3936,13 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 <!-- ══ PEOPLE MODAL ══ -->
 <div class="modal-bg" id="ckops-peopleModal" onclick="if(event.target===this)this.classList.remove('show')">
   <div class="modal">
-    <h3>Gestionar personas y PINs</h3>
+    <h3>Gestionar personas</h3>
     <div id="ckops-peopleList"></div>
     <div class="padd">
       <input type="text" id="ckops-newName" placeholder="Nombre completo" style="flex:2;min-width:120px">
-      <input type="text" id="ckops-newPin" placeholder="PIN (4 dígitos)" maxlength="4" style="width:110px;font-family:monospace" inputmode="numeric">
       <button onclick="addPerson()">Agregar</button>
     </div>
-    <p style="font-size:10px;color:#aaa;margin-top:8px">El PIN identifica a la persona — no es seguridad de datos sensibles.</p>
+    <p style="font-size:10px;color:#aaa;margin-top:8px">Los responsables se eligen de los usuarios del portal. Esta lista solo se usa de respaldo si los usuarios aún no cargan.</p>
     <button class="modal-close" onclick="document.getElementById('ckops-peopleModal').classList.remove('show')">Cerrar</button>
   </div>
 </div>
@@ -4082,21 +4024,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 ════════════════════════════════════════════ -->
 <div id="screen-checklist-adm" class="screen">
   <div class="ckadm-wrap">
-<!-- LOGIN -->
-<div id="ckadm-loginScreen">
-  <div class="login-box">
-    <div class="login-logo">🚢</div>
-    <div class="login-title">ATUNTRO S.A.</div>
-    <div class="login-sub">Ciclo Operativo · Uso interno</div>
-    <label class="login-lbl">¿Quién eres?</label>
-    <div class="user-grid" id="ckadm-userGrid"></div>
-    <input class="pin-input" type="password" id="ckadm-pinInput" maxlength="6" placeholder="••••" inputmode="numeric"
-      onkeydown="if(event.key==='Enter') doLogin()">
-    <button class="login-btn" onclick="doLogin()">Entrar →</button>
-    <div class="login-error" id="ckadm-loginError"></div>
-  </div>
-</div>
-
 <!-- APP -->
 <div class="app" id="ckadm-mainApp" style="display:none">
   <div class="header">
@@ -4118,7 +4045,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
   <div id="ckadm-adminPanel">
     <div class="ap-title">⚙️ Panel de Administrador</div>
     <div class="ap-grid">
-      <button class="ap-btn" onclick="openMo('moUsers')">👥 Gestionar usuarios</button>
       <!-- Responsables ahora son los usuarios del portal (admin y contabilidad); se gestionan en Administrar usuarios -->
       <button class="ap-btn" onclick="resetVessel()">🔄 Reiniciar viaje</button>
       <button class="ap-btn" onclick="exportLog()">📊 Exportar historial Excel</button>
@@ -4153,19 +4079,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
   <div id="ckadm-phasesContainer"></div>
   <div class="footer">ATUNTRO S.A. — Uso interno — v9.0 · Firebase</div>
-</div>
-
-<!-- MODAL: USUARIOS -->
-<div class="mo" id="ckadm-moUsers">
-  <div class="mbox">
-    <h3>👥 Gestionar usuarios</h3>
-    <p>Cambia nombre y PIN de cada usuario. El PIN se muestra al hacer clic en el campo.</p>
-    <div id="ckadm-moUsersBody"></div>
-    <div class="mo-btns">
-      <button class="mb cancel" onclick="closeMo('moUsers')">Cancelar</button>
-      <button class="mb ok" onclick="saveUsers()">💾 Guardar</button>
-    </div>
-  </div>
 </div>
 
 <!-- MODAL: RESPONSABLES -->
@@ -4569,7 +4482,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
         </div>
         <div class="field" style="margin:0">
           <label>Anticipo tripulación ($)</label>
-          <input type="number" id="p_anticipo" value="0" oninput="SIMULADOR.sv();SIMULADOR.cp()" style="border:1.5px solid #e0ddd8;border-radius:7px;padding:8px 10px;font-size:13px;font-family:inherit;color:#1a1a18;background:#fafaf8;outline:none;transition:.2s;width:100%">
+          <input type="number" id="p_anticipo_caja" value="0" oninput="document.getElementById('p_anticipo').value=this.value;SIMULADOR.sv();SIMULADOR.cp()" style="border:1.5px solid #e0ddd8;border-radius:7px;padding:8px 10px;font-size:13px;font-family:inherit;color:#1a1a18;background:#fafaf8;outline:none;transition:.2s;width:100%">
           <div style="font-size:10px;color:#bbb;margin-top:3px">Anticipo zarpe + saldo viaje anterior</div>
         </div>
       </div>

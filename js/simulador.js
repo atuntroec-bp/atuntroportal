@@ -214,6 +214,9 @@ function cp(){
   const rolTM=+document.getElementById('p_rol_tm').value||0;
   const sal  =+document.getElementById('p_sal').value||0;
   const ant  =+document.getElementById('p_anticipo').value||0;
+  // El anticipo se muestra también en "Desglose de la caja de zarpe": ambos campos van iguales.
+  const antCaja=document.getElementById('p_anticipo_caja');
+  if(antCaja && document.activeElement!==antCaja) antCaja.value=document.getElementById('p_anticipo').value;
 
   // TM absolutas por especie
   const tm_yf  =+document.getElementById('tm_yf').value||0;
@@ -1137,7 +1140,7 @@ function calcAuditoria(){
     ].filter(r=>r[2]>0);
     costoTbody.innerHTML=rows.map(([lbl,det,monto,ptm])=>`
       <tr>
-        <td>${lbl}</td>
+        <td>${eh(lbl)}</td>
         <td class="r" style="color:#aaa;font-size:11px">${det}</td>
         <td class="r" style="color:#D85A30;font-weight:600">${fmt(monto)}</td>
         <td class="r" style="color:#888">${ptm>0?'$'+Math.round(ptm)+'/TM':'—'}</td>
@@ -1294,7 +1297,8 @@ function load(){
     applyRemoteData(data);
     try{ localStorage.setItem(SK, json); }catch(e){}
 
-    // re-render todo lo que depende de arrays
+    // re-render todo lo que depende de arrays (sin sacar el cursor del campo abierto)
+    conFoco(()=>{
     SIMULADOR.renderProvs();
     const c=document.getElementById('inv_container');
     if(c) SIMULADOR.renderInvFull(+document.getElementById('sim_dias').value||0, c);
@@ -1309,6 +1313,7 @@ function load(){
     if(document.getElementById('screen-comp')?.classList.contains('active')) calcComp();
     if(document.getElementById('screen-sim')?.classList.contains('active')) SIMULADOR.calcSim();
     if(document.getElementById('screen-auditoria')?.classList.contains('active')) calcAuditoria();
+    });
 
     flashSave();
   };
@@ -1329,7 +1334,22 @@ function fmt(n){
   return n<0?'('+s+')':s;
 }
 function setText(id,val){const el=document.getElementById(id);if(el) el.textContent=val;}
-function eh(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function eh(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+// Redibuja conservando el campo donde está el cursor (un cambio de otro usuario
+// ya no saca el foco de quien tiene un campo abierto).
+function conFoco(fn){
+  const box=document.getElementById('screen-simulador'), a=document.activeElement;
+  let k=null;
+  if(box && a && box.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){
+    k={id:a.id, idx:[...box.querySelectorAll('input,textarea,select')].indexOf(a), tag:a.tagName, cls:a.className, val:a.value};
+    try{ k.s=a.selectionStart; k.e=a.selectionEnd; }catch(x){}
+  }
+  fn();
+  if(!k || (document.activeElement===a && a.isConnected)) return;
+  const el = k.id ? document.getElementById(k.id) : [...box.querySelectorAll('input,textarea,select')][k.idx];
+  if(!el || el.tagName!==k.tag || el.className!==k.cls || el.value!==k.val) return;
+  try{ el.focus({preventScroll:true}); if(k.s!=null) el.setSelectionRange(k.s,k.e); }catch(x){}
+}
 
 let _inputDefaults = null;
 function captureDefaults(){

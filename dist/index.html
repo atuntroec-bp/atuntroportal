@@ -1667,7 +1667,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
 .ckops-wrap .urg-config h4 {font-size:11px;font-weight:700;color:#1F4E79;margin-bottom:10px}
 
-.ckops-wrap .urg-row {display:flex;align-items:center;gap:10px;margin-bottom:7px;flex-wrap:wrap}
+.ckops-wrap .urg-row {display:flex;align-items:center;gap:10px;margin-bottom:7px;flex-wrap:wrap;color:#555}
 
 .ckops-wrap .urg-row label {font-size:11px;color:#555;min-width:220px}
 
@@ -2276,9 +2276,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
   /* TRIP BAR — dos columnas */
   
-.ckadm-wrap .trip-bar {padding:12px 14px;gap:12px;display:grid;grid-template-columns:1fr 1fr}
+.ckadm-wrap .trip-bar {padding:12px 14px;gap:12px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.ckadm-wrap .tf {min-width:0}
   
-.ckadm-wrap .tf input {font-size:14px;min-width:0}
+.ckadm-wrap .tf input {font-size:14px;min-width:0 !important;width:100%;box-sizing:border-box}
   
 .ckadm-wrap .tf label {font-size:10px}
 
@@ -2669,7 +2670,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
 /* Viajes panel */
 .equipos-wrap table.vjt{border-collapse:collapse;width:100%;max-width:520px;font-size:12px}
-@media(max-width:360px){
+@media(max-width:560px){
   .equipos-wrap table.vjt{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
 }
 .equipos-wrap table.vjt th{background:#245e93;color:#fff;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:6px 8px;text-align:left}
@@ -2786,7 +2787,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 
 .simulador-wrap .sim-screen{display:none}.simulador-wrap .sim-screen.active{display:block}
 
-.simulador-wrap .card{background:#fff;border-radius:10px;padding:18px 20px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.simulador-wrap .card{background:#fff;color:#1a1a18;border-radius:10px;padding:18px 20px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .simulador-wrap .card-title{font-size:12px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 
 .simulador-wrap .grid-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
@@ -2807,7 +2808,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .simulador-wrap .carga-wrap{background:#fff;border-radius:10px;padding:16px 20px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .simulador-wrap .carga-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
 .simulador-wrap .carga-title{font-size:12px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.7px}
-.simulador-wrap .carga-nums{font-size:13px;font-weight:700}
+.simulador-wrap .carga-nums{font-size:13px;font-weight:700;color:#1a1a18}
 .simulador-wrap .carga-track{height:18px;background:#f0ece6;border-radius:9px;overflow:hidden;display:flex;gap:1px}
 .simulador-wrap .carga-seg{height:100%;transition:width .35s ease;border-radius:0}
 .simulador-wrap .carga-seg:first-child{border-radius:9px 0 0 9px}
@@ -2949,6 +2950,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .simulador-wrap .sem-dot.crit{background:#D85A30}
 
 @media(max-width:620px){
+/* tablas anchas: se deslizan dentro de su tarjeta en vez de ensanchar la pantalla */
+.simulador-wrap .card:has(> table.data-table){overflow-x:auto;-webkit-overflow-scrolling:touch}
+.simulador-wrap .data-table th, .simulador-wrap .data-table td{padding-left:8px;padding-right:8px}
 .simulador-wrap .grid-2, .simulador-wrap .grid-4{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .simulador-wrap .brkevn-grid, .simulador-wrap .cashflow{grid-template-columns:minmax(0,1fr)}
 }
@@ -3289,7 +3293,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     </div>
     <div class="gt-header-btns">
       <button class="gt-admin-btn" id="gt-rut-btn" onclick="GT.openRutinas()" title="Rutinas de tareas por viaje (solo admin)">🚢 Rutinas</button>
-      <button class="gt-admin-btn" onclick="GT.openPin()" title="Panel de administrador">🔒 Admin</button>
+      <button class="gt-admin-btn" id="gt-admin-btn" onclick="GT.openAdmin()" title="Panel de administrador (solo Administración y Gerencia)">⚙ Admin</button>
       <button class="gt-add-btn"   onclick="GT.openModal()">+ Nueva tarea</button>
     </div>
   </div>
@@ -3712,26 +3716,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 </div>
 
 
-<!-- ── Modal: PIN de administrador ── -->
-<div id="gt-pin-bg" class="gt-modal-overlay" onclick="GT.closePinBg(event)">
-  <div class="gt-modal" style="max-width:340px">
-    <div class="gt-pin-lock">🔒</div>
-    <div class="gt-modal-title" style="justify-content:center;margin-bottom:4px">Panel de Administrador</div>
-    <div class="gt-pin-subtitle">Ingrese la contraseña para continuar</div>
-    <div class="gt-modal-row">
-      <input class="gt-pin-input" type="password" id="gt-pin-input"
-        placeholder="••••••••"
-        onkeydown="if(event.key==='Enter')GT.checkPin()">
-    </div>
-    <div class="gt-pin-error" id="gt-pin-error"></div>
-    <div class="gt-modal-actions">
-      <button class="gt-btn-cancel" onclick="GT.closePin()">Cancelar</button>
-      <button class="gt-btn-save"   onclick="GT.checkPin()">Entrar</button>
-    </div>
-  </div>
-</div>
-
-
 <!-- ── Modal: Panel de admin ── -->
 <div id="gt-admin-bg" class="gt-modal-overlay" onclick="GT.closeAdminBg(event)">
   <div class="gt-modal" style="max-width:520px">
@@ -3770,17 +3754,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
           </div>
 
         </div>
-      </div>
-
-      <!-- SECCIÓN: Seguridad -->
-      <div class="gt-admin-section">
-        <div class="gt-admin-section-title">🔑 Contraseña de Admin</div>
-        <div class="gt-chpass-row">
-          <input class="gt-chpass-input" type="password" id="gt-pass-new"  placeholder="Nueva contraseña…">
-          <input class="gt-chpass-input" type="password" id="gt-pass-conf" placeholder="Confirmar…" style="margin-left:0">
-          <button class="gt-btn-neutral" onclick="GT.changePass()">Cambiar</button>
-        </div>
-        <div class="gt-chpass-msg" id="gt-pass-msg"></div>
       </div>
 
     </div><!-- /gt-admin-body -->
@@ -4745,8 +4718,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     cb(fallback());
   }
 
-  function loadPendingTasks() {
-    _readTasks(function(tasks){
+  function loadPendingTasks(yaLeidas) {
+    // Si el aviso en vivo ya trajo las tareas, se usan esas (evita leer dos veces la base).
+    var leer = Array.isArray(yaLeidas) ? function(cb){ cb(yaLeidas); } : _readTasks;
+    leer(function(tasks){
       var ok = pendingAllowedDepts();
       var mine = tasks.filter(function(t){ return ok.indexOf(t.dept) !== -1; });
       var pending = mine.filter(function(t){ return t.estado !== 'COMPLETO'; });
@@ -4811,7 +4786,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
             return '<div class="bell-item" onclick="openGestor()">' +
               '<span class="bell-item-dot ' + escHtml(t.estado) + '"></span>' +
               '<span class="bell-item-txt" title="' + escHtml(t.tarea||'') + '">' + escHtml(t.tarea||'') + '</span>' +
-              '<span class="bell-item-est ' + escHtml(t.estado) + '">' + (lbl[t.estado]||t.estado) + '</span>' +
+              '<span class="bell-item-est ' + escHtml(t.estado) + '">' + escHtml(lbl[t.estado]||t.estado) + '</span>' +
             '</div>';
           }).join('') +
           (n>8 ? '<div class="bell-more" onclick="openGestor()">+ '+(n-8)+' más — ver todas</div>' : '') +
@@ -5046,10 +5021,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       _pendingSyncOn = true;
       try { startReuBell(); } catch(e) {}
       try { startEvBell(); } catch(e) {}
-      firebase.database().ref('atuntro_gestor/data').on('value', function(){
+      firebase.database().ref('atuntro_gestor/data').on('value', function(snap){
         // solo re-render si el dashboard está visible
         var dash = document.getElementById('screen-dashboard');
-        if (dash && dash.classList.contains('active')) loadPendingTasks();
+        var d = snap && snap.val();
+        if (dash && dash.classList.contains('active')) loadPendingTasks(d && Array.isArray(d.tasks) ? d.tasks.filter(Boolean) : undefined);
       });
     } catch(e) { setTimeout(startPendingLiveSync, 1500); }
   }
@@ -5069,7 +5045,6 @@ const GT = (() => {
 
   /* ── Constantes ─────────────────────────────────────── */
   const STORAGE_KEY  = 'atuntro_gestor_v1';
-  const DEFAULT_PASS = 'ATUNTRO';          // contraseña por defecto
   const ESTADO_ORDER = ['PENDIENTE','INCOMPLETO','COMPLETO'];
   const COLORS = {
     COMPLETO:  { fill:'#1D9E75', bg:'#E1F5EE', tx:'#085041' },
@@ -5162,14 +5137,13 @@ const GT = (() => {
   /* ── State ──────────────────────────────────────────── */
   let tasks       = [];
   let responsables= [];
-  let adminPass   = DEFAULT_PASS;
   let nextId      = 200;
   let editingId   = null;
   let rutinas     = [];        // plantillas de tareas recurrentes por viaje
   let nextRutinaId= 1;
   let editingRutId= null;      // rutina que se está editando
   let rutDraft    = [];        // items de la rutina en edición (buffer del modal)
-  let adminUnlocked = false;   // true tras validar la contraseña admin del Gestor
+  let adminUnlocked = false;   // true cuando Administración o Gerencia abre el panel Admin o Rutinas
 
   /* ── Firebase (sincronización entre dispositivos) ───── */
   const FIREBASE_CONFIG = {
@@ -5209,11 +5183,12 @@ const GT = (() => {
       if (!data) return; // nada remoto aún — lo que hay en local se sube en el próximo save()
       tasks        = data.tasks        || tasks;
       responsables = data.responsables || responsables;
-      adminPass    = data.adminPass    || adminPass;
       nextId       = data.nextId       || nextId;
       rutinas      = data.rutinas      || rutinas;
       nextRutinaId = data.nextRutinaId || nextRutinaId;
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, adminPass, nextId, rutinas, nextRutinaId })); } catch(e) {}
+      // Limpieza única: la contraseña antigua del Gestor ya no se usa; se borra de la base.
+      if (data.adminPass !== undefined && esAdmin()) { ref.child('adminPass').remove().catch(()=>{}); }
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, nextId, rutinas, nextRutinaId })); } catch(e) {}
       renderAll();
       flashSaveDot();
     };
@@ -5228,14 +5203,12 @@ const GT = (() => {
         const p    = JSON.parse(raw);
         tasks       = p.tasks        || [];
         responsables= p.responsables || [...SEED_RESP];
-        adminPass   = p.adminPass    || DEFAULT_PASS;
         nextId      = p.nextId       || 200;
         rutinas     = p.rutinas      || JSON.parse(JSON.stringify(SEED_RUTINAS));
         nextRutinaId= p.nextRutinaId || (rutinas.reduce((m,r)=>Math.max(m,r.id),0) + 1);
       } else {
         tasks        = JSON.parse(JSON.stringify(SEED_TASKS));
         responsables = [...SEED_RESP];
-        adminPass    = DEFAULT_PASS;
         nextId       = 200;
         rutinas      = JSON.parse(JSON.stringify(SEED_RUTINAS));
         nextRutinaId = 2;
@@ -5250,10 +5223,10 @@ const GT = (() => {
 
   function save() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, adminPass, nextId, rutinas, nextRutinaId }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, nextId, rutinas, nextRutinaId }));
     } catch(e) {}
     const db = _getDb();
-    if (db) { db.ref(FB_PATH).set({ tasks, responsables, adminPass, nextId, rutinas, nextRutinaId }).then(flashSaveDot).catch(()=>{}); }
+    if (db) { db.ref(FB_PATH).set({ tasks, responsables, nextId, rutinas, nextRutinaId }).then(flashSaveDot).catch(()=>{}); }
   }
 
   /* ── Stats ──────────────────────────────────────────── */
@@ -5462,7 +5435,7 @@ const GT = (() => {
   }
   function deleteDone() {
     if (!adminUnlocked) {
-      alert('Para eliminar tareas, primero ingrese al panel de administración (🔒 Admin).');
+      alert('Para eliminar tareas, primero abra el panel de administración (⚙ Admin). Solo Administración y Gerencia.');
       return;
     }
     const borrar = visibleForRole(tasks).filter(t => t.estado === 'COMPLETO');
@@ -5548,45 +5521,21 @@ const GT = (() => {
     save(); closeModal(); renderAll();
   }
 
-  /* ── PIN modal ──────────────────────────────────────── */
-  let pinTarget = 'admin';   // 'admin' | 'rutinas' — a dónde ir tras validar el PIN
-
-  function openPin() {
-    document.getElementById('gt-pin-input').value = '';
-    document.getElementById('gt-pin-error').textContent = '';
-    show('gt-pin-bg');
-    setTimeout(() => document.getElementById('gt-pin-input').focus(), 80);
-  }
-
-  function closePin()      { hide('gt-pin-bg'); }
-  function closePinBg(e)   { if (e.target.id === 'gt-pin-bg') closePin(); }
-
-  function checkPin() {
-    const val   = document.getElementById('gt-pin-input').value;
-    const errEl = document.getElementById('gt-pin-error');
-    if (val === adminPass) {
-      adminUnlocked = true;   // habilita eliminar tareas una por una
-      closePin();
-      if (pinTarget === 'rutinas') { pinTarget = 'admin'; openRutinas(); }
-      else { openAdmin(); }
-      applyFilters();          // re-render para mostrar los botones 🗑
-    } else {
-      errEl.textContent = 'Contraseña incorrecta. Intente de nuevo.';
-      const inp = document.getElementById('gt-pin-input');
-      inp.classList.remove('gt-shake');
-      void inp.offsetWidth; // reflow para reiniciar animación
-      inp.classList.add('gt-shake');
-      inp.value = '';
-      inp.focus();
-    }
+  /* ── Acceso de administrador (por rol del portal) ───── */
+  // El panel Admin, las Rutinas y eliminar tareas son solo para Administración y
+  // Gerencia. Lo decide el rol con el que la persona entró al portal: ya no hay
+  // una contraseña aparte.
+  function esAdmin() { return currentRole === 'admin' || currentRole === 'master'; }
+  function desbloquearAdmin() {
+    if (!esAdmin()) { alert('Esta opción es solo para Administración y Gerencia.'); return false; }
+    if (!adminUnlocked) { adminUnlocked = true; applyFilters(); }   // muestra los botones 🗑
+    return true;
   }
 
   /* ── Admin panel ────────────────────────────────────── */
   function openAdmin() {
+    if (!desbloquearAdmin()) return;
     renderRespList();
-    document.getElementById('gt-pass-new').value  = '';
-    document.getElementById('gt-pass-conf').value = '';
-    document.getElementById('gt-pass-msg').textContent = '';
     document.getElementById('gt-resp-new').value  = '';
     document.getElementById('gt-resp-add-error').textContent = '';
     show('gt-admin-bg');
@@ -5608,7 +5557,7 @@ const GT = (() => {
             <div class="gt-resp-item-name">${esc(r)}</div>
             <div class="gt-resp-item-info">${n > 0 ? `${n} tarea${n>1?'s':''} asignada${n>1?'s':''}` : 'Sin tareas asignadas'}</div>
           </div>
-          <button class="gt-resp-del" onclick="GT.removeResponsable('${esc(r)}')"
+          <button class="gt-resp-del" onclick="GT.removeResponsable('${esc(escJs(r))}')"
             ${!canDel?'disabled title="Reasigne las tareas antes de eliminar"':'title="Eliminar responsable"'}>✕</button>
         </div>`;
       }).join('') || '<div style="font-size:12px;color:#ccc;padding:8px 0">Sin responsables registrados.</div>';
@@ -5642,7 +5591,7 @@ const GT = (() => {
   /* ── Eliminar tarea individual (solo admin) ─────────── */
   function deleteTask(id) {
     if (!adminUnlocked) {
-      alert('Para eliminar tareas, primero ingrese al panel de administración (🔒 Admin).');
+      alert('Para eliminar tareas, primero abra el panel de administración (⚙ Admin). Solo Administración y Gerencia.');
       return;
     }
     const t = tasks.find(t => t.id === id);
@@ -5660,24 +5609,6 @@ const GT = (() => {
     tasks  = [];
     nextId = 200;
     save(); closeAdmin(); renderAll();
-  }
-
-  /* ── Cambiar contraseña ─────────────────────────────── */
-  function changePass() {
-    const n1  = document.getElementById('gt-pass-new').value;
-    const n2  = document.getElementById('gt-pass-conf').value;
-    const msg = document.getElementById('gt-pass-msg');
-    msg.className = 'gt-chpass-msg';
-    if (!n1) { msg.textContent = 'Ingrese la nueva contraseña.'; msg.classList.add('gt-chpass-err'); return; }
-    if (n1.length < 4) { msg.textContent = 'Mínimo 4 caracteres.'; msg.classList.add('gt-chpass-err'); return; }
-    if (n1 !== n2) { msg.textContent = 'Las contraseñas no coinciden.'; msg.classList.add('gt-chpass-err'); return; }
-    adminPass = n1;
-    save();
-    document.getElementById('gt-pass-new').value  = '';
-    document.getElementById('gt-pass-conf').value = '';
-    msg.textContent = '✓ Contraseña actualizada correctamente.';
-    msg.classList.add('gt-chpass-ok');
-    setTimeout(() => { msg.textContent = ''; }, 3000);
   }
 
   /* ══════════════════════════════════════════════════════
@@ -5699,10 +5630,9 @@ const GT = (() => {
     return v < 0 ? `${Math.abs(v)} día${Math.abs(v) > 1 ? 's' : ''} antes` : `${v} día${v > 1 ? 's' : ''} después`;
   }
 
-  // Punto de entrada del botón 🚢 Rutinas: exige desbloqueo admin.
+  // Punto de entrada del botón 🚢 Rutinas: solo Administración y Gerencia.
   function openRutinas() {
-    if (!seesAll()) { alert('Las rutinas solo están disponibles para el administrador.'); return; }
-    if (!adminUnlocked) { pinTarget = 'rutinas'; openPin(); return; }
+    if (!desbloquearAdmin()) return;
     renderRutinasList();
     show('gt-rut-bg');
   }
@@ -5874,13 +5804,16 @@ const GT = (() => {
   // Muestra u oculta el botón 🚢 Rutinas según el rol de la sesión.
   function applyRoleToRutinas() {
     const btn = document.getElementById('gt-rut-btn');
-    if (btn) btn.style.display = seesAll() ? '' : 'none';
+    if (btn) btn.style.display = esAdmin() ? '' : 'none';
+    const adm = document.getElementById('gt-admin-btn');
+    if (adm) adm.style.display = esAdmin() ? '' : 'none';
   }
 
   /* ── Helpers ────────────────────────────────────────── */
   function show(id) { document.getElementById(id).classList.add('gt-show'); }
   function hide(id) { document.getElementById(id).classList.remove('gt-show'); }
-  function esc(s)   { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function esc(s)   { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function escJs(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
   function today()  { return new Date().toISOString().slice(0,10); }
 
   /* ── Render all ─────────────────────────────────────── */
@@ -5919,10 +5852,9 @@ const GT = (() => {
   return {
     init, applyFilters, clearFilters, cycleStatus,
     openModal, closeModal, closeModalBg, saveTask,
-    openPin, closePin, closePinBg, checkPin,
     openAdmin, closeAdmin, closeAdminBg,
     addResponsable, removeResponsable,
-    resetTasks, changePass, deleteTask, toggleDone, deleteDone,
+    resetTasks, deleteTask, toggleDone, deleteDone,
     openRutinas, closeRutinas, closeRutinasBg,
     openRutEditor, closeRutEditor, closeRutEditorBg,
     rutDraftSet, rutDraftAdd, rutDraftDel, saveRutina, deleteRutina,
@@ -6493,36 +6425,6 @@ const EQ = (() => {
 ════════════════════════════════════════════ -->
 <div id="screen-checklist-ops" class="screen">
   <div class="ckops-wrap">
-<!-- ══ LOGIN ══ -->
-<div class="login-overlay" id="ckops-loginOverlay">
-  <div class="login-box">
-    <div class="login-logo">ATUNTRO S.A.</div>
-    <h2>Checklist de Operaciones</h2>
-    <p class="login-sub" id="ckops-loginSub">¿Quién eres?</p>
-
-    <!-- PASO 1: elegir nombre -->
-    <div class="name-step" id="ckops-nameStep">
-      <div class="login-section-title">Selecciona tu nombre</div>
-      <div class="person-grid" id="ckops-loginGrid"></div>
-    </div>
-
-    <!-- PASO 2: PIN -->
-    <div class="pin-step" id="ckops-pinStep" style="display:none">
-      <div class="pin-who" id="ckops-pinWho"></div>
-      <div class="pin-label">Ingresa tu PIN (4 dígitos)</div>
-      <div class="pin-input-wrap">
-        <input type="password" id="ckops-pinInput" class="pin-input" maxlength="4"
-          inputmode="numeric" pattern="[0-9]*" autocomplete="off"
-          placeholder="••••" oninput="onPinInput()" onkeydown="if(event.key==='Enter')tryLogin()">
-        <button class="pin-toggle" onclick="togglePinVis()" id="ckops-pinToggle" title="Mostrar/ocultar">👁</button>
-      </div>
-      <div class="login-err" id="ckops-loginErr"></div>
-      <button class="login-btn" onclick="tryLogin()">Ingresar →</button>
-      <span class="login-back" onclick="backToNames()">← Volver a seleccionar nombre</span>
-    </div>
-  </div>
-</div>
-
 <!-- ══ HISTORY MODAL ══ -->
 <div class="modal-bg" id="ckops-histModal" onclick="if(event.target===this)this.classList.remove('show')">
   <div class="modal">
@@ -6535,14 +6437,13 @@ const EQ = (() => {
 <!-- ══ PEOPLE MODAL ══ -->
 <div class="modal-bg" id="ckops-peopleModal" onclick="if(event.target===this)this.classList.remove('show')">
   <div class="modal">
-    <h3>Gestionar personas y PINs</h3>
+    <h3>Gestionar personas</h3>
     <div id="ckops-peopleList"></div>
     <div class="padd">
       <input type="text" id="ckops-newName" placeholder="Nombre completo" style="flex:2;min-width:120px">
-      <input type="text" id="ckops-newPin" placeholder="PIN (4 dígitos)" maxlength="4" style="width:110px;font-family:monospace" inputmode="numeric">
       <button onclick="addPerson()">Agregar</button>
     </div>
-    <p style="font-size:10px;color:#aaa;margin-top:8px">El PIN identifica a la persona — no es seguridad de datos sensibles.</p>
+    <p style="font-size:10px;color:#aaa;margin-top:8px">Los responsables se eligen de los usuarios del portal. Esta lista solo se usa de respaldo si los usuarios aún no cargan.</p>
     <button class="modal-close" onclick="document.getElementById('ckops-peopleModal').classList.remove('show')">Cerrar</button>
   </div>
 </div>
@@ -6926,7 +6827,6 @@ let currentVessel= 'fatima';
 let currentArea  = 'a1';
 let isTyping=false, typingTimer=null, persistTimer=null;
 let db = null, fbReady=false, applyingRemote=false;
-let pinVisible=false;
 
 const VESSEL_INFO={fatima:'María Fátima (180 TM · ~20 tripulantes)',gracia:'María de Gracia (215 TM · ~21 tripulantes)'};
 
@@ -6944,7 +6844,9 @@ function lsPpl()  {return 'atuntro_ops_v3_personas';}
 function lsThr()  {return 'atuntro_ops_v3_thresholds';}
 
 function loadLocal(v){try{const r=localStorage.getItem(lsKey(v));return r?JSON.parse(r):{};}catch(e){return{};}}
-function loadPpl() {try{const r=localStorage.getItem(lsPpl());return r?JSON.parse(r):DEFAULT_PEOPLE.slice();}catch(e){return DEFAULT_PEOPLE.slice();}}
+// La lista de personas guarda solo nombres. Los PIN antiguos ya no se usan ni se guardan.
+function soloNombres(arr){return (Array.isArray(arr)?arr:[]).filter(p=>p&&p.name).map(p=>({name:String(p.name)}));}
+function loadPpl() {try{const r=localStorage.getItem(lsPpl());return r?soloNombres(JSON.parse(r)):DEFAULT_PEOPLE.slice();}catch(e){return DEFAULT_PEOPLE.slice();}}
 function loadThr() {
   try{const r=localStorage.getItem(lsThr());return r?JSON.parse(r):JSON.parse(JSON.stringify(DEFAULT_THRESHOLDS));}
   catch(e){return JSON.parse(JSON.stringify(DEFAULT_THRESHOLDS));}
@@ -6952,6 +6854,21 @@ function loadThr() {
 
 let thresholds = {};
 
+// Redibuja conservando el campo donde está el cursor: un cambio de otro usuario
+// ya no saca el foco de quien tiene un campo abierto.
+function conFoco(fn){
+  const box=document.getElementById('screen-checklist-ops'), a=document.activeElement;
+  let k=null;
+  if(box && a && box.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){
+    k={id:a.id, idx:[...box.querySelectorAll('input,textarea,select')].indexOf(a), tag:a.tagName, cls:a.className, val:a.value};
+    try{ k.s=a.selectionStart; k.e=a.selectionEnd; }catch(x){}
+  }
+  fn();
+  if(!k || (document.activeElement===a && a.isConnected)) return;
+  const el = k.id ? document.getElementById(k.id) : [...box.querySelectorAll('input,textarea,select')][k.idx];
+  if(!el || el.tagName!==k.tag || el.className!==k.cls || el.value!==k.val) return;
+  try{ el.focus({preventScroll:true}); if(k.s!=null) el.setSelectionRange(k.s,k.e); }catch(x){}
+}
 function markTyping(){isTyping=true;clearTimeout(typingTimer);typingTimer=setTimeout(()=>{isTyping=false;},900);}
 function persistDebounced(){clearTimeout(persistTimer);persistTimer=setTimeout(persistNow,600);}
 function persistNow(){
@@ -6986,13 +6903,17 @@ function initFirebase(){
           try{localStorage.setItem(lsKey(v),JSON.stringify(r));}catch(e){}
           applyingRemote=false;
           migrateRespKeys(v);
-          if(v===currentVessel)render();
+          if(v===currentVessel)conFoco(render);
         }
       });
     });
     db.ref(FB_PATH+'/personas').on('value',snap=>{
       if(isTyping)return;const r=snap.val();
-      if(r&&Array.isArray(r)){applyingRemote=true;people=r;try{localStorage.setItem(lsPpl(),JSON.stringify(r));}catch(e){}applyingRemote=false;}
+      if(r&&Array.isArray(r)){
+        applyingRemote=true;people=soloNombres(r);try{localStorage.setItem(lsPpl(),JSON.stringify(people));}catch(e){}applyingRemote=false;
+        // Limpieza única: si en la base aún quedan PIN antiguos, se guarda la lista sin ellos.
+        if(r.some(p=>p&&p.pin!==undefined)) db.ref(FB_PATH+'/personas').set(people).catch(()=>{});
+      }
     });
     db.ref(FB_PATH+'/thresholds').on('value',snap=>{
       if(isTyping)return;const r=snap.val();
@@ -7004,81 +6925,8 @@ function initFirebase(){
 /* ══════════════════════════════════════════
    LOGIN
    ══════════════════════════════════════════ */
-let loginTarget=null;
-
-function showLogin(){
-  document.getElementById('ckops-loginOverlay').style.display='flex';
-  goToStep1();
-  renderLoginGrid();
-}
-function hideLogin(){document.getElementById('ckops-loginOverlay').style.display='none';}
-
-function goToStep1(){
-  document.getElementById('ckops-nameStep').style.display='block';
-  document.getElementById('ckops-pinStep').style.display='none';
-  document.getElementById('ckops-loginSub').textContent='¿Quién eres?';
-  if(document.getElementById('ckops-loginErr')) document.getElementById('ckops-loginErr').textContent='';
-  if(document.getElementById('ckops-pinInput')) document.getElementById('ckops-pinInput').value='';
-  loginTarget=null;
-}
 
 function escJs(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
-
-function renderLoginGrid(){
-  document.getElementById('ckops-loginGrid').innerHTML=people.map(p=>
-    `<button class="person-btn" onclick="selectPerson('${escJs(p.name)}')">${escH(p.name)}</button>`
-  ).join('');
-}
-
-function selectPerson(name){
-  loginTarget=people.find(p=>p.name===name);
-  if(!loginTarget)return;
-  document.getElementById('ckops-nameStep').style.display='none';
-  document.getElementById('ckops-pinStep').style.display='block';
-  document.getElementById('ckops-pinWho').textContent='👤 '+name;
-  document.getElementById('ckops-loginSub').textContent='Ingresa tu PIN para continuar';
-  document.getElementById('ckops-loginErr').textContent='';
-  document.getElementById('ckops-pinInput').value='';
-  setTimeout(()=>document.getElementById('ckops-pinInput').focus(), 80);
-}
-
-function onPinInput(){
-  const inp=document.getElementById('ckops-pinInput');
-  inp.value=inp.value.replace(/\D/g,'').slice(0,4);
-  document.getElementById('ckops-loginErr').textContent='';
-}
-
-function togglePinVis(){
-  pinVisible=!pinVisible;
-  document.getElementById('ckops-pinInput').type=pinVisible?'text':'password';
-  document.getElementById('ckops-pinToggle').textContent=pinVisible?'🙈':'👁';
-}
-
-function tryLogin(){
-  if(!loginTarget){document.getElementById('ckops-loginErr').textContent='Selecciona tu nombre primero.';return;}
-  const entered=document.getElementById('ckops-pinInput').value.trim();
-  if(entered===loginTarget.pin){
-    activeUser=loginTarget;
-    updateUserChip();
-    hideLogin();
-    render();
-  } else {
-    document.getElementById('ckops-loginErr').textContent='PIN incorrecto. Intenta de nuevo.';
-    document.getElementById('ckops-pinInput').value='';
-    document.getElementById('ckops-pinInput').focus();
-  }
-}
-
-function backToNames(){
-  goToStep1();
-}
-
-function logout(){
-  if(!confirm('¿Cerrar sesión?'))return;
-  activeUser=null;
-  updateUserChip();
-  showLogin();
-}
 
 function updateUserChip(){
   const av=document.getElementById('ckops-uAvatar');
@@ -7178,24 +7026,21 @@ function openPeople(){
 }
 function renderPeopleModal(){
   document.getElementById('ckops-peopleList').innerHTML=people.map((p,i)=>
-    `<div class="prow"><span>${escH(p.name)}</span><span class="prow-pin">${escH(p.pin||"")}</span>
+    `<div class="prow"><span>${escH(p.name)}</span>
      <button class="prow-del" onclick="removePerson(${i})">✕</button></div>`
   ).join('')||'<p style="font-size:12px;color:#aaa;padding:8px 0">Sin personas.</p>';
 }
 function addPerson(){
   const name=document.getElementById('ckops-newName').value.trim();
-  const pin=document.getElementById('ckops-newPin').value.trim();
   if(!name){alert('Escribe un nombre.');return;}
-  if(!/^\d{4}$/.test(pin)){alert('El PIN debe ser 4 dígitos numéricos.');return;}
   if(people.find(p=>p.name===name)){alert('Esa persona ya existe.');return;}
-  people.push({name,pin});
+  people.push({name});
   document.getElementById('ckops-newName').value='';
-  document.getElementById('ckops-newPin').value='';
-  renderPeopleModal();renderLoginGrid();persistDebounced();
+  renderPeopleModal();persistDebounced();
 }
 function removePerson(i){
   if(!confirm('¿Eliminar a "'+people[i].name+'"?'))return;
-  people.splice(i,1);renderPeopleModal();renderLoginGrid();persistDebounced();
+  people.splice(i,1);renderPeopleModal();persistDebounced();
 }
 
 /* ══════════════════════════════════════════
@@ -7346,7 +7191,7 @@ function addSectionStep(aid,secIdx){
   render();
 }
 function sectionCheckAll(aid,secIdx){
-  if(!activeUser){alert('Inicia sesión con tu nombre y PIN antes de marcar puntos.');return;}
+  if(!activeUser){alert('Entra al checklist desde el portal antes de marcar puntos.');return;}
   const area=AREAS.find(a=>a.id===aid);
   const items=getSectionItems(area,secIdx);
   if(!items.length)return;
@@ -7370,7 +7215,7 @@ function sectionCheckAll(aid,secIdx){
    INTERACCIÓN DE PASOS
    ══════════════════════════════════════════ */
 function toggleStep(aid,sid){
-  if(!activeUser){alert('Inicia sesión con tu nombre y PIN antes de marcar un punto.');return;}
+  if(!activeUser){alert('Entra al checklist desde el portal antes de marcar un punto.');return;}
   const ss=stepState(aid,sid);
   // Permiso: solo el responsable asignado O el master pueden marcar/desmarcar
   if(!isMaster()){
@@ -7825,7 +7670,7 @@ state.fatima=loadLocal('fatima');
 state.gracia=loadLocal('gracia');
 people=loadPpl();
 thresholds=loadThr();
-/* render() / showLogin() / initFirebase() are called by init() below */
+/* render() / initFirebase() are called by init() below */
 
 
   /* ── CKOPS.init: called by portal navigation ── */
@@ -7834,27 +7679,19 @@ thresholds=loadThr();
     activeUser = {
       name: portalUser.name,
       key:  portalUser.key,
-      pin:  '____',  /* bypass – already authenticated */
       isAdmin: portalUser.role === 'master' || portalUser.role === 'operaciones_master'
     };
     /* Set vessel subtitle */
     var vs = document.getElementById('ckops-vesselSub');
     if (vs) vs.textContent = VESSEL_INFO[currentVessel] || VESSEL_INFO.fatima;
     updateUserChip();
-    /* Hide login overlay */
-    var ov = document.getElementById('ckops-loginOverlay');
-    if (ov) { ov.style.display = 'none'; ov.style.visibility = 'hidden'; }
     /* Connect to Firebase using portal's already-initialised app */
     if (!fbReady) initFirebase();
     migrateRespKeys('fatima'); migrateRespKeys('gracia');
     render();
   }
   /* ── Expose unique functions globally for HTML onclick attributes ── */
-  window.togglePinVis     = togglePinVis;
-  window.tryLogin         = tryLogin;
-  window.backToNames      = backToNames;
   window.addPerson        = addPerson;
-  window.selectPerson     = selectPerson;
   window.removePerson     = removePerson;
   window.openHist         = openHist;
   window.switchArea       = switchArea;
@@ -7867,9 +7704,8 @@ thresholds=loadThr();
   window.updateObs        = updateObs;
   window.saveThr               = saveThr;
   window.copyRespFromFatima    = copyRespFromFatima;
-  /* ── Static HTML (dates bar, PIN overlay) ── */
+  /* ── Static HTML (dates bar) ── */
   window.markTyping       = markTyping;
-  window.onPinInput       = onPinInput;
   window.refreshUrgency   = refreshUrgency;
   window.exportCumplimientoPDF = exportCumplimientoPDF;
   /* NOTE: toggleStep, updateNote, updateStepText, saveTripInfo are routed
@@ -7889,23 +7725,11 @@ thresholds=loadThr();
 var CKADM = (function() {
 
 /* ════════════════════════════════
-   USUARIOS
+   USUARIO
+   Quien usa el checklist es la persona que entró al portal (correo y contraseña).
+   La lista antigua de usuarios con PIN se retiró.
 ════════════════════════════════ */
-const USERS_DEF = [
-  {key:'ricky',     name:'Ricky',          isAdmin:true},
-  {key:'capitan1',  name:'Capitán Fátima', isAdmin:false},
-  {key:'capitan2',  name:'Capitán Gracia', isAdmin:false},
-  {key:'operador1', name:'Operador 1',     isAdmin:false},
-  {key:'operador2', name:'Operador 2',     isAdmin:false},
-  {key:'conta',     name:'Contabilidad',   isAdmin:false},
-  {key:'gerencia',  name:'Gerencia',       isAdmin:false},
-  {key:'proveedor', name:'Proveedor',      isAdmin:false},
-  {key:'tripulac',  name:'Tripulación',    isAdmin:false},
-];
-function loadUsers(){ try{const r=localStorage.getItem('atuntro_users_v8');return r?JSON.parse(r):JSON.parse(JSON.stringify(USERS_DEF));}catch(e){return JSON.parse(JSON.stringify(USERS_DEF));} }
-function persistUsers(u){ localStorage.setItem('atuntro_users_v8',JSON.stringify(u)); }
-let USERS = loadUsers();
-let currentUser = null, selUserKey = null;
+let currentUser = null;
 
 /* ════════════════════════════════
    RESPONSABLES (actor list)
@@ -7953,52 +7777,12 @@ function rebuildLegend(){
     +'<span style="font-size:10px;color:#bbb;margin-left:6px">🔴 Rojo = tarea vencida</span>';
 }
 
-/* ════════════════════════════════
-   LOGIN
-════════════════════════════════ */
-function buildGrid(){
-  const g=document.getElementById('ckadm-userGrid'); if(!g) return; g.innerHTML='';
-  USERS.forEach(u=>{
-    const b=document.createElement('button');
-    b.className='user-btn'+(u.isAdmin?' is-admin':'');
-    b.textContent=u.name+(u.isAdmin?' ⚙️':'');
-    b.onclick=()=>{ selUserKey=u.key; g.querySelectorAll('.user-btn').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); document.getElementById('ckadm-pinInput').focus(); };
-    g.appendChild(b);
-  });
-}
-buildGrid();
-
-function doLogin(){
-  const err=document.getElementById('ckadm-loginError');
-  if(!selUserKey){err.textContent='Selecciona tu nombre.';return;}
-  const pin=document.getElementById('ckadm-pinInput').value.trim();
-  const u=USERS.find(x=>x.key===selUserKey);
-  if(!u||u.pin!==pin){err.textContent='PIN incorrecto.';document.getElementById('ckadm-pinInput').value='';return;}
-  currentUser=u;
-  document.getElementById('ckadm-loginScreen').style.display='none';
-  document.getElementById('ckadm-mainApp').style.display='block';
-  document.getElementById('ckadm-sessionPill').textContent='👤 '+u.name;
-  document.getElementById('ckadm-adminPanel').classList.toggle('on',u.isAdmin);
-  setTripEditable(u.isAdmin);
-  ACTORS=loadActors(currentVessel);
-  rebuildLegend();
-  render();
-}
-function doLogout(){
-  currentUser=null;selUserKey=null;
-  document.getElementById('ckadm-pinInput').value='';
-  document.getElementById('ckadm-loginError').textContent='';
-  document.getElementById('ckadm-mainApp').style.display='none';
-  document.getElementById('ckadm-loginScreen').style.display='flex';
-  document.querySelectorAll('#ckadm-userGrid .user-btn').forEach(b=>b.classList.remove('selected'));
-}
 function setTripEditable(y){ ['ckadm-tripVessel','ckadm-tripId','ckadm-tripEta','ckadm-tripZarpe','ckadm-tripTm','ckadm-tripObs'].forEach(id=>{ const e=document.getElementById(id); if(e) e.disabled=!y; }); }
 
 /* ════════════════════════════════
    MODALS
 ════════════════════════════════ */
 function openMo(id){
-  if(id==='moUsers') buildUsersModal();
   if(id==='moActors') buildActorsModal();
   var el=document.getElementById('ckadm-'+id)||document.getElementById(id);
   if(el) el.classList.add('open');
@@ -8006,26 +7790,6 @@ function openMo(id){
 function closeMo(id){
   var el=document.getElementById('ckadm-'+id)||document.getElementById(id);
   if(el) el.classList.remove('open');
-}
-
-/* usuarios modal */
-function buildUsersModal(){
-  document.getElementById('ckadm-moUsersBody').innerHTML=USERS.map((u,i)=>`
-    <div class="u-row">
-      <div style="flex:1"><div class="u-lbl">Nombre</div><input class="u-inp" id="um_n_${i}" value="${esc(u.name)}"></div>
-      <div style="width:100px"><div class="u-lbl">PIN</div><input class="u-inp" id="um_p_${i}" value="${esc(u.pin)}" maxlength="6" type="password" onfocus="this.type='text'" onblur="this.type='password'"></div>
-      ${u.isAdmin?'<span class="u-admin-tag">Admin</span>':'<span style="width:46px"></span>'}
-    </div>`).join('');
-}
-function saveUsers(){
-  USERS.forEach((u,i)=>{
-    const n=document.getElementById('um_n_'+i); const p=document.getElementById('um_p_'+i);
-    if(n&&n.value.trim()) u.name=n.value.trim();
-    if(p&&p.value.trim()) u.pin=p.value.trim();
-  });
-  persistUsers(USERS);
-  if(currentUser){ const upd=USERS.find(u=>u.key===currentUser.key); if(upd){currentUser=upd;document.getElementById('ckadm-sessionPill').textContent='👤 '+upd.name;} }
-  buildGrid(); closeMo('moUsers'); flash();
 }
 
 /* actores modal */
@@ -8642,13 +8406,6 @@ function persist(){
   fbSave(fbPath('state'), state[currentVessel]);
 }
 
-// persistUsers con Firebase
-const _origPersistUsers = persistUsers;
-function persistUsers(u){
-  localStorage.setItem('atuntro_users_v8', JSON.stringify(u));
-  fbSave('atuntro/users', u);
-}
-
 // persistActors con Firebase (por barco)
 const _origPersistActors = persistActors;
 function persistActors(a){
@@ -8671,19 +8428,7 @@ function startRealtimeSync(){
     if(currentUser && !isTyping){ render(); }
   });
 
-  // 2. Usuarios globales
-  fbOn('atuntro/users', data=>{
-    if(!data||!Array.isArray(data)) return;
-    USERS = data;
-    buildGrid();
-    // actualizar sesión si el nombre cambió
-    if(currentUser){
-      const upd=USERS.find(u=>u.key===currentUser.key);
-      if(upd){ currentUser=upd; document.getElementById('ckadm-sessionPill').textContent='👤 '+upd.name; }
-    }
-  });
-
-  // 3. Responsables del barco
+  // 2. Responsables del barco
   fbOn(fbPath('actors'), data=>{
     if(!data||!Array.isArray(data)) return;
     ACTORS = data;
@@ -8736,9 +8481,6 @@ state.gracia=loadSt('gracia');
       isAdmin:  portalUser.role === 'master' || portalUser.role === 'admin',
       isMaster: portalUser.role === 'master'
     };
-    selUserKey = portalUser.key;
-    var ls = document.getElementById('ckadm-loginScreen');
-    if (ls) ls.style.display = 'none';
     var ma = document.getElementById('ckadm-mainApp');
     if (ma) ma.style.display = 'block';
     var sp = document.getElementById('ckadm-sessionPill');
@@ -8750,9 +8492,13 @@ state.gracia=loadSt('gracia');
     rebuildLegend();
     /* One-time Firebase seed (safe to call multiple times) */
     try {
-      _getDb().ref('atuntro/users').once('value').then(function(snap){
-        if(!snap.val()) fbSave('atuntro/users', USERS);
-      });
+      /* Limpieza única de la lista antigua de usuarios con PIN (ya no se usa). */
+      try { localStorage.removeItem('atuntro_users_v8'); } catch(e) {}
+      if (currentUser.isMaster) {
+        _getDb().ref('atuntro/users').once('value').then(function(snap){
+          if (snap.exists()) return _getDb().ref('atuntro/users').remove();
+        }).catch(function(){});
+      }
       _getDb().ref(fbPath('actors')).once('value').then(function(snap){
         if(!snap.val()) fbSave(fbPath('actors'), ACTORS);
       });
@@ -8762,11 +8508,9 @@ state.gracia=loadSt('gracia');
     startRealtimeSync();
   }
   /* ── Expose unique functions globally for HTML onclick attributes ── */
-  window.doLogin       = doLogin;
   window.openMo        = openMo;
   window.exportLog     = exportLog;
   window.closeMo       = closeMo;
-  window.saveUsers     = saveUsers;
   window.addActorRow   = addActorRow;
   window.saveActors    = saveActors;
   window.confirmReset  = confirmReset;
@@ -8799,21 +8543,6 @@ state.gracia=loadSt('gracia');
 ════════════════════════════════════════════ -->
 <div id="screen-checklist-adm" class="screen">
   <div class="ckadm-wrap">
-<!-- LOGIN -->
-<div id="ckadm-loginScreen">
-  <div class="login-box">
-    <div class="login-logo">🚢</div>
-    <div class="login-title">ATUNTRO S.A.</div>
-    <div class="login-sub">Ciclo Operativo · Uso interno</div>
-    <label class="login-lbl">¿Quién eres?</label>
-    <div class="user-grid" id="ckadm-userGrid"></div>
-    <input class="pin-input" type="password" id="ckadm-pinInput" maxlength="6" placeholder="••••" inputmode="numeric"
-      onkeydown="if(event.key==='Enter') doLogin()">
-    <button class="login-btn" onclick="doLogin()">Entrar →</button>
-    <div class="login-error" id="ckadm-loginError"></div>
-  </div>
-</div>
-
 <!-- APP -->
 <div class="app" id="ckadm-mainApp" style="display:none">
   <div class="header">
@@ -8835,7 +8564,6 @@ state.gracia=loadSt('gracia');
   <div id="ckadm-adminPanel">
     <div class="ap-title">⚙️ Panel de Administrador</div>
     <div class="ap-grid">
-      <button class="ap-btn" onclick="openMo('moUsers')">👥 Gestionar usuarios</button>
       <!-- Responsables ahora son los usuarios del portal (admin y contabilidad); se gestionan en Administrar usuarios -->
       <button class="ap-btn" onclick="resetVessel()">🔄 Reiniciar viaje</button>
       <button class="ap-btn" onclick="exportLog()">📊 Exportar historial Excel</button>
@@ -8870,19 +8598,6 @@ state.gracia=loadSt('gracia');
 
   <div id="ckadm-phasesContainer"></div>
   <div class="footer">ATUNTRO S.A. — Uso interno — v9.0 · Firebase</div>
-</div>
-
-<!-- MODAL: USUARIOS -->
-<div class="mo" id="ckadm-moUsers">
-  <div class="mbox">
-    <h3>👥 Gestionar usuarios</h3>
-    <p>Cambia nombre y PIN de cada usuario. El PIN se muestra al hacer clic en el campo.</p>
-    <div id="ckadm-moUsersBody"></div>
-    <div class="mo-btns">
-      <button class="mb cancel" onclick="closeMo('moUsers')">Cancelar</button>
-      <button class="mb ok" onclick="saveUsers()">💾 Guardar</button>
-    </div>
-  </div>
 </div>
 
 <!-- MODAL: RESPONSABLES -->
@@ -9220,7 +8935,7 @@ function startRealtimeSync(){
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
     if(_fechasReparadas) setTimeout(persist, 0);   // guarda en Firebase las fechas con año corregido (ej. 20025 → 2025)
     document.getElementById('eq-vesselSub').textContent = VESSEL_INFO[currentVessel];
-    render();
+    conFoco(render);
     flashSave();
   };
   ref.on('value', _fbHandler);
@@ -9275,6 +8990,21 @@ let currentTab = 'resumen';
 // Control de escritura: evita que el sync remoto reconstruya la tabla
 // mientras el usuario está escribiendo (causaba perder el foco tras cada dígito).
 let _isTyping = false, _typingTO = null, _saveDebounce = null, _lastRemoteJSON = null;
+// Redibuja conservando el campo donde está el cursor: un cambio de otro usuario
+// ya no saca el foco de quien tiene un campo abierto.
+function conFoco(fn){
+  const box=document.getElementById('screen-equipos'), a=document.activeElement;
+  let k=null;
+  if(box && a && box.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && !a.classList.contains('eq-dt')){
+    k={id:a.id, idx:[...box.querySelectorAll('input,textarea,select')].indexOf(a), tag:a.tagName, cls:a.className, val:a.value};
+    try{ k.s=a.selectionStart; k.e=a.selectionEnd; }catch(x){}
+  }
+  fn();
+  if(!k || (document.activeElement===a && a.isConnected)) return;
+  const el = k.id ? document.getElementById(k.id) : [...box.querySelectorAll('input,textarea,select')][k.idx];
+  if(!el || el.tagName!==k.tag || el.className!==k.cls || el.value!==k.val) return;
+  try{ el.focus({preventScroll:true}); if(k.s!=null) el.setSelectionRange(k.s,k.e); }catch(x){}
+}
 function _markTyping(){ _isTyping = true; clearTimeout(_typingTO); _typingTO = setTimeout(()=>{ _isTyping = false; }, 900); }
 
 function loadState(){
@@ -10444,7 +10174,7 @@ function init(){
         </div>
         <div class="field" style="margin:0">
           <label>Anticipo tripulación ($)</label>
-          <input type="number" id="p_anticipo" value="0" oninput="SIMULADOR.sv();SIMULADOR.cp()" style="border:1.5px solid #e0ddd8;border-radius:7px;padding:8px 10px;font-size:13px;font-family:inherit;color:#1a1a18;background:#fafaf8;outline:none;transition:.2s;width:100%">
+          <input type="number" id="p_anticipo_caja" value="0" oninput="document.getElementById('p_anticipo').value=this.value;SIMULADOR.sv();SIMULADOR.cp()" style="border:1.5px solid #e0ddd8;border-radius:7px;padding:8px 10px;font-size:13px;font-family:inherit;color:#1a1a18;background:#fafaf8;outline:none;transition:.2s;width:100%">
           <div style="font-size:10px;color:#bbb;margin-top:3px">Anticipo zarpe + saldo viaje anterior</div>
         </div>
       </div>
@@ -11367,6 +11097,9 @@ function cp(){
   const rolTM=+document.getElementById('p_rol_tm').value||0;
   const sal  =+document.getElementById('p_sal').value||0;
   const ant  =+document.getElementById('p_anticipo').value||0;
+  // El anticipo se muestra también en "Desglose de la caja de zarpe": ambos campos van iguales.
+  const antCaja=document.getElementById('p_anticipo_caja');
+  if(antCaja && document.activeElement!==antCaja) antCaja.value=document.getElementById('p_anticipo').value;
 
   // TM absolutas por especie
   const tm_yf  =+document.getElementById('tm_yf').value||0;
@@ -12290,7 +12023,7 @@ function calcAuditoria(){
     ].filter(r=>r[2]>0);
     costoTbody.innerHTML=rows.map(([lbl,det,monto,ptm])=>`
       <tr>
-        <td>${lbl}</td>
+        <td>${eh(lbl)}</td>
         <td class="r" style="color:#aaa;font-size:11px">${det}</td>
         <td class="r" style="color:#D85A30;font-weight:600">${fmt(monto)}</td>
         <td class="r" style="color:#888">${ptm>0?'$'+Math.round(ptm)+'/TM':'—'}</td>
@@ -12447,7 +12180,8 @@ function load(){
     applyRemoteData(data);
     try{ localStorage.setItem(SK, json); }catch(e){}
 
-    // re-render todo lo que depende de arrays
+    // re-render todo lo que depende de arrays (sin sacar el cursor del campo abierto)
+    conFoco(()=>{
     SIMULADOR.renderProvs();
     const c=document.getElementById('inv_container');
     if(c) SIMULADOR.renderInvFull(+document.getElementById('sim_dias').value||0, c);
@@ -12462,6 +12196,7 @@ function load(){
     if(document.getElementById('screen-comp')?.classList.contains('active')) calcComp();
     if(document.getElementById('screen-sim')?.classList.contains('active')) SIMULADOR.calcSim();
     if(document.getElementById('screen-auditoria')?.classList.contains('active')) calcAuditoria();
+    });
 
     flashSave();
   };
@@ -12482,7 +12217,22 @@ function fmt(n){
   return n<0?'('+s+')':s;
 }
 function setText(id,val){const el=document.getElementById(id);if(el) el.textContent=val;}
-function eh(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function eh(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+// Redibuja conservando el campo donde está el cursor (un cambio de otro usuario
+// ya no saca el foco de quien tiene un campo abierto).
+function conFoco(fn){
+  const box=document.getElementById('screen-simulador'), a=document.activeElement;
+  let k=null;
+  if(box && a && box.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){
+    k={id:a.id, idx:[...box.querySelectorAll('input,textarea,select')].indexOf(a), tag:a.tagName, cls:a.className, val:a.value};
+    try{ k.s=a.selectionStart; k.e=a.selectionEnd; }catch(x){}
+  }
+  fn();
+  if(!k || (document.activeElement===a && a.isConnected)) return;
+  const el = k.id ? document.getElementById(k.id) : [...box.querySelectorAll('input,textarea,select')][k.idx];
+  if(!el || el.tagName!==k.tag || el.className!==k.cls || el.value!==k.val) return;
+  try{ el.focus({preventScroll:true}); if(k.s!=null) el.setSelectionRange(k.s,k.e); }catch(x){}
+}
 
 let _inputDefaults = null;
 function captureDefaults(){

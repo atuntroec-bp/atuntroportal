@@ -231,7 +231,6 @@ let currentVessel= 'fatima';
 let currentArea  = 'a1';
 let isTyping=false, typingTimer=null, persistTimer=null;
 let db = null, fbReady=false, applyingRemote=false;
-let pinVisible=false;
 
 const VESSEL_INFO={fatima:'María Fátima (180 TM · ~20 tripulantes)',gracia:'María de Gracia (215 TM · ~21 tripulantes)'};
 
@@ -249,7 +248,9 @@ function lsPpl()  {return 'atuntro_ops_v3_personas';}
 function lsThr()  {return 'atuntro_ops_v3_thresholds';}
 
 function loadLocal(v){try{const r=localStorage.getItem(lsKey(v));return r?JSON.parse(r):{};}catch(e){return{};}}
-function loadPpl() {try{const r=localStorage.getItem(lsPpl());return r?JSON.parse(r):DEFAULT_PEOPLE.slice();}catch(e){return DEFAULT_PEOPLE.slice();}}
+// La lista de personas guarda solo nombres. Los PIN antiguos ya no se usan ni se guardan.
+function soloNombres(arr){return (Array.isArray(arr)?arr:[]).filter(p=>p&&p.name).map(p=>({name:String(p.name)}));}
+function loadPpl() {try{const r=localStorage.getItem(lsPpl());return r?soloNombres(JSON.parse(r)):DEFAULT_PEOPLE.slice();}catch(e){return DEFAULT_PEOPLE.slice();}}
 function loadThr() {
   try{const r=localStorage.getItem(lsThr());return r?JSON.parse(r):JSON.parse(JSON.stringify(DEFAULT_THRESHOLDS));}
   catch(e){return JSON.parse(JSON.stringify(DEFAULT_THRESHOLDS));}
@@ -257,6 +258,21 @@ function loadThr() {
 
 let thresholds = {};
 
+// Redibuja conservando el campo donde está el cursor: un cambio de otro usuario
+// ya no saca el foco de quien tiene un campo abierto.
+function conFoco(fn){
+  const box=document.getElementById('screen-checklist-ops'), a=document.activeElement;
+  let k=null;
+  if(box && a && box.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){
+    k={id:a.id, idx:[...box.querySelectorAll('input,textarea,select')].indexOf(a), tag:a.tagName, cls:a.className, val:a.value};
+    try{ k.s=a.selectionStart; k.e=a.selectionEnd; }catch(x){}
+  }
+  fn();
+  if(!k || (document.activeElement===a && a.isConnected)) return;
+  const el = k.id ? document.getElementById(k.id) : [...box.querySelectorAll('input,textarea,select')][k.idx];
+  if(!el || el.tagName!==k.tag || el.className!==k.cls || el.value!==k.val) return;
+  try{ el.focus({preventScroll:true}); if(k.s!=null) el.setSelectionRange(k.s,k.e); }catch(x){}
+}
 function markTyping(){isTyping=true;clearTimeout(typingTimer);typingTimer=setTimeout(()=>{isTyping=false;},900);}
 function persistDebounced(){clearTimeout(persistTimer);persistTimer=setTimeout(persistNow,600);}
 function persistNow(){
@@ -291,13 +307,17 @@ function initFirebase(){
           try{localStorage.setItem(lsKey(v),JSON.stringify(r));}catch(e){}
           applyingRemote=false;
           migrateRespKeys(v);
-          if(v===currentVessel)render();
+          if(v===currentVessel)conFoco(render);
         }
       });
     });
     db.ref(FB_PATH+'/personas').on('value',snap=>{
       if(isTyping)return;const r=snap.val();
-      if(r&&Array.isArray(r)){applyingRemote=true;people=r;try{localStorage.setItem(lsPpl(),JSON.stringify(r));}catch(e){}applyingRemote=false;}
+      if(r&&Array.isArray(r)){
+        applyingRemote=true;people=soloNombres(r);try{localStorage.setItem(lsPpl(),JSON.stringify(people));}catch(e){}applyingRemote=false;
+        // Limpieza única: si en la base aún quedan PIN antiguos, se guarda la lista sin ellos.
+        if(r.some(p=>p&&p.pin!==undefined)) db.ref(FB_PATH+'/personas').set(people).catch(()=>{});
+      }
     });
     db.ref(FB_PATH+'/thresholds').on('value',snap=>{
       if(isTyping)return;const r=snap.val();
@@ -309,81 +329,8 @@ function initFirebase(){
 /* ══════════════════════════════════════════
    LOGIN
    ══════════════════════════════════════════ */
-let loginTarget=null;
-
-function showLogin(){
-  document.getElementById('ckops-loginOverlay').style.display='flex';
-  goToStep1();
-  renderLoginGrid();
-}
-function hideLogin(){document.getElementById('ckops-loginOverlay').style.display='none';}
-
-function goToStep1(){
-  document.getElementById('ckops-nameStep').style.display='block';
-  document.getElementById('ckops-pinStep').style.display='none';
-  document.getElementById('ckops-loginSub').textContent='¿Quién eres?';
-  if(document.getElementById('ckops-loginErr')) document.getElementById('ckops-loginErr').textContent='';
-  if(document.getElementById('ckops-pinInput')) document.getElementById('ckops-pinInput').value='';
-  loginTarget=null;
-}
 
 function escJs(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
-
-function renderLoginGrid(){
-  document.getElementById('ckops-loginGrid').innerHTML=people.map(p=>
-    `<button class="person-btn" onclick="selectPerson('${escJs(p.name)}')">${escH(p.name)}</button>`
-  ).join('');
-}
-
-function selectPerson(name){
-  loginTarget=people.find(p=>p.name===name);
-  if(!loginTarget)return;
-  document.getElementById('ckops-nameStep').style.display='none';
-  document.getElementById('ckops-pinStep').style.display='block';
-  document.getElementById('ckops-pinWho').textContent='👤 '+name;
-  document.getElementById('ckops-loginSub').textContent='Ingresa tu PIN para continuar';
-  document.getElementById('ckops-loginErr').textContent='';
-  document.getElementById('ckops-pinInput').value='';
-  setTimeout(()=>document.getElementById('ckops-pinInput').focus(), 80);
-}
-
-function onPinInput(){
-  const inp=document.getElementById('ckops-pinInput');
-  inp.value=inp.value.replace(/\D/g,'').slice(0,4);
-  document.getElementById('ckops-loginErr').textContent='';
-}
-
-function togglePinVis(){
-  pinVisible=!pinVisible;
-  document.getElementById('ckops-pinInput').type=pinVisible?'text':'password';
-  document.getElementById('ckops-pinToggle').textContent=pinVisible?'🙈':'👁';
-}
-
-function tryLogin(){
-  if(!loginTarget){document.getElementById('ckops-loginErr').textContent='Selecciona tu nombre primero.';return;}
-  const entered=document.getElementById('ckops-pinInput').value.trim();
-  if(entered===loginTarget.pin){
-    activeUser=loginTarget;
-    updateUserChip();
-    hideLogin();
-    render();
-  } else {
-    document.getElementById('ckops-loginErr').textContent='PIN incorrecto. Intenta de nuevo.';
-    document.getElementById('ckops-pinInput').value='';
-    document.getElementById('ckops-pinInput').focus();
-  }
-}
-
-function backToNames(){
-  goToStep1();
-}
-
-function logout(){
-  if(!confirm('¿Cerrar sesión?'))return;
-  activeUser=null;
-  updateUserChip();
-  showLogin();
-}
 
 function updateUserChip(){
   const av=document.getElementById('ckops-uAvatar');
@@ -483,24 +430,21 @@ function openPeople(){
 }
 function renderPeopleModal(){
   document.getElementById('ckops-peopleList').innerHTML=people.map((p,i)=>
-    `<div class="prow"><span>${escH(p.name)}</span><span class="prow-pin">${escH(p.pin||"")}</span>
+    `<div class="prow"><span>${escH(p.name)}</span>
      <button class="prow-del" onclick="removePerson(${i})">✕</button></div>`
   ).join('')||'<p style="font-size:12px;color:#aaa;padding:8px 0">Sin personas.</p>';
 }
 function addPerson(){
   const name=document.getElementById('ckops-newName').value.trim();
-  const pin=document.getElementById('ckops-newPin').value.trim();
   if(!name){alert('Escribe un nombre.');return;}
-  if(!/^\d{4}$/.test(pin)){alert('El PIN debe ser 4 dígitos numéricos.');return;}
   if(people.find(p=>p.name===name)){alert('Esa persona ya existe.');return;}
-  people.push({name,pin});
+  people.push({name});
   document.getElementById('ckops-newName').value='';
-  document.getElementById('ckops-newPin').value='';
-  renderPeopleModal();renderLoginGrid();persistDebounced();
+  renderPeopleModal();persistDebounced();
 }
 function removePerson(i){
   if(!confirm('¿Eliminar a "'+people[i].name+'"?'))return;
-  people.splice(i,1);renderPeopleModal();renderLoginGrid();persistDebounced();
+  people.splice(i,1);renderPeopleModal();persistDebounced();
 }
 
 /* ══════════════════════════════════════════
@@ -651,7 +595,7 @@ function addSectionStep(aid,secIdx){
   render();
 }
 function sectionCheckAll(aid,secIdx){
-  if(!activeUser){alert('Inicia sesión con tu nombre y PIN antes de marcar puntos.');return;}
+  if(!activeUser){alert('Entra al checklist desde el portal antes de marcar puntos.');return;}
   const area=AREAS.find(a=>a.id===aid);
   const items=getSectionItems(area,secIdx);
   if(!items.length)return;
@@ -675,7 +619,7 @@ function sectionCheckAll(aid,secIdx){
    INTERACCIÓN DE PASOS
    ══════════════════════════════════════════ */
 function toggleStep(aid,sid){
-  if(!activeUser){alert('Inicia sesión con tu nombre y PIN antes de marcar un punto.');return;}
+  if(!activeUser){alert('Entra al checklist desde el portal antes de marcar un punto.');return;}
   const ss=stepState(aid,sid);
   // Permiso: solo el responsable asignado O el master pueden marcar/desmarcar
   if(!isMaster()){
@@ -1130,7 +1074,7 @@ state.fatima=loadLocal('fatima');
 state.gracia=loadLocal('gracia');
 people=loadPpl();
 thresholds=loadThr();
-/* render() / showLogin() / initFirebase() are called by init() below */
+/* render() / initFirebase() are called by init() below */
 
 
   /* ── CKOPS.init: called by portal navigation ── */
@@ -1139,27 +1083,19 @@ thresholds=loadThr();
     activeUser = {
       name: portalUser.name,
       key:  portalUser.key,
-      pin:  '____',  /* bypass – already authenticated */
       isAdmin: portalUser.role === 'master' || portalUser.role === 'operaciones_master'
     };
     /* Set vessel subtitle */
     var vs = document.getElementById('ckops-vesselSub');
     if (vs) vs.textContent = VESSEL_INFO[currentVessel] || VESSEL_INFO.fatima;
     updateUserChip();
-    /* Hide login overlay */
-    var ov = document.getElementById('ckops-loginOverlay');
-    if (ov) { ov.style.display = 'none'; ov.style.visibility = 'hidden'; }
     /* Connect to Firebase using portal's already-initialised app */
     if (!fbReady) initFirebase();
     migrateRespKeys('fatima'); migrateRespKeys('gracia');
     render();
   }
   /* ── Expose unique functions globally for HTML onclick attributes ── */
-  window.togglePinVis     = togglePinVis;
-  window.tryLogin         = tryLogin;
-  window.backToNames      = backToNames;
   window.addPerson        = addPerson;
-  window.selectPerson     = selectPerson;
   window.removePerson     = removePerson;
   window.openHist         = openHist;
   window.switchArea       = switchArea;
@@ -1172,9 +1108,8 @@ thresholds=loadThr();
   window.updateObs        = updateObs;
   window.saveThr               = saveThr;
   window.copyRespFromFatima    = copyRespFromFatima;
-  /* ── Static HTML (dates bar, PIN overlay) ── */
+  /* ── Static HTML (dates bar) ── */
   window.markTyping       = markTyping;
-  window.onPinInput       = onPinInput;
   window.refreshUrgency   = refreshUrgency;
   window.exportCumplimientoPDF = exportCumplimientoPDF;
   /* NOTE: toggleStep, updateNote, updateStepText, saveTripInfo are routed

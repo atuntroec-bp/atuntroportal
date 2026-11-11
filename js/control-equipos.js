@@ -267,7 +267,7 @@ function startRealtimeSync(){
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
     if(_fechasReparadas) setTimeout(persist, 0);   // guarda en Firebase las fechas con año corregido (ej. 20025 → 2025)
     document.getElementById('eq-vesselSub').textContent = VESSEL_INFO[currentVessel];
-    render();
+    conFoco(render);
     flashSave();
   };
   ref.on('value', _fbHandler);
@@ -322,6 +322,21 @@ let currentTab = 'resumen';
 // Control de escritura: evita que el sync remoto reconstruya la tabla
 // mientras el usuario está escribiendo (causaba perder el foco tras cada dígito).
 let _isTyping = false, _typingTO = null, _saveDebounce = null, _lastRemoteJSON = null;
+// Redibuja conservando el campo donde está el cursor: un cambio de otro usuario
+// ya no saca el foco de quien tiene un campo abierto.
+function conFoco(fn){
+  const box=document.getElementById('screen-equipos'), a=document.activeElement;
+  let k=null;
+  if(box && a && box.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && !a.classList.contains('eq-dt')){
+    k={id:a.id, idx:[...box.querySelectorAll('input,textarea,select')].indexOf(a), tag:a.tagName, cls:a.className, val:a.value};
+    try{ k.s=a.selectionStart; k.e=a.selectionEnd; }catch(x){}
+  }
+  fn();
+  if(!k || (document.activeElement===a && a.isConnected)) return;
+  const el = k.id ? document.getElementById(k.id) : [...box.querySelectorAll('input,textarea,select')][k.idx];
+  if(!el || el.tagName!==k.tag || el.className!==k.cls || el.value!==k.val) return;
+  try{ el.focus({preventScroll:true}); if(k.s!=null) el.setSelectionRange(k.s,k.e); }catch(x){}
+}
 function _markTyping(){ _isTyping = true; clearTimeout(_typingTO); _typingTO = setTimeout(()=>{ _isTyping = false; }, 900); }
 
 function loadState(){

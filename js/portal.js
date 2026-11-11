@@ -803,8 +803,10 @@
     cb(fallback());
   }
 
-  function loadPendingTasks() {
-    _readTasks(function(tasks){
+  function loadPendingTasks(yaLeidas) {
+    // Si el aviso en vivo ya trajo las tareas, se usan esas (evita leer dos veces la base).
+    var leer = Array.isArray(yaLeidas) ? function(cb){ cb(yaLeidas); } : _readTasks;
+    leer(function(tasks){
       var ok = pendingAllowedDepts();
       var mine = tasks.filter(function(t){ return ok.indexOf(t.dept) !== -1; });
       var pending = mine.filter(function(t){ return t.estado !== 'COMPLETO'; });
@@ -869,7 +871,7 @@
             return '<div class="bell-item" onclick="openGestor()">' +
               '<span class="bell-item-dot ' + escHtml(t.estado) + '"></span>' +
               '<span class="bell-item-txt" title="' + escHtml(t.tarea||'') + '">' + escHtml(t.tarea||'') + '</span>' +
-              '<span class="bell-item-est ' + escHtml(t.estado) + '">' + (lbl[t.estado]||t.estado) + '</span>' +
+              '<span class="bell-item-est ' + escHtml(t.estado) + '">' + escHtml(lbl[t.estado]||t.estado) + '</span>' +
             '</div>';
           }).join('') +
           (n>8 ? '<div class="bell-more" onclick="openGestor()">+ '+(n-8)+' más — ver todas</div>' : '') +
@@ -1104,10 +1106,11 @@
       _pendingSyncOn = true;
       try { startReuBell(); } catch(e) {}
       try { startEvBell(); } catch(e) {}
-      firebase.database().ref('atuntro_gestor/data').on('value', function(){
+      firebase.database().ref('atuntro_gestor/data').on('value', function(snap){
         // solo re-render si el dashboard está visible
         var dash = document.getElementById('screen-dashboard');
-        if (dash && dash.classList.contains('active')) loadPendingTasks();
+        var d = snap && snap.val();
+        if (dash && dash.classList.contains('active')) loadPendingTasks(d && Array.isArray(d.tasks) ? d.tasks.filter(Boolean) : undefined);
       });
     } catch(e) { setTimeout(startPendingLiveSync, 1500); }
   }

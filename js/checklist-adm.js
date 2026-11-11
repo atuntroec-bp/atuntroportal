@@ -4,23 +4,11 @@
 var CKADM = (function() {
 
 /* ════════════════════════════════
-   USUARIOS
+   USUARIO
+   Quien usa el checklist es la persona que entró al portal (correo y contraseña).
+   La lista antigua de usuarios con PIN se retiró.
 ════════════════════════════════ */
-const USERS_DEF = [
-  {key:'ricky',     name:'Ricky',          isAdmin:true},
-  {key:'capitan1',  name:'Capitán Fátima', isAdmin:false},
-  {key:'capitan2',  name:'Capitán Gracia', isAdmin:false},
-  {key:'operador1', name:'Operador 1',     isAdmin:false},
-  {key:'operador2', name:'Operador 2',     isAdmin:false},
-  {key:'conta',     name:'Contabilidad',   isAdmin:false},
-  {key:'gerencia',  name:'Gerencia',       isAdmin:false},
-  {key:'proveedor', name:'Proveedor',      isAdmin:false},
-  {key:'tripulac',  name:'Tripulación',    isAdmin:false},
-];
-function loadUsers(){ try{const r=localStorage.getItem('atuntro_users_v8');return r?JSON.parse(r):JSON.parse(JSON.stringify(USERS_DEF));}catch(e){return JSON.parse(JSON.stringify(USERS_DEF));} }
-function persistUsers(u){ localStorage.setItem('atuntro_users_v8',JSON.stringify(u)); }
-let USERS = loadUsers();
-let currentUser = null, selUserKey = null;
+let currentUser = null;
 
 /* ════════════════════════════════
    RESPONSABLES (actor list)
@@ -68,52 +56,12 @@ function rebuildLegend(){
     +'<span style="font-size:10px;color:#bbb;margin-left:6px">🔴 Rojo = tarea vencida</span>';
 }
 
-/* ════════════════════════════════
-   LOGIN
-════════════════════════════════ */
-function buildGrid(){
-  const g=document.getElementById('ckadm-userGrid'); if(!g) return; g.innerHTML='';
-  USERS.forEach(u=>{
-    const b=document.createElement('button');
-    b.className='user-btn'+(u.isAdmin?' is-admin':'');
-    b.textContent=u.name+(u.isAdmin?' ⚙️':'');
-    b.onclick=()=>{ selUserKey=u.key; g.querySelectorAll('.user-btn').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); document.getElementById('ckadm-pinInput').focus(); };
-    g.appendChild(b);
-  });
-}
-buildGrid();
-
-function doLogin(){
-  const err=document.getElementById('ckadm-loginError');
-  if(!selUserKey){err.textContent='Selecciona tu nombre.';return;}
-  const pin=document.getElementById('ckadm-pinInput').value.trim();
-  const u=USERS.find(x=>x.key===selUserKey);
-  if(!u||u.pin!==pin){err.textContent='PIN incorrecto.';document.getElementById('ckadm-pinInput').value='';return;}
-  currentUser=u;
-  document.getElementById('ckadm-loginScreen').style.display='none';
-  document.getElementById('ckadm-mainApp').style.display='block';
-  document.getElementById('ckadm-sessionPill').textContent='👤 '+u.name;
-  document.getElementById('ckadm-adminPanel').classList.toggle('on',u.isAdmin);
-  setTripEditable(u.isAdmin);
-  ACTORS=loadActors(currentVessel);
-  rebuildLegend();
-  render();
-}
-function doLogout(){
-  currentUser=null;selUserKey=null;
-  document.getElementById('ckadm-pinInput').value='';
-  document.getElementById('ckadm-loginError').textContent='';
-  document.getElementById('ckadm-mainApp').style.display='none';
-  document.getElementById('ckadm-loginScreen').style.display='flex';
-  document.querySelectorAll('#ckadm-userGrid .user-btn').forEach(b=>b.classList.remove('selected'));
-}
 function setTripEditable(y){ ['ckadm-tripVessel','ckadm-tripId','ckadm-tripEta','ckadm-tripZarpe','ckadm-tripTm','ckadm-tripObs'].forEach(id=>{ const e=document.getElementById(id); if(e) e.disabled=!y; }); }
 
 /* ════════════════════════════════
    MODALS
 ════════════════════════════════ */
 function openMo(id){
-  if(id==='moUsers') buildUsersModal();
   if(id==='moActors') buildActorsModal();
   var el=document.getElementById('ckadm-'+id)||document.getElementById(id);
   if(el) el.classList.add('open');
@@ -121,26 +69,6 @@ function openMo(id){
 function closeMo(id){
   var el=document.getElementById('ckadm-'+id)||document.getElementById(id);
   if(el) el.classList.remove('open');
-}
-
-/* usuarios modal */
-function buildUsersModal(){
-  document.getElementById('ckadm-moUsersBody').innerHTML=USERS.map((u,i)=>`
-    <div class="u-row">
-      <div style="flex:1"><div class="u-lbl">Nombre</div><input class="u-inp" id="um_n_${i}" value="${esc(u.name)}"></div>
-      <div style="width:100px"><div class="u-lbl">PIN</div><input class="u-inp" id="um_p_${i}" value="${esc(u.pin)}" maxlength="6" type="password" onfocus="this.type='text'" onblur="this.type='password'"></div>
-      ${u.isAdmin?'<span class="u-admin-tag">Admin</span>':'<span style="width:46px"></span>'}
-    </div>`).join('');
-}
-function saveUsers(){
-  USERS.forEach((u,i)=>{
-    const n=document.getElementById('um_n_'+i); const p=document.getElementById('um_p_'+i);
-    if(n&&n.value.trim()) u.name=n.value.trim();
-    if(p&&p.value.trim()) u.pin=p.value.trim();
-  });
-  persistUsers(USERS);
-  if(currentUser){ const upd=USERS.find(u=>u.key===currentUser.key); if(upd){currentUser=upd;document.getElementById('ckadm-sessionPill').textContent='👤 '+upd.name;} }
-  buildGrid(); closeMo('moUsers'); flash();
 }
 
 /* actores modal */
@@ -757,13 +685,6 @@ function persist(){
   fbSave(fbPath('state'), state[currentVessel]);
 }
 
-// persistUsers con Firebase
-const _origPersistUsers = persistUsers;
-function persistUsers(u){
-  localStorage.setItem('atuntro_users_v8', JSON.stringify(u));
-  fbSave('atuntro/users', u);
-}
-
 // persistActors con Firebase (por barco)
 const _origPersistActors = persistActors;
 function persistActors(a){
@@ -786,19 +707,7 @@ function startRealtimeSync(){
     if(currentUser && !isTyping){ render(); }
   });
 
-  // 2. Usuarios globales
-  fbOn('atuntro/users', data=>{
-    if(!data||!Array.isArray(data)) return;
-    USERS = data;
-    buildGrid();
-    // actualizar sesión si el nombre cambió
-    if(currentUser){
-      const upd=USERS.find(u=>u.key===currentUser.key);
-      if(upd){ currentUser=upd; document.getElementById('ckadm-sessionPill').textContent='👤 '+upd.name; }
-    }
-  });
-
-  // 3. Responsables del barco
+  // 2. Responsables del barco
   fbOn(fbPath('actors'), data=>{
     if(!data||!Array.isArray(data)) return;
     ACTORS = data;
@@ -851,9 +760,6 @@ state.gracia=loadSt('gracia');
       isAdmin:  portalUser.role === 'master' || portalUser.role === 'admin',
       isMaster: portalUser.role === 'master'
     };
-    selUserKey = portalUser.key;
-    var ls = document.getElementById('ckadm-loginScreen');
-    if (ls) ls.style.display = 'none';
     var ma = document.getElementById('ckadm-mainApp');
     if (ma) ma.style.display = 'block';
     var sp = document.getElementById('ckadm-sessionPill');
@@ -865,9 +771,13 @@ state.gracia=loadSt('gracia');
     rebuildLegend();
     /* One-time Firebase seed (safe to call multiple times) */
     try {
-      _getDb().ref('atuntro/users').once('value').then(function(snap){
-        if(!snap.val()) fbSave('atuntro/users', USERS);
-      });
+      /* Limpieza única de la lista antigua de usuarios con PIN (ya no se usa). */
+      try { localStorage.removeItem('atuntro_users_v8'); } catch(e) {}
+      if (currentUser.isMaster) {
+        _getDb().ref('atuntro/users').once('value').then(function(snap){
+          if (snap.exists()) return _getDb().ref('atuntro/users').remove();
+        }).catch(function(){});
+      }
       _getDb().ref(fbPath('actors')).once('value').then(function(snap){
         if(!snap.val()) fbSave(fbPath('actors'), ACTORS);
       });
@@ -877,11 +787,9 @@ state.gracia=loadSt('gracia');
     startRealtimeSync();
   }
   /* ── Expose unique functions globally for HTML onclick attributes ── */
-  window.doLogin       = doLogin;
   window.openMo        = openMo;
   window.exportLog     = exportLog;
   window.closeMo       = closeMo;
-  window.saveUsers     = saveUsers;
   window.addActorRow   = addActorRow;
   window.saveActors    = saveActors;
   window.confirmReset  = confirmReset;

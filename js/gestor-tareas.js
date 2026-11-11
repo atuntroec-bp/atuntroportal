@@ -8,7 +8,6 @@ const GT = (() => {
 
   /* ── Constantes ─────────────────────────────────────── */
   const STORAGE_KEY  = 'atuntro_gestor_v1';
-  const DEFAULT_PASS = 'ATUNTRO';          // contraseña por defecto
   const ESTADO_ORDER = ['PENDIENTE','INCOMPLETO','COMPLETO'];
   const COLORS = {
     COMPLETO:  { fill:'#1D9E75', bg:'#E1F5EE', tx:'#085041' },
@@ -101,14 +100,13 @@ const GT = (() => {
   /* ── State ──────────────────────────────────────────── */
   let tasks       = [];
   let responsables= [];
-  let adminPass   = DEFAULT_PASS;
   let nextId      = 200;
   let editingId   = null;
   let rutinas     = [];        // plantillas de tareas recurrentes por viaje
   let nextRutinaId= 1;
   let editingRutId= null;      // rutina que se está editando
   let rutDraft    = [];        // items de la rutina en edición (buffer del modal)
-  let adminUnlocked = false;   // true tras validar la contraseña admin del Gestor
+  let adminUnlocked = false;   // true cuando Administración o Gerencia abre el panel Admin o Rutinas
 
   /* ── Firebase (sincronización entre dispositivos) ───── */
   const FIREBASE_CONFIG = {
@@ -148,11 +146,12 @@ const GT = (() => {
       if (!data) return; // nada remoto aún — lo que hay en local se sube en el próximo save()
       tasks        = data.tasks        || tasks;
       responsables = data.responsables || responsables;
-      adminPass    = data.adminPass    || adminPass;
       nextId       = data.nextId       || nextId;
       rutinas      = data.rutinas      || rutinas;
       nextRutinaId = data.nextRutinaId || nextRutinaId;
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, adminPass, nextId, rutinas, nextRutinaId })); } catch(e) {}
+      // Limpieza única: la contraseña antigua del Gestor ya no se usa; se borra de la base.
+      if (data.adminPass !== undefined && esAdmin()) { ref.child('adminPass').remove().catch(()=>{}); }
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, nextId, rutinas, nextRutinaId })); } catch(e) {}
       renderAll();
       flashSaveDot();
     };
@@ -167,14 +166,12 @@ const GT = (() => {
         const p    = JSON.parse(raw);
         tasks       = p.tasks        || [];
         responsables= p.responsables || [...SEED_RESP];
-        adminPass   = p.adminPass    || DEFAULT_PASS;
         nextId      = p.nextId       || 200;
         rutinas     = p.rutinas      || JSON.parse(JSON.stringify(SEED_RUTINAS));
         nextRutinaId= p.nextRutinaId || (rutinas.reduce((m,r)=>Math.max(m,r.id),0) + 1);
       } else {
         tasks        = JSON.parse(JSON.stringify(SEED_TASKS));
         responsables = [...SEED_RESP];
-        adminPass    = DEFAULT_PASS;
         nextId       = 200;
         rutinas      = JSON.parse(JSON.stringify(SEED_RUTINAS));
         nextRutinaId = 2;
@@ -189,10 +186,10 @@ const GT = (() => {
 
   function save() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, adminPass, nextId, rutinas, nextRutinaId }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, nextId, rutinas, nextRutinaId }));
     } catch(e) {}
     const db = _getDb();
-    if (db) { db.ref(FB_PATH).set({ tasks, responsables, adminPass, nextId, rutinas, nextRutinaId }).then(flashSaveDot).catch(()=>{}); }
+    if (db) { db.ref(FB_PATH).set({ tasks, responsables, nextId, rutinas, nextRutinaId }).then(flashSaveDot).catch(()=>{}); }
   }
 
   /* ── Stats ──────────────────────────────────────────── */
@@ -401,7 +398,7 @@ const GT = (() => {
   }
   function deleteDone() {
     if (!adminUnlocked) {
-      alert('Para eliminar tareas, primero ingrese al panel de administración (🔒 Admin).');
+      alert('Para eliminar tareas, primero abra el panel de administración (⚙ Admin). Solo Administración y Gerencia.');
       return;
     }
     const borrar = visibleForRole(tasks).filter(t => t.estado === 'COMPLETO');
@@ -487,45 +484,21 @@ const GT = (() => {
     save(); closeModal(); renderAll();
   }
 
-  /* ── PIN modal ──────────────────────────────────────── */
-  let pinTarget = 'admin';   // 'admin' | 'rutinas' — a dónde ir tras validar el PIN
-
-  function openPin() {
-    document.getElementById('gt-pin-input').value = '';
-    document.getElementById('gt-pin-error').textContent = '';
-    show('gt-pin-bg');
-    setTimeout(() => document.getElementById('gt-pin-input').focus(), 80);
-  }
-
-  function closePin()      { hide('gt-pin-bg'); }
-  function closePinBg(e)   { if (e.target.id === 'gt-pin-bg') closePin(); }
-
-  function checkPin() {
-    const val   = document.getElementById('gt-pin-input').value;
-    const errEl = document.getElementById('gt-pin-error');
-    if (val === adminPass) {
-      adminUnlocked = true;   // habilita eliminar tareas una por una
-      closePin();
-      if (pinTarget === 'rutinas') { pinTarget = 'admin'; openRutinas(); }
-      else { openAdmin(); }
-      applyFilters();          // re-render para mostrar los botones 🗑
-    } else {
-      errEl.textContent = 'Contraseña incorrecta. Intente de nuevo.';
-      const inp = document.getElementById('gt-pin-input');
-      inp.classList.remove('gt-shake');
-      void inp.offsetWidth; // reflow para reiniciar animación
-      inp.classList.add('gt-shake');
-      inp.value = '';
-      inp.focus();
-    }
+  /* ── Acceso de administrador (por rol del portal) ───── */
+  // El panel Admin, las Rutinas y eliminar tareas son solo para Administración y
+  // Gerencia. Lo decide el rol con el que la persona entró al portal: ya no hay
+  // una contraseña aparte.
+  function esAdmin() { return currentRole === 'admin' || currentRole === 'master'; }
+  function desbloquearAdmin() {
+    if (!esAdmin()) { alert('Esta opción es solo para Administración y Gerencia.'); return false; }
+    if (!adminUnlocked) { adminUnlocked = true; applyFilters(); }   // muestra los botones 🗑
+    return true;
   }
 
   /* ── Admin panel ────────────────────────────────────── */
   function openAdmin() {
+    if (!desbloquearAdmin()) return;
     renderRespList();
-    document.getElementById('gt-pass-new').value  = '';
-    document.getElementById('gt-pass-conf').value = '';
-    document.getElementById('gt-pass-msg').textContent = '';
     document.getElementById('gt-resp-new').value  = '';
     document.getElementById('gt-resp-add-error').textContent = '';
     show('gt-admin-bg');
@@ -547,7 +520,7 @@ const GT = (() => {
             <div class="gt-resp-item-name">${esc(r)}</div>
             <div class="gt-resp-item-info">${n > 0 ? `${n} tarea${n>1?'s':''} asignada${n>1?'s':''}` : 'Sin tareas asignadas'}</div>
           </div>
-          <button class="gt-resp-del" onclick="GT.removeResponsable('${esc(r)}')"
+          <button class="gt-resp-del" onclick="GT.removeResponsable('${esc(escJs(r))}')"
             ${!canDel?'disabled title="Reasigne las tareas antes de eliminar"':'title="Eliminar responsable"'}>✕</button>
         </div>`;
       }).join('') || '<div style="font-size:12px;color:#ccc;padding:8px 0">Sin responsables registrados.</div>';
@@ -581,7 +554,7 @@ const GT = (() => {
   /* ── Eliminar tarea individual (solo admin) ─────────── */
   function deleteTask(id) {
     if (!adminUnlocked) {
-      alert('Para eliminar tareas, primero ingrese al panel de administración (🔒 Admin).');
+      alert('Para eliminar tareas, primero abra el panel de administración (⚙ Admin). Solo Administración y Gerencia.');
       return;
     }
     const t = tasks.find(t => t.id === id);
@@ -599,24 +572,6 @@ const GT = (() => {
     tasks  = [];
     nextId = 200;
     save(); closeAdmin(); renderAll();
-  }
-
-  /* ── Cambiar contraseña ─────────────────────────────── */
-  function changePass() {
-    const n1  = document.getElementById('gt-pass-new').value;
-    const n2  = document.getElementById('gt-pass-conf').value;
-    const msg = document.getElementById('gt-pass-msg');
-    msg.className = 'gt-chpass-msg';
-    if (!n1) { msg.textContent = 'Ingrese la nueva contraseña.'; msg.classList.add('gt-chpass-err'); return; }
-    if (n1.length < 4) { msg.textContent = 'Mínimo 4 caracteres.'; msg.classList.add('gt-chpass-err'); return; }
-    if (n1 !== n2) { msg.textContent = 'Las contraseñas no coinciden.'; msg.classList.add('gt-chpass-err'); return; }
-    adminPass = n1;
-    save();
-    document.getElementById('gt-pass-new').value  = '';
-    document.getElementById('gt-pass-conf').value = '';
-    msg.textContent = '✓ Contraseña actualizada correctamente.';
-    msg.classList.add('gt-chpass-ok');
-    setTimeout(() => { msg.textContent = ''; }, 3000);
   }
 
   /* ══════════════════════════════════════════════════════
@@ -638,10 +593,9 @@ const GT = (() => {
     return v < 0 ? `${Math.abs(v)} día${Math.abs(v) > 1 ? 's' : ''} antes` : `${v} día${v > 1 ? 's' : ''} después`;
   }
 
-  // Punto de entrada del botón 🚢 Rutinas: exige desbloqueo admin.
+  // Punto de entrada del botón 🚢 Rutinas: solo Administración y Gerencia.
   function openRutinas() {
-    if (!seesAll()) { alert('Las rutinas solo están disponibles para el administrador.'); return; }
-    if (!adminUnlocked) { pinTarget = 'rutinas'; openPin(); return; }
+    if (!desbloquearAdmin()) return;
     renderRutinasList();
     show('gt-rut-bg');
   }
@@ -813,13 +767,16 @@ const GT = (() => {
   // Muestra u oculta el botón 🚢 Rutinas según el rol de la sesión.
   function applyRoleToRutinas() {
     const btn = document.getElementById('gt-rut-btn');
-    if (btn) btn.style.display = seesAll() ? '' : 'none';
+    if (btn) btn.style.display = esAdmin() ? '' : 'none';
+    const adm = document.getElementById('gt-admin-btn');
+    if (adm) adm.style.display = esAdmin() ? '' : 'none';
   }
 
   /* ── Helpers ────────────────────────────────────────── */
   function show(id) { document.getElementById(id).classList.add('gt-show'); }
   function hide(id) { document.getElementById(id).classList.remove('gt-show'); }
-  function esc(s)   { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function esc(s)   { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function escJs(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
   function today()  { return new Date().toISOString().slice(0,10); }
 
   /* ── Render all ─────────────────────────────────────── */
@@ -858,10 +815,9 @@ const GT = (() => {
   return {
     init, applyFilters, clearFilters, cycleStatus,
     openModal, closeModal, closeModalBg, saveTask,
-    openPin, closePin, closePinBg, checkPin,
     openAdmin, closeAdmin, closeAdminBg,
     addResponsable, removeResponsable,
-    resetTasks, changePass, deleteTask, toggleDone, deleteDone,
+    resetTasks, deleteTask, toggleDone, deleteDone,
     openRutinas, closeRutinas, closeRutinasBg,
     openRutEditor, closeRutEditor, closeRutEditorBg,
     rutDraftSet, rutDraftAdd, rutDraftDel, saveRutina, deleteRutina,

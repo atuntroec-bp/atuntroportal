@@ -34,6 +34,9 @@ Nunca editar `index.html` ni `dist/index.html` a mano: se sobrescriben en cada b
 | `contable.js` | Dashboard Contable |
 | `boyas.js` | Control de Boyas |
 | `plano-red.js` | Plano de Red |
+| `cuadro-salida.js` | Cuadro de Salida (presupuesto por viaje; abre `contratos.html` dentro del portal) |
+| `notif-plantillas.js` | Textos y ajustes de fábrica de las notificaciones (JSON válido; va antes de `notificaciones.js`) |
+| `notificaciones.js` | Notificaciones push: activación por dispositivo y editor (solo master) |
 | `pwa.js` | App instalable: registra el service worker y recarga sola con cada versión nueva |
 
 ## Cómo hacer un cambio
@@ -67,6 +70,7 @@ Android → Chrome → menú → *Instalar app*; iPhone → Safari → Compartir
   campo, espera a que termine.
 - Al publicar, subir también `sw.js`, `manifest.webmanifest`, `offline.html` e `icons/` de la raíz.
 
+## Firebase
 
 - **Inicio de sesión:** correo y contraseña (Firebase Authentication). El acceso anónimo está desactivado.
 - **Usuarios y roles:** `atuntro_portal_auth_v2` (`users`, `emails`, `uids`). Solo un master los cambia.
