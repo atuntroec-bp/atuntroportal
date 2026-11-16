@@ -18111,7 +18111,7 @@ return api;
 .conc-kpi .l{font-size:10px;font-weight:700;color:#7A96B2;text-transform:uppercase;letter-spacing:.5px}
 .conc-kpi .v{font-size:20px;font-weight:700;color:#1F4E79;margin-top:4px}
 .conc-kpi .s{font-size:10px;color:#999;margin-top:2px}
-.conc-wrap .neg{color:#B3261E!important}
+.conc-wrap .neg,.conc-wrap .conc-in.neg{color:#B3261E!important}
 .conc-alert{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-bottom:10px}
 .conc-alert-b{background:#fff;border-radius:10px;padding:10px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #B3261E}
 .conc-alert-b.ambar{border-left-color:#E8A33D}
@@ -18126,6 +18126,12 @@ return api;
 .conc-card-h h3{font-size:12px;color:#1F4E79;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .conc-card-h .t{font-size:13px;color:#1F4E79;font-weight:700}
 .conc-card-h .meta{font-size:10px;color:#7A96B2;font-weight:400;text-transform:none}
+.conc-sec{border-left:5px solid var(--c)}
+.conc-sec .conc-card-h{background:color-mix(in srgb,var(--c) 10%,#fff);border-bottom-color:color-mix(in srgb,var(--c) 25%,#fff)}
+.conc-sec .conc-card-h h3,.conc-sec .conc-card-h .t{color:var(--c)}
+.conc-sec .conc-t th{color:var(--c)}
+.conc-sec .conc-t tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--c) 4%,#fff)}
+.conc-sec .conc-btn.sm{background:var(--c)}
 .conc-per input.per{width:110px;text-transform:none;font-weight:700}
 .conc-scroll{overflow-x:auto}
 table.conc-t{width:100%;border-collapse:collapse;font-size:12px}
@@ -18212,19 +18218,19 @@ const P = {
 
 /* Secciones en el orden del Excel. pago:true → columnas Fecha y Pagado. */
 const SECS = [
-  { k:'bancos',     t:'Efectivo y bancos',                 hint:'Saldo disponible en libros por cuenta' },
-  { k:'cheques',    t:'Cheques girados y no cobrados',     hint:'Ingresa en negativo', pago:true },
-  { k:'recibir',    t:'Valores por recibir',               hint:'Ingresa en positivo', pago:true },
-  { k:'inmediato',  t:'Pagos a realizar inmediato',        hint:'Ingresa en negativo', pago:true },
-  { k:'cxc',        t:'Cuentas por cobrar',                hint:'Ingresa en positivo', pago:true },
-  { k:'mensual',    t:'Pagos a realizar mensual',          hint:'Pagos en negativo · ingresos esperados en positivo', pago:true },
-  { k:'descargas',  t:'Por recibir de descargas',          hint:'Ingresa en positivo', pago:true, periodo:true },
-  { k:'salida',     t:'Pagos para salida',                 hint:'Ingresa en negativo', pago:true },
-  { k:'proyeccion', t:'Proyección: entrada MG y pagos sin compensación', hint:'Ajustes de la proyección (+ / −)', pago:true }
+  { k:'bancos',     c:'#2E75B6', t:'Efectivo y bancos',                 hint:'Saldo disponible en libros por cuenta' },
+  { k:'cheques',    c:'#8E44AD', t:'Cheques girados y no cobrados',     hint:'Ingresa en negativo', pago:true },
+  { k:'recibir',    c:'#1D9E75', t:'Valores por recibir',               hint:'Ingresa en positivo', pago:true },
+  { k:'inmediato',  c:'#E8A33D', t:'Pagos a realizar inmediato',        hint:'Ingresa en negativo', pago:true },
+  { k:'cxc',        c:'#2E8B57', t:'Cuentas por cobrar',                hint:'Ingresa en positivo', pago:true },
+  { k:'mensual',    c:'#3F51B5', t:'Pagos a realizar mensual',          hint:'Pagos en negativo · ingresos esperados en positivo', pago:true },
+  { k:'descargas',  c:'#00838F', t:'Por recibir de descargas',          hint:'Ingresa en positivo', pago:true, periodo:true },
+  { k:'salida',     c:'#A0522D', t:'Pagos para salida',                 hint:'Ingresa en negativo', pago:true },
+  { k:'proyeccion', c:'#546E7A', t:'Proyección: entrada MG y pagos sin compensación', hint:'Ajustes de la proyección (+ / −)', pago:true }
 ];
 /* Saldos encadenados: aparecen debajo de la sección indicada. */
 const SALDOS = [
-  { after:'bancos',     k:'disp', t:'Total disponible',                                 f:T => T.bancos },
+  { after:'bancos',     k:'disp', t:'Total disponible',                                 f:T => T.bancos, oculto:true },
   { after:'cheques',    k:'s1',   t:'Saldo después de cheques girados y no cobrados',   f:T => T.disp + T.cheques },
   { after:'inmediato',  k:'s2',   t:'Saldo después de pagos',                           f:T => T.s1 + T.recibir + T.inmediato },
   { after:'cxc',        k:'s3',   t:'Saldo después de cuentas por cobrar y pagos',      f:T => T.s2 + T.cxc },
@@ -18477,7 +18483,7 @@ function vConc(D, T){
     kpi('Proyección final', T.s6, 'Con ajustes de proyección', 'k4', 'conc-k-s6') +
     '</div>';
   if (venc.length || prox.length) {
-    const li = x => '<li><span>' + esc(x.txt) + ' <em>· ' + esc(x.sec) + '</em></span><span>' + fFecha(x.fecha) + ' · <b>' + money(x.monto) + '</b></span></li>';
+    const li = x => '<li><span>' + esc(x.txt) + ' <em>· ' + esc(x.sec) + '</em></span><span>' + fFecha(x.fecha) + ' · <b class="'+(Number(x.monto)<0?'neg':'')+'">' + money(x.monto) + '</b></span></li>';
     h += '<div class="conc-alert">' +
       (venc.length ? '<div class="conc-alert-b rojo"><h4>⚠ Vencidos sin marcar como pagados (' + venc.length + ')</h4><ul>' + venc.map(li).join('') + '</ul></div>' : '') +
       (prox.length ? '<div class="conc-alert-b ambar"><h4>⏳ Vencen en los próximos 7 días (' + prox.length + ')</h4><ul>' + prox.map(li).join('') + '</ul></div>' : '') +
@@ -18485,7 +18491,7 @@ function vConc(D, T){
   }
   SECS.forEach(s => {
     h += secCard(D, s, T);
-    SALDOS.filter(x=>x.after===s.k).forEach(x => {
+    SALDOS.filter(x=>x.after===s.k && !x.oculto).forEach(x => {
       h += '<div class="conc-saldo'+(x.fuerte?' fuerte':'')+'"><span>'+esc(x.t)+'</span><b id="conc-t-'+x.k+'" class="'+(T[x.k]<0?'neg':'')+'">'+money(T[x.k])+'</b></div>';
     });
   });
@@ -18496,11 +18502,11 @@ function secCard(D, s, T){
   const ed = editable();
   const abierto = st.open[s.k] !== false;
   const sd = (D.actual.secs||{})[s.k] || {};
-  let h = '<div class="conc-card"><div class="conc-card-h" onclick="CONC.toggle(\''+s.k+'\')">' +
+  let h = '<div class="conc-card conc-sec" style="--c:'+s.c+'"><div class="conc-card-h" onclick="CONC.toggle(\''+s.k+'\')">' +
     '<h3>' + (abierto?'▾ ':'▸ ') + esc(s.t) +
     (s.periodo ? ' <span class="conc-per">' + (ed ? '<input class="conc-in per" value="'+esc(sd.periodo||'')+'" placeholder="Periodo" onclick="event.stopPropagation()" onchange="CONC.periodo(\''+s.k+'\',this.value)">' : esc(sd.periodo||'')) + '</span>' : '') +
     ' <span class="meta">' + L.length + ' línea' + (L.length===1?'':'s') + '</span></h3>' +
-    '<span class="t" id="conc-t-'+s.k+'">' + money(T[s.k]) + '</span></div>';
+    '<span class="t'+(T[s.k]<0?' neg':'')+'" id="conc-t-'+s.k+'">' + money(T[s.k]) + '</span></div>';
   if (!abierto) return h + '</div>';
   h += '<div class="conc-scroll"><table class="conc-t"><thead><tr><th>Concepto</th>' + (s.pago ? '<th>Fecha</th>' : '') + '<th class="r">Monto</th><th>Nota</th>' + (s.pago ? '<th class="c">Pagado</th>' : '') + (ed ? '<th></th>' : '') + '</tr></thead><tbody>';
   if (!L.length) h += '<tr><td colspan="6" class="conc-vac">Sin líneas</td></tr>';
@@ -18624,7 +18630,7 @@ function onInput(e){
   if (esMonto(el)) {
     if (a.f !== 'monto') return;  // precios: se guardan al salir del campo
     const p = parseMonto(el.value); el.classList.toggle('bad', !p);
-    if (p) { row.monto = p.monto; row.expr = p.expr; refrescarTotales(); }
+    if (p) { row.monto = p.monto; row.expr = p.expr; el.classList.toggle('neg', p.monto < 0); refrescarTotales(); }
     return;
   }
   if (el.type === 'checkbox' || el.tagName === 'SELECT' || el.type === 'date') return;
