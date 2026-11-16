@@ -152,6 +152,19 @@
         linkLabel: 'Abrir dashboard',
       },
       {
+        id: 'conciliacion',
+        title: 'Conciliación Bancaria',
+        desc: 'Saldos en bancos, cheques, pagos y cobros pendientes con saldos encadenados, préstamos, precio de combustible, alertas de vencimiento y cortes guardados.',
+        icon: '🏦',
+        iconColor: 'teal',
+        color: 'color-teal',
+        status: 'active',
+        roles: ['admin','master'],
+        vessels: [],
+        onclick: 'openConciliacion()',
+        linkLabel: 'Abrir conciliación',
+      },
+      {
         id: 'rentabilidad',
         title: 'Modelo de Rentabilidad',
         desc: 'Base de datos anual de viajes: descargas por talla, costos por proveedor, breakdowns de capitanes y análisis de rentabilidad.',
@@ -232,7 +245,7 @@
 
   // ── Navigation ──────────────────────────────────────────────────────────────
   function hideAllScreens() {
-    ['screen-login','screen-dashboard','screen-gestor','screen-checklist-ops','screen-checklist-adm','screen-equipos','screen-simulador','screen-documentos','screen-boyas','screen-proyectos','screen-plano','screen-contable','screen-cuadro'].forEach(function(id){
+    ['screen-login','screen-dashboard','screen-gestor','screen-checklist-ops','screen-checklist-adm','screen-equipos','screen-simulador','screen-documentos','screen-boyas','screen-proyectos','screen-plano','screen-contable','screen-cuadro','screen-conciliacion'].forEach(function(id){
       var el = document.getElementById(id);
       if (el) el.classList.remove('active');
     });
@@ -368,6 +381,23 @@
     }, 100);
   }
   function goBackFromCuadro() {
+    var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
+    if (sess && AUTH.users[sess.id]) { enterDashboard(AUTH.users[sess.id].role); } else { logout(); }
+  }
+  function openConciliacion() {
+    var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
+    if (!sess) { logout(); return; }
+    var u = AUTH.users[sess.id];
+    if (!u || (u.role !== 'admin' && u.role !== 'master')) { enterDashboard(u ? u.role : ''); return; }
+    hideAllScreens();
+    document.getElementById('screen-conciliacion').classList.add('active');
+    window.scrollTo(0,0);
+    setTimeout(function(){
+      if (typeof CONC !== 'undefined') { try { CONC.init({ name: u.name, key: sess.id, role: u.role }); } catch(e){ console.error(e); } }
+    }, 100);
+  }
+  function goBackFromConciliacion() {
+    if (typeof CONC !== 'undefined') { try { CONC.salir(); } catch(e){} }
     var sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
     if (sess && AUTH.users[sess.id]) { enterDashboard(AUTH.users[sess.id].role); } else { logout(); }
   }

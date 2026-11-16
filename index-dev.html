@@ -6125,6 +6125,115 @@ table.csal-t{width:100%;border-collapse:collapse;font-size:12px}
 <!-- =============== FIN MÓDULO CUADRO DE SALIDA =============== -->
 </div>
 
+<div id="screen-conciliacion" class="screen">
+<!-- ================= MÓDULO CONCILIACIÓN (CONC) v1 ================= -->
+<style>
+#screen-conciliacion.screen.active{display:block;padding:0;min-height:100vh;background:#f0f2f5;overflow-y:auto}
+#screen-conciliacion{color:#1a1a18;font-family:Arial,sans-serif}
+#screen-conciliacion input,#screen-conciliacion select,#screen-conciliacion button{font-family:inherit}
+.conc-wrap{max-width:1100px;margin:0 auto;padding:14px}
+.conc-header{background:#1F4E79;border-radius:12px;padding:14px 20px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.conc-header h2{font-size:15px;font-weight:600;color:#fff;margin-bottom:1px}
+.conc-header p{font-size:11px;color:#a8c4e0}
+.conc-hr{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.conc-hbtn{font-size:11px;padding:5px 11px;border-radius:14px;border:1px solid rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.9);cursor:pointer}
+.conc-hbtn:hover{background:rgba(255,255,255,.18)}
+.conc-sync{display:flex;align-items:center;gap:5px;font-size:11px;color:#a8c4e0}
+.conc-sync .sync-dot{width:6px;height:6px;border-radius:50%;background:#999;display:inline-block}
+.conc-sync .sync-dot.ok{background:#4AE3A8}.conc-sync .sync-dot.local{background:#F5B942}.conc-sync .sync-dot.saving{background:#4AE3A8;opacity:.6}
+.conc-back{font-size:11px;padding:6px 14px;border-radius:20px;border:none;background:#fff;color:#1F4E79;font-weight:700;cursor:pointer}
+.conc-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.conc-tab{padding:7px 14px;border-radius:20px;border:1.5px solid #C8D6E5;background:#fff;color:#1F4E79;font-size:12px;cursor:pointer}
+.conc-tab.active{background:#1F4E79;color:#fff;border-color:#1F4E79;font-weight:600}
+.conc-tab .n{font-size:10px;background:rgba(0,0,0,.08);border-radius:8px;padding:1px 6px;margin-left:4px}
+.conc-tab.active .n{background:rgba(255,255,255,.2)}
+.conc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:10px}
+.conc-kpi{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #2E75B6}
+.conc-kpi.k2{border-left-color:#E8A33D}.conc-kpi.k3{border-left-color:#1D9E75}.conc-kpi.k4{border-left-color:#7F77DD}
+.conc-kpi .l{font-size:10px;font-weight:700;color:#7A96B2;text-transform:uppercase;letter-spacing:.5px}
+.conc-kpi .v{font-size:20px;font-weight:700;color:#1F4E79;margin-top:4px}
+.conc-kpi .s{font-size:10px;color:#999;margin-top:2px}
+.conc-wrap .neg{color:#B3261E!important}
+.conc-alert{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-bottom:10px}
+.conc-alert-b{background:#fff;border-radius:10px;padding:10px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #B3261E}
+.conc-alert-b.ambar{border-left-color:#E8A33D}
+.conc-alert-b h4{font-size:12px;color:#1F4E79;margin-bottom:6px}
+.conc-alert-b ul{list-style:none;margin:0;padding:0}
+.conc-alert-b li{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:4px 0;border-top:1px solid #f0f2f5}
+.conc-alert-b li>span:last-child{white-space:nowrap;text-align:right}
+.conc-alert-b li em{color:#999;font-style:normal;font-size:11px}
+.conc-card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:8px;overflow:hidden}
+.conc-card-h{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#F4F7FB;border-bottom:1px solid #e3eaf2;cursor:pointer;gap:8px;flex-wrap:wrap}
+.conc-card-h.nohand{cursor:default}
+.conc-card-h h3{font-size:12px;color:#1F4E79;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.conc-card-h .t{font-size:13px;color:#1F4E79;font-weight:700}
+.conc-card-h .meta{font-size:10px;color:#7A96B2;font-weight:400;text-transform:none}
+.conc-per input.per{width:110px;text-transform:none;font-weight:700}
+.conc-scroll{overflow-x:auto}
+table.conc-t{width:100%;border-collapse:collapse;font-size:12px}
+.conc-t th{text-align:left;font-size:10px;color:#7A96B2;text-transform:uppercase;letter-spacing:.4px;padding:7px 10px;border-bottom:1px solid #eef2f7;white-space:nowrap}
+.conc-t td{padding:4px 10px;border-bottom:1px solid #f3f5f8;vertical-align:middle}
+.conc-t .r{text-align:right;white-space:nowrap}.conc-t .c{text-align:center}.conc-t .nw{white-space:nowrap}
+.conc-t tr.pagado td{color:#999;background:#FAFAF8}
+.conc-t tr.pagado .conc-in{text-decoration:line-through;color:#999}
+.conc-vac,.conc-empty{color:#999;font-size:12px;text-align:center;padding:14px}
+.conc-in{width:100%;min-width:90px;border:1px solid transparent;border-bottom:1.5px solid #e0e0e0;background:transparent;padding:4px 2px;font-size:12px;color:#1a1a18;outline:none;border-radius:4px}
+.conc-in:focus{border-color:#2E75B6;background:#fff}
+.conc-in.monto{text-align:right;min-width:110px;font-weight:600}
+.conc-in.fecha{width:auto;min-width:120px}
+.conc-in.sel{min-width:90px}
+.conc-in.nota{min-width:140px;color:#555}
+.conc-in.calc{color:#7A96B2;font-style:italic}
+.conc-in.bad{border-color:#B3261E;background:#FDECEA}
+.conc-fx{font-size:10px;color:#7A96B2;font-style:italic;margin-left:3px;cursor:help}
+.conc-nota{color:#666}
+.conc-sub{color:#999;font-size:10px}
+.conc-x{border:none;background:transparent;color:#c0392b;cursor:pointer;font-size:13px;padding:2px 6px;border-radius:4px}
+.conc-x:hover{background:#FDECEA}
+.conc-card-f{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 14px;flex-wrap:wrap}
+.conc-hint{font-size:10px;color:#999}
+.conc-btn{background:#1F4E79;color:#fff;border:none;border-radius:16px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer}
+.conc-btn:hover{background:#2E75B6}
+.conc-btn.sm{padding:5px 12px;font-size:11px}
+.conc-btn.sec{background:#fff;color:#1F4E79;border:1.5px solid #C8D6E5}
+.conc-saldo{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#E8EEF5;color:#1F4E79;border-radius:10px;padding:9px 16px;margin:0 0 12px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.conc-saldo b{font-size:14px;white-space:nowrap}
+.conc-saldo.fuerte{background:#1F4E79;color:#fff}
+.conc-saldo.fuerte b.neg{color:#FFB4AB!important}
+.conc-bdg{display:inline-block;font-size:10px;font-weight:700;border-radius:8px;padding:2px 7px;white-space:nowrap}
+.conc-bdg.rojo{background:#FDECEA;color:#B3261E}.conc-bdg.ambar{background:#FFF3E0;color:#8a4b00}.conc-bdg.azul{background:#E6F1FB;color:#1F4E79}
+.conc-cortebar{background:#FFF3E0;color:#8a4b00;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.conc-ovl{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;align-items:center;justify-content:center;padding:16px}
+.conc-ovl.show{display:flex}
+.conc-modal{background:#fff;border-radius:12px;padding:20px;max-width:420px;width:100%;color:#1a1a18}
+.conc-modal h3{font-size:15px;color:#1F4E79;margin-bottom:6px}
+.conc-mp{font-size:12px;color:#666;margin-bottom:12px}
+.conc-ml{display:block;font-size:10px;font-weight:700;color:#7A96B2;text-transform:uppercase;margin-bottom:4px}
+.conc-mi{width:100%;border:1.5px solid #C8D6E5;border-radius:8px;padding:8px;font-size:13px}
+.conc-mb{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.conc-toast{font-family:Arial,sans-serif;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1F4E79;color:#fff;padding:9px 18px;border-radius:20px;font-size:12px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.conc-toast.err{background:#8B2E0A}
+@media(max-width:640px){.conc-wrap{padding:8px}.conc-kpi .v{font-size:17px}.conc-saldo{font-size:11px}.conc-header{padding:12px 14px}}
+@media print{.conc-header .conc-hr,.conc-tabs,.conc-card-f,.conc-x{display:none!important}.conc-in{border:none!important}}
+</style>
+<div class="conc-wrap">
+  <div class="conc-header">
+    <div><h2>🏦 Conciliación Bancaria</h2><p id="conc-upd">Cargando…</p></div>
+    <div class="conc-hr">
+      <button class="conc-hbtn" id="conc-corteBtn" hidden onclick="CONC.nuevoCorte()">📸 Guardar corte</button>
+      <button class="conc-hbtn" id="conc-exp" hidden onclick="CONC.exportar()">⬇ Excel</button>
+      <span class="conc-sync"><span class="sync-dot" id="conc-syncDot"></span><span id="conc-syncLbl">—</span></span>
+      <button class="conc-back" onclick="goBackFromConciliacion()">← Volver</button>
+    </div>
+  </div>
+  <div class="conc-tabs" id="conc-tabs"></div>
+  <div id="conc-body"></div>
+</div>
+<div class="conc-ovl" id="conc-ovl"><div class="conc-modal" id="conc-modal"></div></div>
+<script src="js/conciliacion.js"></script>
+<!-- =============== FIN MÓDULO CONCILIACIÓN =============== -->
+</div>
+
 
 <!-- ═══════════════════════════════════════════════════════════════════
      IMPRESIÓN — GLOBAL. Debe ir al FINAL del documento.
