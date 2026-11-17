@@ -28,7 +28,7 @@ const SECS = [
   { k:'salida',     c:'#A0522D', t:'Pagos para salida',                 sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
   { k:'cxc',        c:'#2E8B57', t:'Cuentas por cobrar',                sg:1, hint:'Se suma solo', pago:true },
   { k:'mensual',    c:'#3F51B5', t:'Pagos a realizar mensual',          hint:'Usa el botón ± para cambiar entre pago (resta) e ingreso (suma)', pago:true },
-  { k:'descargas',  c:'#00838F', t:'Valores por recibir de descargas',          sg:1, hint:'Se suma solo', pago:true, periodo:true },
+  { k:'descargas',  c:'#00838F', t:'Valores por recibir',          sg:1, hint:'Se suma solo', pago:true, periodo:true },
   { k:'proyeccion', c:'#546E7A', oculto:true, t:'Proyección: entrada MG y pagos sin compensación', hint:'Usa el botón ± para cambiar entre resta y suma', pago:true }
 ];
 /* Saldos encadenados: aparecen debajo de la sección indicada. */
@@ -38,7 +38,7 @@ const SALDOS = [
   { after:'salida',     k:'s2',   t:'Saldo después de pagos',                           f:T => T.s1 + T.inmediato + T.salida },
   { after:'cxc',        k:'s3',   t:'Saldo después de cuentas por cobrar y pagos',      f:T => T.s2 + T.cxc },
   { after:'mensual',    k:'s4',   t:'Luego de pagos mensuales',                         f:T => T.s3 + T.mensual },
-  { after:'descargas',  k:'s5',   t:'Saldo aproximado luego de pagos y salida del barco', f:T => T.s4 + T.descargas + T.recibir, fuerte:true },
+  { after:'descargas',  k:'s5',   t:'Saldo aproximado luego de pagos, cobros y valores por recibir', f:T => T.s4 + T.descargas + T.recibir, fuerte:true },
   { after:'proyeccion', k:'s6',   t:'Proyección final',                                 f:T => T.s5 + T.proyeccion, oculto:true }
 ];
 
@@ -296,7 +296,7 @@ function vConc(D, T){
   h += '<div class="conc-kpis">' +
     kpi('Total disponible', T.disp, 'Efectivo y bancos', '', 'conc-k-disp') +
     kpi('Saldo después de pagos', T.s2, 'Incluye pagos inmediatos y de salida', 'k2', 'conc-k-s2') +
-    kpi('Saldo aproximado', T.s5, 'Luego de pagos y salida del barco', 'k3', 'conc-k-s5') +
+    kpi('Saldo aproximado', T.s5, 'Luego de pagos, cobros y valores por recibir', 'k3', 'conc-k-s5') +
     '</div>';
   if (venc.length || prox.length) {
     const li = x => '<li><span>' + esc(x.txt) + ' <em>· ' + esc(x.sec) + '</em></span><span>' + fFecha(x.fecha) + ' · <b class="'+(Number(x.monto)<0?'neg':'')+'">' + money(x.monto) + '</b></span></li>';
