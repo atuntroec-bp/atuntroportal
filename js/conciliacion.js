@@ -21,15 +21,15 @@ const P = {
 
 /* Secciones en el orden del Excel. pago:true → columnas Fecha y Pagado. */
 const SECS = [
-  { k:'bancos',     c:'#2E75B6', t:'Efectivo y bancos',                 hint:'Saldo disponible en libros por cuenta' },
-  { k:'cheques',    c:'#8E44AD', t:'Cheques girados y no cobrados',     hint:'Ingresa en negativo', pago:true },
-  { k:'recibir',    c:'#1D9E75', t:'Valores por recibir',               hint:'Ingresa en positivo', pago:true },
-  { k:'inmediato',  c:'#E8A33D', t:'Pagos a realizar inmediato',        hint:'Ingresa en negativo', pago:true },
-  { k:'cxc',        c:'#2E8B57', t:'Cuentas por cobrar',                hint:'Ingresa en positivo', pago:true },
-  { k:'mensual',    c:'#3F51B5', t:'Pagos a realizar mensual',          hint:'Pagos en negativo · ingresos esperados en positivo', pago:true },
-  { k:'descargas',  c:'#00838F', t:'Por recibir de descargas',          hint:'Ingresa en positivo', pago:true, periodo:true },
-  { k:'salida',     c:'#A0522D', t:'Pagos para salida',                 hint:'Ingresa en negativo', pago:true },
-  { k:'proyeccion', c:'#546E7A', t:'Proyección: entrada MG y pagos sin compensación', hint:'Ajustes de la proyección (+ / −)', pago:true }
+  { k:'bancos',     c:'#2E75B6', t:'Efectivo y bancos',                 hint:'Saldo disponible en libros por cuenta · usa ± si una cuenta está en negativo' },
+  { k:'cheques',    c:'#8E44AD', t:'Cheques girados y no cobrados',     sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
+  { k:'recibir',    c:'#1D9E75', t:'Valores por recibir',               sg:1, hint:'Se suma solo', pago:true },
+  { k:'inmediato',  c:'#E8A33D', t:'Pagos a realizar inmediato',        sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
+  { k:'cxc',        c:'#2E8B57', t:'Cuentas por cobrar',                sg:1, hint:'Se suma solo', pago:true },
+  { k:'mensual',    c:'#3F51B5', t:'Pagos a realizar mensual',          hint:'Usa el botón ± para cambiar entre pago (resta) e ingreso (suma)', pago:true },
+  { k:'descargas',  c:'#00838F', t:'Por recibir de descargas',          sg:1, hint:'Se suma solo', pago:true, periodo:true },
+  { k:'salida',     c:'#A0522D', t:'Pagos para salida',                 sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
+  { k:'proyeccion', c:'#546E7A', t:'Proyección: entrada MG y pagos sin compensación', hint:'Usa el botón ± para cambiar entre resta y suma', pago:true }
 ];
 /* Saldos encadenados: aparecen debajo de la sección indicada. */
 const SALDOS = [
@@ -86,10 +86,14 @@ function parseMonto(txt, dec){
   try { const n = Function('"use strict";return (' + s + ')')(); return isFinite(n) ? { monto:rd(n), expr:s } : null; } catch(e){ return null; }
 }
 
+/* Signo según la sección: sg -1 siempre resta, sg 1 siempre suma, sin sg respeta el signo de la línea. */
+const SECMAP = {}; SECS.forEach(s => { SECMAP[s.k] = s; });
+function val(sec, m){ const s = SECMAP[sec] || {}; const n = Number(m)||0; return s.sg === -1 ? -Math.abs(n) : s.sg === 1 ? Math.abs(n) : n; }
+
 /* ── cálculos ── */
 function totales(D){
   const T = {};
-  SECS.forEach(s => { T[s.k] = r2(filas(D, s.k).filter(r => !(s.pago && r.pagado)).reduce((a,r)=>a+(Number(r.monto)||0),0)); });
+  SECS.forEach(s => { T[s.k] = r2(filas(D, s.k).filter(r => !(s.pago && r.pagado)).reduce((a,r)=>a+val(s.k, r.monto),0)); });
   SALDOS.forEach(x => { T[x.k] = r2(x.f(T)); });
   const pv = lista(D.prestamos).filter(p => p.estado !== 'pagada');
   T.prestVig = r2(pv.reduce((a,p)=>a+(Number(p.monto)||0),0));
@@ -102,7 +106,7 @@ function vencimientos(D){
   const out = [];
   SECS.filter(s=>s.pago).forEach(s => filas(D, s.k).forEach(r => {
     if (r.pagado || !r.fecha) return;
-    out.push({ d:dias(r.fecha), fecha:r.fecha, txt:r.concepto||'(sin concepto)', monto:r.monto, sec:s.t });
+    out.push({ d:dias(r.fecha), fecha:r.fecha, txt:r.concepto||'(sin concepto)', monto:val(s.k, r.monto), sec:s.t });
   }));
   lista(D.prestamos).forEach(p => {
     if (p.estado === 'pagada' || !p.pago) return;
@@ -315,19 +319,20 @@ function secCard(D, s, T){
   if (!L.length) h += '<tr><td colspan="6" class="conc-vac">Sin líneas</td></tr>';
   L.forEach(r => {
     const a = 'data-t="sec" data-s="'+s.k+'" data-id="'+r.id+'"';
-    const neg = Number(r.monto) < 0 ? ' neg' : '';
+    const mv = val(s.k, r.monto);
+    const neg = mv < 0 ? ' neg' : '';
     h += '<tr class="'+(s.pago && r.pagado ? 'pagado' : '')+'">';
     if (ed) {
       h += '<td><input class="conc-in" '+a+' data-f="concepto" value="'+esc(r.concepto||'')+'" placeholder="Concepto"></td>';
       if (s.pago) h += '<td class="nw"><input type="date" class="conc-in fecha" '+a+' data-f="fecha" value="'+esc(r.fecha||'')+'"> ' + badge(r.fecha, r.pagado) + '</td>';
-      h += '<td class="r"><input class="conc-in monto'+neg+'" inputmode="decimal" '+a+' data-f="monto" value="'+esc(money(r.monto))+'" title="'+(r.expr?'Operación: '+esc(r.expr):'Número u operación, ej. 28960.49-25000')+'">' + (r.expr ? '<span class="conc-fx" title="'+esc(r.expr)+'">ƒx</span>' : '') + '</td>';
+      h += '<td class="r nw">' + (s.sg ? '' : '<button class="conc-pm" title="Cambiar signo (resta / suma)" onclick="CONC.signo(\''+s.k+'\',\''+r.id+'\')">±</button>') + '<input class="conc-in monto'+neg+'" inputmode="decimal" '+a+' data-f="monto" value="'+esc(money(mv))+'" title="'+(r.expr?'Operación: '+esc(r.expr):'Número u operación, ej. 28960.49-25000')+'">' + (r.expr ? '<span class="conc-fx" title="'+esc(r.expr)+'">ƒx</span>' : '') + '</td>';
       h += '<td><input class="conc-in nota" '+a+' data-f="nota" value="'+esc(r.nota||'')+'" placeholder="—"></td>';
       if (s.pago) h += '<td class="c"><input type="checkbox" '+a+' data-f="pagado"'+(r.pagado?' checked':'')+'></td>';
       h += '<td class="c"><button class="conc-x" title="Eliminar línea" onclick="CONC.delFila(\'sec\',\''+s.k+'\',\''+r.id+'\')">✕</button></td>';
     } else {
       h += '<td>' + esc(r.concepto||'') + '</td>';
       if (s.pago) h += '<td class="nw">' + fFecha(r.fecha) + ' ' + badge(r.fecha, r.pagado) + '</td>';
-      h += '<td class="r'+neg+'">' + money(r.monto) + (r.expr ? ' <span class="conc-fx" title="'+esc(r.expr)+'">ƒx</span>' : '') + '</td>';
+      h += '<td class="r'+neg+'">' + money(mv) + (r.expr ? ' <span class="conc-fx" title="'+esc(r.expr)+'">ƒx</span>' : '') + '</td>';
       h += '<td class="conc-nota">' + esc(r.nota||'') + '</td>';
       if (s.pago) h += '<td class="c">' + (r.pagado ? '✔' : '') + '</td>';
     }
@@ -423,7 +428,7 @@ function esMonto(el){ return el.classList.contains('monto'); }
 function onFocusIn(e){
   const el = e.target; if (!el.getAttribute || !el.getAttribute('data-f') || !esMonto(el)) return;
   const a = attr(el); const row = getRow(a.t, a.s, a.id); if (!row) return;
-  if (a.f === 'monto') el.value = row.expr ? row.expr : (Number(row.monto)||0) === 0 ? '' : String(row.monto);
+  if (a.f === 'monto') { const fijo = a.t === 'sec' && (SECMAP[a.s]||{}).sg; const m = fijo ? Math.abs(Number(row.monto)||0) : Number(row.monto)||0; el.value = row.expr ? row.expr : m === 0 ? '' : String(m); }
   else el.value = (row[a.f] === '' || row[a.f] == null) ? '' : String(row[a.f]);
   try { el.select(); } catch(x){}
 }
@@ -433,7 +438,7 @@ function onInput(e){
   if (esMonto(el)) {
     if (a.f !== 'monto') return;  // precios: se guardan al salir del campo
     const p = parseMonto(el.value); el.classList.toggle('bad', !p);
-    if (p) { row.monto = p.monto; row.expr = p.expr; el.classList.toggle('neg', p.monto < 0); refrescarTotales(); }
+    if (p) { row.monto = a.t === 'sec' ? val(a.s, p.monto) : p.monto; row.expr = p.expr; el.classList.toggle('neg', row.monto < 0); refrescarTotales(); }
     return;
   }
   if (el.type === 'checkbox' || el.tagName === 'SELECT' || el.type === 'date') return;
@@ -456,7 +461,7 @@ function onFocusOut(e){
       const dec = Number(el.getAttribute('data-dec')) || 2;
       const p = parseMonto(el.value, dec);
       if (!p) { toast('Monto no válido: usa números y + − × ÷', true); }
-      else if (a.f === 'monto') { row.monto = p.monto; row.expr = p.expr; guardarFila(a.t, a.s, a.id); }
+      else if (a.f === 'monto') { row.monto = a.t === 'sec' ? val(a.s, p.monto) : p.monto; row.expr = p.expr; guardarFila(a.t, a.s, a.id); }
       else { row[a.f] = el.value.trim() === '' ? '' : p.monto; guardarFila(a.t, a.s, a.id); }
       el.classList.remove('bad');
       if (p) el.value = a.f === 'monto' ? money(row.monto) : (row[a.f] === '' ? '' : num(row[a.f]));
@@ -479,7 +484,7 @@ function exportar(){
     const sd = (D.actual.secs||{})[s.k] || {};
     A.push([s.t.toUpperCase() + (s.periodo && sd.periodo ? ' — ' + sd.periodo : '')]);
     A.push(['Concepto','Fecha','Monto','Nota','Pagado']);
-    filas(D, s.k).forEach(r => A.push([r.concepto||'', r.fecha ? fFecha(r.fecha) : '', Number(r.monto)||0, r.nota||'', s.pago ? (r.pagado ? 'Sí' : 'No') : '']));
+    filas(D, s.k).forEach(r => A.push([r.concepto||'', r.fecha ? fFecha(r.fecha) : '', val(s.k, r.monto), r.nota||'', s.pago ? (r.pagado ? 'Sí' : 'No') : '']));
     A.push(['Total ' + s.t.toLowerCase(), '', T[s.k]]);
     SALDOS.filter(x=>x.after===s.k).forEach(x => A.push([x.t.toUpperCase(), '', T[x.k]]));
     A.push([]);
@@ -575,6 +580,13 @@ const api = {
     closeM();
     setSync('saving','Guardando…');
     db.ref(FB+'/cortes').push(corte).then(()=>{ setSync('ok','Sincronizado'); toast('Corte guardado'); }).catch(fallo);
+  },
+  signo(sec, id){
+    if (!editable()) return;
+    const row = getRow('sec', sec, id); if (!row) return;
+    row.monto = r2(-(Number(row.monto)||0));
+    if (row.expr) row.expr = '-(' + row.expr + ')';
+    guardarFila('sec', sec, id); render();
   },
   verCorte(id){ st.corte = id; st.tab = 'conc'; render(); window.scrollTo(0,0); },
   delCorte(id){
