@@ -18225,21 +18225,21 @@ const SECS = [
   { k:'cheques',    c:'#8E44AD', t:'Cheques girados y no cobrados',     sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
   { k:'recibir',    c:'#1D9E75', t:'Valores por recibir',               sg:1, hint:'Se suma solo', pago:true },
   { k:'inmediato',  c:'#E8A33D', t:'Pagos a realizar inmediato',        sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
+  { k:'salida',     c:'#A0522D', t:'Pagos para salida',                 sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
   { k:'cxc',        c:'#2E8B57', t:'Cuentas por cobrar',                sg:1, hint:'Se suma solo', pago:true },
   { k:'mensual',    c:'#3F51B5', t:'Pagos a realizar mensual',          hint:'Usa el botón ± para cambiar entre pago (resta) e ingreso (suma)', pago:true },
   { k:'descargas',  c:'#00838F', t:'Por recibir de descargas',          sg:1, hint:'Se suma solo', pago:true, periodo:true },
-  { k:'salida',     c:'#A0522D', t:'Pagos para salida',                 sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
-  { k:'proyeccion', c:'#546E7A', t:'Proyección: entrada MG y pagos sin compensación', hint:'Usa el botón ± para cambiar entre resta y suma', pago:true }
+  { k:'proyeccion', c:'#546E7A', oculto:true, t:'Proyección: entrada MG y pagos sin compensación', hint:'Usa el botón ± para cambiar entre resta y suma', pago:true }
 ];
 /* Saldos encadenados: aparecen debajo de la sección indicada. */
 const SALDOS = [
   { after:'bancos',     k:'disp', t:'Total disponible',                                 f:T => T.bancos, oculto:true },
   { after:'cheques',    k:'s1',   t:'Saldo después de cheques girados y no cobrados',   f:T => T.disp + T.cheques },
-  { after:'inmediato',  k:'s2',   t:'Saldo después de pagos',                           f:T => T.s1 + T.recibir + T.inmediato },
+  { after:'salida',     k:'s2',   t:'Saldo después de pagos',                           f:T => T.s1 + T.recibir + T.inmediato + T.salida },
   { after:'cxc',        k:'s3',   t:'Saldo después de cuentas por cobrar y pagos',      f:T => T.s2 + T.cxc },
   { after:'mensual',    k:'s4',   t:'Luego de pagos mensuales',                         f:T => T.s3 + T.mensual },
-  { after:'salida',     k:'s5',   t:'Saldo aproximado luego de pagos y salida del barco', f:T => T.s4 + T.descargas + T.salida, fuerte:true },
-  { after:'proyeccion', k:'s6',   t:'Proyección final',                                 f:T => T.s5 + T.proyeccion, fuerte:true }
+  { after:'descargas',  k:'s5',   t:'Saldo aproximado luego de pagos y salida del barco', f:T => T.s4 + T.descargas, fuerte:true },
+  { after:'proyeccion', k:'s6',   t:'Proyección final',                                 f:T => T.s5 + T.proyeccion, oculto:true }
 ];
 
 let user = null;
@@ -18304,7 +18304,7 @@ function precioIva(c){ return (c.precioIva !== '' && c.precioIva != null && Numb
 function ultimoComb(D){ const L = lista(D.combustible).filter(c=>c.fecha).sort((a,b)=>a.fecha<b.fecha?1:-1); return L[0] || null; }
 function vencimientos(D){
   const out = [];
-  SECS.filter(s=>s.pago).forEach(s => filas(D, s.k).forEach(r => {
+  SECS.filter(s=>s.pago && !s.oculto).forEach(s => filas(D, s.k).forEach(r => {
     if (r.pagado || !r.fecha) return;
     out.push({ d:dias(r.fecha), fecha:r.fecha, txt:r.concepto||'(sin concepto)', monto:val(s.k, r.monto), sec:s.t });
   }));
@@ -18485,9 +18485,8 @@ function vConc(D, T){
   const venc = V.filter(x=>x.d<0), prox = V.filter(x=>x.d>=0 && x.d<=7);
   h += '<div class="conc-kpis">' +
     kpi('Total disponible', T.disp, 'Efectivo y bancos', '', 'conc-k-disp') +
-    kpi('Saldo después de pagos', T.s2, 'Incluye pagos inmediatos', 'k2', 'conc-k-s2') +
+    kpi('Saldo después de pagos', T.s2, 'Incluye pagos inmediatos y de salida', 'k2', 'conc-k-s2') +
     kpi('Saldo aproximado', T.s5, 'Luego de pagos y salida del barco', 'k3', 'conc-k-s5') +
-    kpi('Proyección final', T.s6, 'Con ajustes de proyección', 'k4', 'conc-k-s6') +
     '</div>';
   if (venc.length || prox.length) {
     const li = x => '<li><span>' + esc(x.txt) + ' <em>· ' + esc(x.sec) + '</em></span><span>' + fFecha(x.fecha) + ' · <b class="'+(Number(x.monto)<0?'neg':'')+'">' + money(x.monto) + '</b></span></li>';
@@ -18496,7 +18495,7 @@ function vConc(D, T){
       (prox.length ? '<div class="conc-alert-b ambar"><h4>⏳ Vencen en los próximos 7 días (' + prox.length + ')</h4><ul>' + prox.map(li).join('') + '</ul></div>' : '') +
       '</div>';
   }
-  SECS.forEach(s => {
+  SECS.filter(s => !s.oculto).forEach(s => {
     h += secCard(D, s, T);
     SALDOS.filter(x=>x.after===s.k && !x.oculto).forEach(x => {
       h += '<div class="conc-saldo'+(x.fuerte?' fuerte':'')+'"><span>'+esc(x.t)+'</span><b id="conc-t-'+x.k+'" class="'+(T[x.k]<0?'neg':'')+'">'+money(T[x.k])+'</b></div>';
@@ -18602,11 +18601,11 @@ function vCortes(){
   let h = '<div class="conc-card"><div class="conc-card-h nohand"><h3>Cortes guardados</h3>' +
     (editable() ? '<button class="conc-btn sm" onclick="CONC.nuevoCorte()">📸 Guardar corte</button>' : '') + '</div>';
   if (!L.length) return h + '<div class="conc-empty">Aún no hay cortes. Usa “📸 Guardar corte” para congelar la conciliación de hoy y consultarla después.</div></div>';
-  h += '<div class="conc-scroll"><table class="conc-t"><thead><tr><th>Fecha</th><th>Nota</th><th>Guardado por</th><th class="r">Disponible</th><th class="r">Saldo después de pagos</th><th class="r">Saldo aproximado</th><th class="r">Proyección</th><th></th></tr></thead><tbody>';
+  h += '<div class="conc-scroll"><table class="conc-t"><thead><tr><th>Fecha</th><th>Nota</th><th>Guardado por</th><th class="r">Disponible</th><th class="r">Saldo después de pagos</th><th class="r">Saldo aproximado</th><th></th></tr></thead><tbody>';
   L.forEach(c => {
     const T = c.tot || {};
     h += '<tr><td class="nw">' + fFecha(c.f) + ' <span class="conc-sub">' + esc(String(c.f||'').slice(11)) + '</span></td><td>' + esc(c.nota||'') + '</td><td>' + esc(c.u||'—') + '</td>' +
-      ['disp','s2','s5','s6'].map(k => '<td class="r'+(Number(T[k])<0?' neg':'')+'">' + money(T[k]) + '</td>').join('') +
+      ['disp','s2','s5'].map(k => '<td class="r'+(Number(T[k])<0?' neg':'')+'">' + money(T[k]) + '</td>').join('') +
       '<td class="nw"><button class="conc-btn sm sec" onclick="CONC.verCorte(\''+c.id+'\')">Ver</button>' +
       (P.borrarCorte(role()) ? ' <button class="conc-x" title="Eliminar corte" onclick="CONC.delCorte(\''+c.id+'\')">✕</button>' : '') + '</td></tr>';
   });
@@ -18680,13 +18679,13 @@ function exportar(){
   const D = vista(), T = totales(D);
   const titulo = st.corte ? 'Corte del ' + fFecha(DATA.cortes[st.corte].f) : 'Al ' + fFecha(hoyISO());
   const A = [['CONCILIACIÓN BANCARIA'],['ATÚN TROPICAL ATUNTRO S.A.'],[titulo],[]];
-  SECS.forEach(s => {
+  SECS.filter(s => !s.oculto).forEach(s => {
     const sd = (D.actual.secs||{})[s.k] || {};
     A.push([s.t.toUpperCase() + (s.periodo && sd.periodo ? ' — ' + sd.periodo : '')]);
     A.push(['Concepto','Fecha','Monto','Nota','Pagado']);
     filas(D, s.k).forEach(r => A.push([r.concepto||'', r.fecha ? fFecha(r.fecha) : '', val(s.k, r.monto), r.nota||'', s.pago ? (r.pagado ? 'Sí' : 'No') : '']));
     A.push(['Total ' + s.t.toLowerCase(), '', T[s.k]]);
-    SALDOS.filter(x=>x.after===s.k).forEach(x => A.push([x.t.toUpperCase(), '', T[x.k]]));
+    SALDOS.filter(x=>x.after===s.k && !x.oculto).forEach(x => A.push([x.t.toUpperCase(), '', T[x.k]]));
     A.push([]);
   });
   const ws1 = XLSX.utils.aoa_to_sheet(A); ws1['!cols'] = [{wch:52},{wch:12},{wch:16},{wch:40},{wch:8}];

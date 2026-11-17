@@ -8,7 +8,7 @@
  *  - Cada build cambia VERSION (hash de index.html); eso hace que los teléfonos
  *    detecten la versión nueva y la app se recargue sola (ver js/pwa.js).
  */
-var VERSION = '27dbf4273459';
+var VERSION = '6d4cba2d106c';
 var CACHE = 'atuntro-shell-' + VERSION;
 var PRECACHE = [
   'offline.html',
