@@ -103,7 +103,7 @@
         color: 'color-purple',
         status: 'active',
         roles: ['operaciones','operaciones_master','admin','master'],
-        vessels: ['María Fátima'],
+        vessels: ['María Fátima','María de Gracia'],
         onclick: 'openPlano()',
         linkLabel: 'Abrir plano de red',
       },
