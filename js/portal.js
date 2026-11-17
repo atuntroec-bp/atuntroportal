@@ -5,7 +5,7 @@
     ops: [
       {
         id: 'checklist',
-        title: 'Checklist Operacional',
+        title: 'Checklist Operativo',
         desc: 'Control de las 4 fases operacionales por buque: pre-llegada, llegada, pre-descarga y pre-zarpe. Auditoría completa con historial.',
         icon: '✅',
         iconColor: 'blue',
