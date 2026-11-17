@@ -224,9 +224,10 @@
   }
 
   function renderDashboard(role) {
-    const opsModules    = MODULES.ops.filter(function(m){ return m.roles.includes(role); });
-    const finModules    = MODULES.fin.filter(function(m){ return m.roles.includes(role); });
-    const gestorModules = MODULES.gestor_modules.filter(function(m){ return m.roles.includes(role); });
+    const hayOrden = typeof PORD !== 'undefined';
+    const opsModules    = hayOrden ? PORD.modulos('ops', role)    : MODULES.ops.filter(function(m){ return m.roles.includes(role); });
+    const finModules    = hayOrden ? PORD.modulos('fin', role)    : MODULES.fin.filter(function(m){ return m.roles.includes(role); });
+    const gestorModules = hayOrden ? PORD.modulos('equipo', role) : MODULES.gestor_modules.filter(function(m){ return m.roles.includes(role); });
 
     document.getElementById('role-badge-text').textContent = ROLE_LABELS[role] || role;
     document.getElementById('grid-ops').innerHTML = opsModules.map(renderCard).join('');
@@ -241,6 +242,7 @@
     if (finLabel) {
       finLabel.textContent = role === 'contabilidad' ? 'Herramientas' : 'Finanzas y Rentabilidad';
     }
+    if (hayOrden) { try { PORD.aplicarSecciones(role); } catch(e){} }
   }
 
   // ── Navigation ──────────────────────────────────────────────────────────────
@@ -575,6 +577,8 @@
     if (avatar) avatar.textContent = initials;
     if (pillName) pillName.textContent = user.name;
     if (adminBtn) adminBtn.style.display = user.role === 'master' ? 'inline-flex' : 'none';
+    var ordenBtn = document.getElementById('btn-orden-portal');
+    if (ordenBtn) ordenBtn.style.display = (user.role === 'master' || user.role === 'admin') ? 'inline-flex' : 'none';
   }
 
   // ── Login con correo y contraseña ───────────────────────────────────────────
