@@ -18117,6 +18117,8 @@ return api;
 .conc-alert-b{background:#fff;border-radius:10px;padding:10px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #B3261E}
 .conc-alert-b.ambar{border-left-color:#E8A33D}
 .conc-alert-b.verde{border-left-color:#2E8B57}
+.conc-alert.uno{grid-template-columns:1fr}
+.conc-bdg.gris{background:#EEF1F4;color:#666}
 .conc-alert-b h4{font-size:12px;color:#1F4E79;margin-bottom:6px}
 .conc-alert-b ul{list-style:none;margin:0;padding:0}
 .conc-alert-b li{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:4px 0;border-top:1px solid #f0f2f5}
@@ -18520,15 +18522,14 @@ function vConc(D, T){
       (prox.length ? '<div class="conc-alert-b ambar"><h4>⏳ Vencen en los próximos 7 días (' + prox.length + ')</h4><ul>' + prox.map(li).join('') + '</ul></div>' : '') +
       '</div>';
   }
-  const C = filas(D, 'cxc').filter(r => !r.pagado && r.fecha).map(r => ({ d:dias(r.fecha), fecha:r.fecha, txt:r.concepto||'(sin concepto)', monto:val('cxc', r.monto) })).sort((x,y)=>x.d-y.d);
-  const cv = C.filter(x=>x.d<0), cp = C.filter(x=>x.d>=0 && x.d<=7);
-  if (cv.length || cp.length) {
-    const tot = L => money(L.reduce((a,x)=>a+x.monto,0));
-    const lc = x => '<li><span>' + esc(x.txt) + ' <em>· ' + (x.d<0 ? 'vencida hace ' + (-x.d) + ' d' : x.d===0 ? 'vence hoy' : 'en ' + x.d + ' d') + '</em></span><span>' + fFecha(x.fecha) + ' · <b>' + money(x.monto) + '</b></span></li>';
-    h += '<div class="conc-alert">' +
-      (cv.length ? '<div class="conc-alert-b rojo"><h4>💰 Facturas por cobrar vencidas (' + cv.length + ') · ' + tot(cv) + '</h4><ul>' + cv.map(lc).join('') + '</ul></div>' : '') +
-      (cp.length ? '<div class="conc-alert-b verde"><h4>📅 Facturas por cobrar que vencen en 7 días (' + cp.length + ') · ' + tot(cp) + '</h4><ul>' + cp.map(lc).join('') + '</ul></div>' : '') +
-      '</div>';
+  const C = filas(D, 'cxc').filter(r => !r.pagado).map(r => ({ d:r.fecha ? dias(r.fecha) : null, fecha:r.fecha, txt:r.concepto||'(sin concepto)', monto:val('cxc', r.monto) }))
+    .sort((x,y)=>(x.d==null?99999:x.d)-(y.d==null?99999:y.d));
+  if (C.length) {
+    const nv = C.filter(x=>x.d!=null && x.d<0).length;
+    const tot = money(C.reduce((a,x)=>a+x.monto,0));
+    const est = x => x.d==null ? '<span class="conc-bdg gris">Sin fecha de vencimiento</span>' : x.d<0 ? '<span class="conc-bdg rojo">Vencida hace ' + (-x.d) + ' d</span>' : x.d===0 ? '<span class="conc-bdg rojo">Vence hoy</span>' : x.d<=7 ? '<span class="conc-bdg ambar">Vence en ' + x.d + ' d</span>' : '<span class="conc-bdg azul">Vence en ' + x.d + ' d</span>';
+    const lc = x => '<li><span>' + esc(x.txt) + ' ' + est(x) + '</span><span>' + (x.fecha ? fFecha(x.fecha) + ' · ' : '') + '<b>' + money(x.monto) + '</b></span></li>';
+    h += '<div class="conc-alert uno"><div class="conc-alert-b ' + (nv ? 'rojo' : 'verde') + '"><h4>💰 Facturas por cobrar (' + C.length + ') · ' + tot + (nv ? ' · <span class="neg">' + nv + ' vencida' + (nv>1?'s':'') + '</span>' : '') + '</h4><ul>' + C.map(lc).join('') + '</ul></div></div>';
   }
   SECS.filter(s => !s.oculto).forEach(s => {
     h += secCard(D, s, T);
