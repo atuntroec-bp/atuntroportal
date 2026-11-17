@@ -18223,22 +18223,22 @@ const P = {
 const SECS = [
   { k:'bancos',     c:'#2E75B6', t:'Efectivo y bancos',                 hint:'Saldo disponible en libros por cuenta · usa ± si una cuenta está en negativo' },
   { k:'cheques',    c:'#8E44AD', t:'Cheques girados y no cobrados',     sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
-  { k:'recibir',    c:'#1D9E75', t:'Valores por recibir',               sg:1, hint:'Se suma solo', pago:true },
+  { k:'recibir',    c:'#1D9E75', oculto:true, t:'Valores por recibir',               sg:1, hint:'Se suma solo', pago:true },
   { k:'inmediato',  c:'#E8A33D', t:'Pagos a realizar inmediato',        sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
   { k:'salida',     c:'#A0522D', t:'Pagos para salida',                 sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
   { k:'cxc',        c:'#2E8B57', t:'Cuentas por cobrar',                sg:1, hint:'Se suma solo', pago:true },
   { k:'mensual',    c:'#3F51B5', t:'Pagos a realizar mensual',          hint:'Usa el botón ± para cambiar entre pago (resta) e ingreso (suma)', pago:true },
-  { k:'descargas',  c:'#00838F', t:'Por recibir de descargas',          sg:1, hint:'Se suma solo', pago:true, periodo:true },
+  { k:'descargas',  c:'#00838F', t:'Valores por recibir de descargas',          sg:1, hint:'Se suma solo', pago:true, periodo:true },
   { k:'proyeccion', c:'#546E7A', oculto:true, t:'Proyección: entrada MG y pagos sin compensación', hint:'Usa el botón ± para cambiar entre resta y suma', pago:true }
 ];
 /* Saldos encadenados: aparecen debajo de la sección indicada. */
 const SALDOS = [
   { after:'bancos',     k:'disp', t:'Total disponible',                                 f:T => T.bancos, oculto:true },
   { after:'cheques',    k:'s1',   t:'Saldo después de cheques girados y no cobrados',   f:T => T.disp + T.cheques },
-  { after:'salida',     k:'s2',   t:'Saldo después de pagos',                           f:T => T.s1 + T.recibir + T.inmediato + T.salida },
+  { after:'salida',     k:'s2',   t:'Saldo después de pagos',                           f:T => T.s1 + T.inmediato + T.salida },
   { after:'cxc',        k:'s3',   t:'Saldo después de cuentas por cobrar y pagos',      f:T => T.s2 + T.cxc },
   { after:'mensual',    k:'s4',   t:'Luego de pagos mensuales',                         f:T => T.s3 + T.mensual },
-  { after:'descargas',  k:'s5',   t:'Saldo aproximado luego de pagos y salida del barco', f:T => T.s4 + T.descargas, fuerte:true },
+  { after:'descargas',  k:'s5',   t:'Saldo aproximado luego de pagos y salida del barco', f:T => T.s4 + T.descargas + T.recibir, fuerte:true },
   { after:'proyeccion', k:'s6',   t:'Proyección final',                                 f:T => T.s5 + T.proyeccion, oculto:true }
 ];
 
@@ -18386,11 +18386,21 @@ function initFirebase(){
       const v = snap.val();
       if (v === null && P.editar(role())) { sembrar(); return; }
       DATA = normalizar(v); cargado = true;
+      migrarRecibir();
       if (st.corte && !DATA.cortes[st.corte]) st.corte = null;
       setSync('ok','Sincronizado');
       if (modalAbierto() || hasFocusInside()) pendingRender = true; else render();
     }, function(){ cargado = true; setSync('local','Sin acceso'); render(); });
   } catch(e){ fbReady = false; setSync('local','Sin conexión'); }
+}
+/* Valores por recibir se unificó con Por recibir de descargas: mueve las líneas viejas. */
+function migrarRecibir(){
+  const r = (DATA.actual.secs.recibir || {}).rows;
+  if (!r || !Object.keys(r).length || !P.editar(role()) || !fbReady) return;
+  const upd = {};
+  Object.keys(r).forEach(id => { upd['actual/secs/descargas/rows/'+id] = r[id]; });
+  upd['actual/secs/recibir/rows'] = null;
+  db.ref(FB).update(upd).catch(()=>{});
 }
 function sembrar(){
   db.ref(FB).transaction(cur => cur === null ? semilla() : undefined).catch(fallo);
