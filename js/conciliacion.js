@@ -318,6 +318,16 @@ function vConc(D, T){
       (prox.length ? '<div class="conc-alert-b ambar"><h4>⏳ Vencen en los próximos 7 días (' + prox.length + ')</h4><ul>' + prox.map(li).join('') + '</ul></div>' : '') +
       '</div>';
   }
+  const C = filas(D, 'cxc').filter(r => !r.pagado && r.fecha).map(r => ({ d:dias(r.fecha), fecha:r.fecha, txt:r.concepto||'(sin concepto)', monto:val('cxc', r.monto) })).sort((x,y)=>x.d-y.d);
+  const cv = C.filter(x=>x.d<0), cp = C.filter(x=>x.d>=0 && x.d<=7);
+  if (cv.length || cp.length) {
+    const tot = L => money(L.reduce((a,x)=>a+x.monto,0));
+    const lc = x => '<li><span>' + esc(x.txt) + ' <em>· ' + (x.d<0 ? 'vencida hace ' + (-x.d) + ' d' : x.d===0 ? 'vence hoy' : 'en ' + x.d + ' d') + '</em></span><span>' + fFecha(x.fecha) + ' · <b>' + money(x.monto) + '</b></span></li>';
+    h += '<div class="conc-alert">' +
+      (cv.length ? '<div class="conc-alert-b rojo"><h4>💰 Facturas por cobrar vencidas (' + cv.length + ') · ' + tot(cv) + '</h4><ul>' + cv.map(lc).join('') + '</ul></div>' : '') +
+      (cp.length ? '<div class="conc-alert-b verde"><h4>📅 Facturas por cobrar que vencen en 7 días (' + cp.length + ') · ' + tot(cp) + '</h4><ul>' + cp.map(lc).join('') + '</ul></div>' : '') +
+      '</div>';
+  }
   SECS.filter(s => !s.oculto).forEach(s => {
     h += secCard(D, s, T);
     SALDOS.filter(x=>x.after===s.k && !x.oculto).forEach(x => {
