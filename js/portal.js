@@ -164,19 +164,6 @@
         onclick: 'openConciliacion()',
         linkLabel: 'Abrir conciliación',
       },
-      {
-        id: 'rentabilidad',
-        title: 'Modelo de Rentabilidad',
-        desc: 'Base de datos anual de viajes: descargas por talla, costos por proveedor, breakdowns de capitanes y análisis de rentabilidad.',
-        icon: '🗂️',
-        iconColor: 'purple',
-        color: 'color-purple',
-        status: 'dev',
-        roles: ['admin','contabilidad','master'],
-        vessels: ['María Fátima','María de Gracia'],
-        url: null,
-        linkLabel: 'Próximamente',
-      },
     ],
   };
 
