@@ -18324,8 +18324,7 @@ function badge(iso, cerrado){
   if (d < 0) return '<span class="conc-bdg rojo">Vencido hace ' + (-d) + ' d</span>';
   if (d === 0) return '<span class="conc-bdg rojo">Vence hoy</span>';
   if (d <= 3) return '<span class="conc-bdg ambar">En ' + d + ' d</span>';
-  if (d <= 7) return '<span class="conc-bdg azul">En ' + d + ' d</span>';
-  return '';
+  return '<span class="conc-bdg azul">En ' + d + ' d</span>';
 }
 
 /* ── datos iniciales (Excel CONCILIACION.xlsx) ── */
