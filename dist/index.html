@@ -18107,6 +18107,7 @@ return api;
 .conc-tab.active .n{background:rgba(255,255,255,.2)}
 .conc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:10px}
 .conc-kpi{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #2E75B6}
+.conc-kpi.k5{border-left-color:#2E8B57}.conc-kpi.alerta{border-left-color:#B3261E}
 .conc-kpi.k2{border-left-color:#E8A33D}.conc-kpi.k3{border-left-color:#1D9E75}.conc-kpi.k4{border-left-color:#7F77DD}
 .conc-kpi .l{font-size:10px;font-weight:700;color:#7A96B2;text-transform:uppercase;letter-spacing:.5px}
 .conc-kpi .v{font-size:20px;font-weight:700;color:#1F4E79;margin-top:4px}
@@ -18226,7 +18227,7 @@ const SECS = [
   { k:'recibir',    c:'#1D9E75', oculto:true, t:'Valores por recibir',               sg:1, hint:'Se suma solo', pago:true },
   { k:'inmediato',  c:'#E8A33D', t:'Pagos a realizar inmediato',        sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
   { k:'salida',     c:'#A0522D', t:'Pagos para salida',                 sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
-  { k:'cxc',        c:'#2E8B57', t:'Cuentas por cobrar',                sg:1, hint:'Se suma solo', pago:true },
+  { k:'cxc',        c:'#2E8B57', t:'Cuentas por cobrar',                sg:1, hint:'Se suma solo · la fecha es el vencimiento de la factura', pago:true, cobro:true },
   { k:'mensual',    c:'#3F51B5', t:'Pagos a realizar mensual',          hint:'Usa el botón ± para cambiar entre pago (resta) e ingreso (suma)', pago:true },
   { k:'descargas',  c:'#00838F', t:'Valores por recibir',          sg:1, hint:'Se suma solo', pago:true, periodo:true },
   { k:'proyeccion', c:'#546E7A', oculto:true, t:'Proyección: entrada MG y pagos sin compensación', hint:'Usa el botón ± para cambiar entre resta y suma', pago:true }
@@ -18304,7 +18305,7 @@ function precioIva(c){ return (c.precioIva !== '' && c.precioIva != null && Numb
 function ultimoComb(D){ const L = lista(D.combustible).filter(c=>c.fecha).sort((a,b)=>a.fecha<b.fecha?1:-1); return L[0] || null; }
 function vencimientos(D){
   const out = [];
-  SECS.filter(s=>s.pago && !s.oculto).forEach(s => filas(D, s.k).forEach(r => {
+  SECS.filter(s=>s.pago && !s.oculto && !s.cobro).forEach(s => filas(D, s.k).forEach(r => {
     if (r.pagado || !r.fecha) return;
     out.push({ d:dias(r.fecha), fecha:r.fecha, txt:r.concepto||'(sin concepto)', monto:val(s.k, r.monto), sec:s.t });
   }));
@@ -18489,6 +18490,18 @@ function renderTabs(){
   if (el) el.innerHTML = tabs.filter(t => !(st.corte && t[0]==='cortes')).map(t => '<button class="conc-tab'+(st.tab===t[0]?' active':'')+'" onclick="CONC.tab(\''+t[0]+'\')">'+t[1]+'</button>').join('');
 }
 function kpi(l, v, s, cls, id){ return '<div class="conc-kpi '+(cls||'')+'"><div class="l">'+l+'</div><div class="v'+(Number(v)<0?' neg':'')+'"'+(id?' id="'+id+'"':'')+'>'+money(v)+'</div><div class="s">'+(s||'')+'</div></div>'; }
+function kpiCxc(D, T){
+  const L = filas(D, 'cxc').filter(r => !r.pagado);
+  const venc = L.filter(r => r.fecha && dias(r.fecha) < 0);
+  const prox = L.filter(r => r.fecha && dias(r.fecha) >= 0 && dias(r.fecha) <= 7);
+  const sv = venc.reduce((a,r)=>a+Math.abs(Number(r.monto)||0),0);
+  const sp = prox.reduce((a,r)=>a+Math.abs(Number(r.monto)||0),0);
+  const sinF = L.filter(r => !r.fecha).length;
+  let sub = venc.length ? '<span class="neg">' + venc.length + ' vencida' + (venc.length>1?'s':'') + ' · ' + money(sv) + '</span>' : 'Ninguna vencida';
+  if (prox.length) sub += ' · ' + prox.length + ' vence' + (prox.length>1?'n':'') + ' en 7 d (' + money(sp) + ')';
+  if (sinF) sub += ' · ' + sinF + ' sin fecha';
+  return '<div class="conc-kpi k5' + (venc.length ? ' alerta' : '') + '"><div class="l">Cuentas por cobrar</div><div class="v" id="conc-k-cxc">' + money(T.cxc) + '</div><div class="s">' + sub + '</div></div>';
+}
 function vConc(D, T){
   let h = '';
   const V = vencimientos(D);
@@ -18496,6 +18509,7 @@ function vConc(D, T){
   h += '<div class="conc-kpis">' +
     kpi('Total disponible', T.disp, 'Efectivo y bancos', '', 'conc-k-disp') +
     kpi('Saldo después de pagos', T.s2, 'Incluye pagos inmediatos y de salida', 'k2', 'conc-k-s2') +
+    kpiCxc(D, T) +
     kpi('Saldo aproximado', T.s5, 'Luego de pagos, cobros y valores por recibir', 'k3', 'conc-k-s5') +
     '</div>';
   if (venc.length || prox.length) {
@@ -18524,7 +18538,7 @@ function secCard(D, s, T){
     ' <span class="meta">' + L.length + ' línea' + (L.length===1?'':'s') + '</span></h3>' +
     '<span class="t'+(T[s.k]<0?' neg':'')+'" id="conc-t-'+s.k+'">' + money(T[s.k]) + '</span></div>';
   if (!abierto) return h + '</div>';
-  h += '<div class="conc-scroll"><table class="conc-t"><thead><tr><th>Concepto</th>' + (s.pago ? '<th>Fecha</th>' : '') + '<th class="r">Monto</th><th>Nota</th>' + (s.pago ? '<th class="c">Pagado</th>' : '') + (ed ? '<th></th>' : '') + '</tr></thead><tbody>';
+  h += '<div class="conc-scroll"><table class="conc-t"><thead><tr><th>Concepto</th>' + (s.pago ? '<th>' + (s.cobro ? 'Vence factura' : 'Fecha') + '</th>' : '') + '<th class="r">Monto</th><th>Nota</th>' + (s.pago ? '<th class="c">' + (s.cobro ? 'Cobrado' : 'Pagado') + '</th>' : '') + (ed ? '<th></th>' : '') + '</tr></thead><tbody>';
   if (!L.length) h += '<tr><td colspan="6" class="conc-vac">Sin líneas</td></tr>';
   L.forEach(r => {
     const a = 'data-t="sec" data-s="'+s.k+'" data-id="'+r.id+'"';
@@ -18548,7 +18562,7 @@ function secCard(D, s, T){
     h += '</tr>';
   });
   h += '</tbody></table></div>';
-  h += '<div class="conc-card-f"><span class="conc-hint">' + esc(s.hint) + (s.pago ? ' · las líneas marcadas como pagadas no suman' : '') + '</span>' +
+  h += '<div class="conc-card-f"><span class="conc-hint">' + esc(s.hint) + (s.pago ? ' · las líneas marcadas como ' + (s.cobro ? 'cobradas' : 'pagadas') + ' no suman' : '') + '</span>' +
        (ed ? '<button class="conc-btn sm" onclick="CONC.addFila(\'sec\',\''+s.k+'\')">+ Agregar línea</button>' : '') + '</div>';
   return h + '</div>';
 }
@@ -18628,7 +18642,7 @@ function refrescarTotales(){
   const set = (id, v) => { const el=document.getElementById(id); if(el){ el.textContent=money(v); el.classList.toggle('neg', v<0); } };
   SECS.forEach(s => set('conc-t-'+s.k, T[s.k]));
   SALDOS.forEach(x => set('conc-t-'+x.k, T[x.k]));
-  set('conc-k-disp', T.disp); set('conc-k-s2', T.s2); set('conc-k-s5', T.s5); set('conc-k-s6', T.s6);
+  set('conc-k-cxc', T.cxc); set('conc-k-disp', T.disp); set('conc-k-s2', T.s2); set('conc-k-s5', T.s5); set('conc-k-s6', T.s6);
 }
 
 /* ── eventos de las tablas (delegados) ── */
