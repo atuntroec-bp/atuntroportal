@@ -1139,3 +1139,15 @@
   // startPendingLiveSync() se inicia al completar el login (authResolveUser).
 
   document.addEventListener('DOMContentLoaded', authInit);
+
+  // ── Logo de temporada (Navidad: 1 dic – 6 ene) ──────────────────────────────
+  // Solo cambia el logo del login y del encabezado; icons/logo.png y el ícono de la app no se tocan.
+  (function logoTemporada() {
+    var d = new Date(), m = d.getMonth() + 1, dia = d.getDate();
+    if (!(m === 12 || (m === 1 && dia <= 6))) return;
+    document.querySelectorAll('.logo-badge img').forEach(function (img) {
+      var pre = new Image();
+      pre.onload = function () { img.src = pre.src; };
+      pre.src = 'icons/logo-navidad.png';
+    });
+  })();
