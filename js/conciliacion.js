@@ -26,6 +26,10 @@ const SECS = [
   { k:'recibir',    c:'#1D9E75', oculto:true, t:'Valores por recibir',               sg:1, hint:'Se suma solo', pago:true },
   { k:'inmediato',  c:'#E8A33D', t:'Pagos a realizar inmediato',        sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
   { k:'salida',     c:'#A0522D', t:'Pagos para salida',                 sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
+  { k:'trip_mg_ant', c:'#00695C', grupo:'trip', barco:'María de Gracia', sub:'Anticipo', t:'Tripulación María de Gracia · Anticipo', sg:-1, hint:'Se resta solo', pago:true },
+  { k:'trip_mg_sal', c:'#00695C', grupo:'trip', barco:'María de Gracia', sub:'Saldo',    t:'Tripulación María de Gracia · Saldo',    sg:-1, hint:'Se resta solo', pago:true },
+  { k:'trip_mf_ant', c:'#00695C', grupo:'trip', barco:'María Fátima',    sub:'Anticipo', t:'Tripulación María Fátima · Anticipo',    sg:-1, hint:'Se resta solo', pago:true },
+  { k:'trip_mf_sal', c:'#00695C', grupo:'trip', barco:'María Fátima',    sub:'Saldo',    t:'Tripulación María Fátima · Saldo',       sg:-1, hint:'Se resta solo', pago:true },
   { k:'cxc',        c:'#2E8B57', t:'Cuentas por cobrar',                sg:1, hint:'Se suma solo · la fecha es el vencimiento de la factura', pago:true, cobro:true },
   { k:'mensual',    c:'#3F51B5', t:'Pagos a realizar mensual',          hint:'Usa el botón ± para cambiar entre pago (resta) e ingreso (suma)', pago:true },
   { k:'descargas',  c:'#00838F', t:'Valores por recibir',          sg:1, hint:'Se suma solo', pago:true, periodo:true },
@@ -35,7 +39,7 @@ const SECS = [
 const SALDOS = [
   { after:'bancos',     k:'disp', t:'Total disponible',                                 f:T => T.bancos, oculto:true },
   { after:'cheques',    k:'s1',   t:'Saldo después de cheques girados y no cobrados',   f:T => T.disp + T.cheques },
-  { after:'salida',     k:'s2',   t:'Saldo después de pagos',                           f:T => T.s1 + T.inmediato + T.salida },
+  { after:'salida',     k:'s2',   t:'Saldo después de pagos',                           f:T => T.s1 + T.inmediato + T.salida + T.trip },
   { after:'cxc',        k:'s3',   t:'Saldo después de cuentas por cobrar y pagos',      f:T => T.s2 + T.cxc },
   { after:'mensual',    k:'s4',   t:'Luego de pagos mensuales',                         f:T => T.s3 + T.mensual },
   { after:'descargas',  k:'s5',   t:'Saldo aproximado luego de pagos, cobros y valores por recibir', f:T => T.s4 + T.descargas + T.recibir, fuerte:true },
@@ -94,6 +98,9 @@ function val(sec, m){ const s = SECMAP[sec] || {}; const n = Number(m)||0; retur
 function totales(D){
   const T = {};
   SECS.forEach(s => { T[s.k] = r2(filas(D, s.k).filter(r => !(s.pago && r.pagado)).reduce((a,r)=>a+val(s.k, r.monto),0)); });
+  T.trip_mg = r2(T.trip_mg_ant + T.trip_mg_sal);
+  T.trip_mf = r2(T.trip_mf_ant + T.trip_mf_sal);
+  T.trip = r2(T.trip_mg + T.trip_mf);
   SALDOS.forEach(x => { T[x.k] = r2(x.f(T)); });
   const pv = lista(D.prestamos).filter(p => p.estado !== 'pagada');
   T.prestVig = r2(pv.reduce((a,p)=>a+(Number(p.monto)||0),0));
@@ -306,7 +313,8 @@ function vConc(D, T){
   const venc = V.filter(x=>x.d<0), prox = V.filter(x=>x.d>=0 && x.d<=7);
   h += '<div class="conc-kpis">' +
     kpi('Total disponible', T.disp, 'Efectivo y bancos', '', 'conc-k-disp') +
-    kpi('Saldo después de pagos', T.s2, 'Incluye pagos inmediatos y de salida', 'k2', 'conc-k-s2') +
+    kpi('Saldo después de pagos', T.s2, 'Incluye pagos inmediatos, de salida y tripulación', 'k2', 'conc-k-s2') +
+    '<div class="conc-kpi k6 clic" onclick="CONC.irTrip()" title="Ver detalle por barco"><div class="l">Por pagar a tripulación</div><div class="v'+(T.trip<0?' neg':'')+'" id="conc-k-trip">'+money(T.trip)+'</div><div class="s">MG ' + money(T.trip_mg) + ' · MF ' + money(T.trip_mf) + ' ›</div></div>' +
     kpiCxc(D, T) +
     kpi('Saldo aproximado', T.s5, 'Luego de pagos, cobros y valores por recibir', 'k3', 'conc-k-s5') +
     '</div>';
@@ -326,13 +334,30 @@ function vConc(D, T){
     const lc = x => '<li><span>' + esc(x.txt) + ' ' + est(x) + '</span><span>' + (x.fecha ? fFecha(x.fecha) + ' · ' : '') + '<b>' + money(x.monto) + '</b></span></li>';
     h += '<div class="conc-alert uno"><div class="conc-alert-b ' + (nv ? 'rojo' : 'verde') + '"><h4>💰 Facturas por cobrar (' + C.length + ') · ' + tot + (nv ? ' · <span class="neg">' + nv + ' vencida' + (nv>1?'s':'') + '</span>' : '') + '</h4><ul>' + C.map(lc).join('') + '</ul></div></div>';
   }
-  SECS.filter(s => !s.oculto).forEach(s => {
+  SECS.filter(s => !s.oculto && !s.grupo).forEach(s => {
     h += secCard(D, s, T);
+    if (s.k === 'salida') h += tripCard(D, T);
     SALDOS.filter(x=>x.after===s.k && !x.oculto).forEach(x => {
       h += '<div class="conc-saldo'+(x.fuerte?' fuerte':'')+'"><span>'+esc(x.t)+'</span><b id="conc-t-'+x.k+'" class="'+(T[x.k]<0?'neg':'')+'">'+money(T[x.k])+'</b></div>';
     });
   });
   return h;
+}
+function tripCard(D, T){
+  const abierto = st.open.trip !== false;
+  const pend = SECS.filter(s=>s.grupo==='trip').reduce((n,s)=>n+filas(D, s.k).filter(r=>!r.pagado).length, 0);
+  let h = '<div class="conc-card conc-sec conc-trip" id="conc-trip" style="--c:#00695C"><div class="conc-card-h" onclick="CONC.toggle(\'trip\')">' +
+    '<h3>' + (abierto?'▾ ':'▸ ') + 'Valores por pagar a tripulación <span class="meta">' + pend + ' pendiente' + (pend===1?'':'s') + '</span></h3>' +
+    '<span class="t'+(T.trip<0?' neg':'')+'" id="conc-t-trip">' + money(T.trip) + '</span></div>';
+  if (!abierto) return h + '</div>';
+  h += '<div class="conc-trip-body">';
+  [['mg','María de Gracia'],['mf','María Fátima']].forEach(b => {
+    const k = 'trip_' + b[0];
+    h += '<div class="conc-barco"><div class="conc-barco-h"><span>🚢 ' + b[1] + '</span><b class="'+(T[k]<0?'neg':'')+'" id="conc-t-'+k+'">' + money(T[k]) + '</b></div>';
+    SECS.filter(s => s.k === k+'_ant' || s.k === k+'_sal').forEach(s => { h += secCard(D, s, T); });
+    h += '</div>';
+  });
+  return h + '</div></div>';
 }
 function secCard(D, s, T){
   const L = filas(D, s.k);
@@ -340,7 +365,7 @@ function secCard(D, s, T){
   const abierto = st.open[s.k] !== false;
   const sd = (D.actual.secs||{})[s.k] || {};
   let h = '<div class="conc-card conc-sec" style="--c:'+s.c+'"><div class="conc-card-h" onclick="CONC.toggle(\''+s.k+'\')">' +
-    '<h3>' + (abierto?'▾ ':'▸ ') + esc(s.t) +
+    '<h3>' + (abierto?'▾ ':'▸ ') + esc(s.sub || s.t) +
     (s.periodo ? ' <span class="conc-per">' + (ed ? '<input class="conc-in per" value="'+esc(sd.periodo||'')+'" placeholder="Periodo" onclick="event.stopPropagation()" onchange="CONC.periodo(\''+s.k+'\',this.value)">' : esc(sd.periodo||'')) + '</span>' : '') +
     ' <span class="meta">' + L.length + ' línea' + (L.length===1?'':'s') + '</span></h3>' +
     '<span class="t'+(T[s.k]<0?' neg':'')+'" id="conc-t-'+s.k+'">' + money(T[s.k]) + '</span></div>';
@@ -449,6 +474,7 @@ function refrescarTotales(){
   const set = (id, v) => { const el=document.getElementById(id); if(el){ el.textContent=money(v); el.classList.toggle('neg', v<0); } };
   SECS.forEach(s => set('conc-t-'+s.k, T[s.k]));
   SALDOS.forEach(x => set('conc-t-'+x.k, T[x.k]));
+  ['trip','trip_mg','trip_mf'].forEach(k => set('conc-t-'+k, T[k])); set('conc-k-trip', T.trip);
   set('conc-k-cxc', T.cxc); set('conc-k-disp', T.disp); set('conc-k-s2', T.s2); set('conc-k-s5', T.s5); set('conc-k-s6', T.s6);
 }
 
@@ -617,6 +643,11 @@ const api = {
     row.monto = r2(-(Number(row.monto)||0));
     if (row.expr) row.expr = '-(' + row.expr + ')';
     guardarFila('sec', sec, id); render();
+  },
+  irTrip(){
+    st.tab = 'conc'; st.open.trip = true; render();
+    const el = document.getElementById('conc-trip');
+    if (el) { el.scrollIntoView({ behavior:'smooth', block:'start' }); el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'), 1600); }
   },
   verCorte(id){ st.corte = id; st.tab = 'conc'; render(); window.scrollTo(0,0); },
   delCorte(id){

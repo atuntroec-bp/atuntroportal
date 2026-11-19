@@ -6172,12 +6172,18 @@ table.csal-t{width:100%;border-collapse:collapse;font-size:12px}
 .conc-tab.active{background:#1F4E79;color:#fff;border-color:#1F4E79;font-weight:600}
 .conc-tab .n{font-size:10px;background:rgba(0,0,0,.08);border-radius:8px;padding:1px 6px;margin-left:4px}
 .conc-tab.active .n{background:rgba(255,255,255,.2)}
-.conc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:10px}
-.conc-kpi{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #2E75B6}
-.conc-kpi.k5{border-left-color:#2E8B57}.conc-kpi.alerta{border-left-color:#B3261E}
+.conc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:10px}
+.conc-kpi{background:#fff;border-radius:10px;padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #2E75B6}
+.conc-kpi.k5{border-left-color:#2E8B57}.conc-kpi.k6{border-left-color:#00695C}
+.conc-kpi.clic{cursor:pointer;transition:box-shadow .15s}.conc-kpi.clic:hover{box-shadow:0 2px 10px rgba(0,105,92,.25)}
+.conc-trip-body{padding:8px 10px 2px}
+.conc-barco{border:1px solid color-mix(in srgb,#00695C 20%,#fff);border-radius:10px;padding:6px;margin-bottom:8px}
+.conc-barco-h{display:flex;justify-content:space-between;align-items:center;padding:4px 8px 8px;font-size:13px;font-weight:700;color:#00695C}
+.conc-barco .conc-card{box-shadow:none;border:1px solid #eef2f7;margin-bottom:6px}
+.conc-trip.flash{box-shadow:0 0 0 3px rgba(0,105,92,.45)}.conc-kpi.alerta{border-left-color:#B3261E}
 .conc-kpi.k2{border-left-color:#E8A33D}.conc-kpi.k3{border-left-color:#1D9E75}.conc-kpi.k4{border-left-color:#7F77DD}
 .conc-kpi .l{font-size:10px;font-weight:700;color:#7A96B2;text-transform:uppercase;letter-spacing:.5px}
-.conc-kpi .v{font-size:20px;font-weight:700;color:#1F4E79;margin-top:4px}
+.conc-kpi .v{font-size:17px;font-weight:700;color:#1F4E79;margin-top:4px;white-space:nowrap}
 .conc-kpi .s{font-size:10px;color:#999;margin-top:2px}
 .conc-wrap .neg,.conc-wrap .conc-in.neg{color:#B3261E!important}
 .conc-alert{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-bottom:10px}
@@ -6251,7 +6257,7 @@ table.conc-t{width:100%;border-collapse:collapse;font-size:12px}
 .conc-mb{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 .conc-toast{font-family:Arial,sans-serif;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1F4E79;color:#fff;padding:9px 18px;border-radius:20px;font-size:12px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25)}
 .conc-toast.err{background:#8B2E0A}
-@media(max-width:640px){.conc-wrap{padding:8px}.conc-kpi .v{font-size:17px}.conc-saldo{font-size:11px}.conc-header{padding:12px 14px}}
+@media(max-width:640px){.conc-wrap{padding:8px}.conc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.conc-kpi .v{font-size:15px}.conc-saldo{font-size:11px}.conc-header{padding:12px 14px}}
 @media print{.conc-header .conc-hr,.conc-tabs,.conc-card-f,.conc-x{display:none!important}.conc-in{border:none!important}}
 </style>
 <div class="conc-wrap">

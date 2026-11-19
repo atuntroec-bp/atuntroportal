@@ -18322,12 +18322,18 @@ return api;
 .conc-tab.active{background:#1F4E79;color:#fff;border-color:#1F4E79;font-weight:600}
 .conc-tab .n{font-size:10px;background:rgba(0,0,0,.08);border-radius:8px;padding:1px 6px;margin-left:4px}
 .conc-tab.active .n{background:rgba(255,255,255,.2)}
-.conc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:10px}
-.conc-kpi{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #2E75B6}
-.conc-kpi.k5{border-left-color:#2E8B57}.conc-kpi.alerta{border-left-color:#B3261E}
+.conc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:10px}
+.conc-kpi{background:#fff;border-radius:10px;padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #2E75B6}
+.conc-kpi.k5{border-left-color:#2E8B57}.conc-kpi.k6{border-left-color:#00695C}
+.conc-kpi.clic{cursor:pointer;transition:box-shadow .15s}.conc-kpi.clic:hover{box-shadow:0 2px 10px rgba(0,105,92,.25)}
+.conc-trip-body{padding:8px 10px 2px}
+.conc-barco{border:1px solid color-mix(in srgb,#00695C 20%,#fff);border-radius:10px;padding:6px;margin-bottom:8px}
+.conc-barco-h{display:flex;justify-content:space-between;align-items:center;padding:4px 8px 8px;font-size:13px;font-weight:700;color:#00695C}
+.conc-barco .conc-card{box-shadow:none;border:1px solid #eef2f7;margin-bottom:6px}
+.conc-trip.flash{box-shadow:0 0 0 3px rgba(0,105,92,.45)}.conc-kpi.alerta{border-left-color:#B3261E}
 .conc-kpi.k2{border-left-color:#E8A33D}.conc-kpi.k3{border-left-color:#1D9E75}.conc-kpi.k4{border-left-color:#7F77DD}
 .conc-kpi .l{font-size:10px;font-weight:700;color:#7A96B2;text-transform:uppercase;letter-spacing:.5px}
-.conc-kpi .v{font-size:20px;font-weight:700;color:#1F4E79;margin-top:4px}
+.conc-kpi .v{font-size:17px;font-weight:700;color:#1F4E79;margin-top:4px;white-space:nowrap}
 .conc-kpi .s{font-size:10px;color:#999;margin-top:2px}
 .conc-wrap .neg,.conc-wrap .conc-in.neg{color:#B3261E!important}
 .conc-alert{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-bottom:10px}
@@ -18401,7 +18407,7 @@ table.conc-t{width:100%;border-collapse:collapse;font-size:12px}
 .conc-mb{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 .conc-toast{font-family:Arial,sans-serif;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1F4E79;color:#fff;padding:9px 18px;border-radius:20px;font-size:12px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25)}
 .conc-toast.err{background:#8B2E0A}
-@media(max-width:640px){.conc-wrap{padding:8px}.conc-kpi .v{font-size:17px}.conc-saldo{font-size:11px}.conc-header{padding:12px 14px}}
+@media(max-width:640px){.conc-wrap{padding:8px}.conc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.conc-kpi .v{font-size:15px}.conc-saldo{font-size:11px}.conc-header{padding:12px 14px}}
 @media print{.conc-header .conc-hr,.conc-tabs,.conc-card-f,.conc-x{display:none!important}.conc-in{border:none!important}}
 </style>
 <div class="conc-wrap">
@@ -18447,6 +18453,10 @@ const SECS = [
   { k:'recibir',    c:'#1D9E75', oculto:true, t:'Valores por recibir',               sg:1, hint:'Se suma solo', pago:true },
   { k:'inmediato',  c:'#E8A33D', t:'Pagos a realizar inmediato',        sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
   { k:'salida',     c:'#A0522D', t:'Pagos para salida',                 sg:-1, hint:'Se resta solo: escribe el valor sin el signo −', pago:true },
+  { k:'trip_mg_ant', c:'#00695C', grupo:'trip', barco:'María de Gracia', sub:'Anticipo', t:'Tripulación María de Gracia · Anticipo', sg:-1, hint:'Se resta solo', pago:true },
+  { k:'trip_mg_sal', c:'#00695C', grupo:'trip', barco:'María de Gracia', sub:'Saldo',    t:'Tripulación María de Gracia · Saldo',    sg:-1, hint:'Se resta solo', pago:true },
+  { k:'trip_mf_ant', c:'#00695C', grupo:'trip', barco:'María Fátima',    sub:'Anticipo', t:'Tripulación María Fátima · Anticipo',    sg:-1, hint:'Se resta solo', pago:true },
+  { k:'trip_mf_sal', c:'#00695C', grupo:'trip', barco:'María Fátima',    sub:'Saldo',    t:'Tripulación María Fátima · Saldo',       sg:-1, hint:'Se resta solo', pago:true },
   { k:'cxc',        c:'#2E8B57', t:'Cuentas por cobrar',                sg:1, hint:'Se suma solo · la fecha es el vencimiento de la factura', pago:true, cobro:true },
   { k:'mensual',    c:'#3F51B5', t:'Pagos a realizar mensual',          hint:'Usa el botón ± para cambiar entre pago (resta) e ingreso (suma)', pago:true },
   { k:'descargas',  c:'#00838F', t:'Valores por recibir',          sg:1, hint:'Se suma solo', pago:true, periodo:true },
@@ -18456,7 +18466,7 @@ const SECS = [
 const SALDOS = [
   { after:'bancos',     k:'disp', t:'Total disponible',                                 f:T => T.bancos, oculto:true },
   { after:'cheques',    k:'s1',   t:'Saldo después de cheques girados y no cobrados',   f:T => T.disp + T.cheques },
-  { after:'salida',     k:'s2',   t:'Saldo después de pagos',                           f:T => T.s1 + T.inmediato + T.salida },
+  { after:'salida',     k:'s2',   t:'Saldo después de pagos',                           f:T => T.s1 + T.inmediato + T.salida + T.trip },
   { after:'cxc',        k:'s3',   t:'Saldo después de cuentas por cobrar y pagos',      f:T => T.s2 + T.cxc },
   { after:'mensual',    k:'s4',   t:'Luego de pagos mensuales',                         f:T => T.s3 + T.mensual },
   { after:'descargas',  k:'s5',   t:'Saldo aproximado luego de pagos, cobros y valores por recibir', f:T => T.s4 + T.descargas + T.recibir, fuerte:true },
@@ -18515,6 +18525,9 @@ function val(sec, m){ const s = SECMAP[sec] || {}; const n = Number(m)||0; retur
 function totales(D){
   const T = {};
   SECS.forEach(s => { T[s.k] = r2(filas(D, s.k).filter(r => !(s.pago && r.pagado)).reduce((a,r)=>a+val(s.k, r.monto),0)); });
+  T.trip_mg = r2(T.trip_mg_ant + T.trip_mg_sal);
+  T.trip_mf = r2(T.trip_mf_ant + T.trip_mf_sal);
+  T.trip = r2(T.trip_mg + T.trip_mf);
   SALDOS.forEach(x => { T[x.k] = r2(x.f(T)); });
   const pv = lista(D.prestamos).filter(p => p.estado !== 'pagada');
   T.prestVig = r2(pv.reduce((a,p)=>a+(Number(p.monto)||0),0));
@@ -18727,7 +18740,8 @@ function vConc(D, T){
   const venc = V.filter(x=>x.d<0), prox = V.filter(x=>x.d>=0 && x.d<=7);
   h += '<div class="conc-kpis">' +
     kpi('Total disponible', T.disp, 'Efectivo y bancos', '', 'conc-k-disp') +
-    kpi('Saldo después de pagos', T.s2, 'Incluye pagos inmediatos y de salida', 'k2', 'conc-k-s2') +
+    kpi('Saldo después de pagos', T.s2, 'Incluye pagos inmediatos, de salida y tripulación', 'k2', 'conc-k-s2') +
+    '<div class="conc-kpi k6 clic" onclick="CONC.irTrip()" title="Ver detalle por barco"><div class="l">Por pagar a tripulación</div><div class="v'+(T.trip<0?' neg':'')+'" id="conc-k-trip">'+money(T.trip)+'</div><div class="s">MG ' + money(T.trip_mg) + ' · MF ' + money(T.trip_mf) + ' ›</div></div>' +
     kpiCxc(D, T) +
     kpi('Saldo aproximado', T.s5, 'Luego de pagos, cobros y valores por recibir', 'k3', 'conc-k-s5') +
     '</div>';
@@ -18747,13 +18761,30 @@ function vConc(D, T){
     const lc = x => '<li><span>' + esc(x.txt) + ' ' + est(x) + '</span><span>' + (x.fecha ? fFecha(x.fecha) + ' · ' : '') + '<b>' + money(x.monto) + '</b></span></li>';
     h += '<div class="conc-alert uno"><div class="conc-alert-b ' + (nv ? 'rojo' : 'verde') + '"><h4>💰 Facturas por cobrar (' + C.length + ') · ' + tot + (nv ? ' · <span class="neg">' + nv + ' vencida' + (nv>1?'s':'') + '</span>' : '') + '</h4><ul>' + C.map(lc).join('') + '</ul></div></div>';
   }
-  SECS.filter(s => !s.oculto).forEach(s => {
+  SECS.filter(s => !s.oculto && !s.grupo).forEach(s => {
     h += secCard(D, s, T);
+    if (s.k === 'salida') h += tripCard(D, T);
     SALDOS.filter(x=>x.after===s.k && !x.oculto).forEach(x => {
       h += '<div class="conc-saldo'+(x.fuerte?' fuerte':'')+'"><span>'+esc(x.t)+'</span><b id="conc-t-'+x.k+'" class="'+(T[x.k]<0?'neg':'')+'">'+money(T[x.k])+'</b></div>';
     });
   });
   return h;
+}
+function tripCard(D, T){
+  const abierto = st.open.trip !== false;
+  const pend = SECS.filter(s=>s.grupo==='trip').reduce((n,s)=>n+filas(D, s.k).filter(r=>!r.pagado).length, 0);
+  let h = '<div class="conc-card conc-sec conc-trip" id="conc-trip" style="--c:#00695C"><div class="conc-card-h" onclick="CONC.toggle(\'trip\')">' +
+    '<h3>' + (abierto?'▾ ':'▸ ') + 'Valores por pagar a tripulación <span class="meta">' + pend + ' pendiente' + (pend===1?'':'s') + '</span></h3>' +
+    '<span class="t'+(T.trip<0?' neg':'')+'" id="conc-t-trip">' + money(T.trip) + '</span></div>';
+  if (!abierto) return h + '</div>';
+  h += '<div class="conc-trip-body">';
+  [['mg','María de Gracia'],['mf','María Fátima']].forEach(b => {
+    const k = 'trip_' + b[0];
+    h += '<div class="conc-barco"><div class="conc-barco-h"><span>🚢 ' + b[1] + '</span><b class="'+(T[k]<0?'neg':'')+'" id="conc-t-'+k+'">' + money(T[k]) + '</b></div>';
+    SECS.filter(s => s.k === k+'_ant' || s.k === k+'_sal').forEach(s => { h += secCard(D, s, T); });
+    h += '</div>';
+  });
+  return h + '</div></div>';
 }
 function secCard(D, s, T){
   const L = filas(D, s.k);
@@ -18761,7 +18792,7 @@ function secCard(D, s, T){
   const abierto = st.open[s.k] !== false;
   const sd = (D.actual.secs||{})[s.k] || {};
   let h = '<div class="conc-card conc-sec" style="--c:'+s.c+'"><div class="conc-card-h" onclick="CONC.toggle(\''+s.k+'\')">' +
-    '<h3>' + (abierto?'▾ ':'▸ ') + esc(s.t) +
+    '<h3>' + (abierto?'▾ ':'▸ ') + esc(s.sub || s.t) +
     (s.periodo ? ' <span class="conc-per">' + (ed ? '<input class="conc-in per" value="'+esc(sd.periodo||'')+'" placeholder="Periodo" onclick="event.stopPropagation()" onchange="CONC.periodo(\''+s.k+'\',this.value)">' : esc(sd.periodo||'')) + '</span>' : '') +
     ' <span class="meta">' + L.length + ' línea' + (L.length===1?'':'s') + '</span></h3>' +
     '<span class="t'+(T[s.k]<0?' neg':'')+'" id="conc-t-'+s.k+'">' + money(T[s.k]) + '</span></div>';
@@ -18870,6 +18901,7 @@ function refrescarTotales(){
   const set = (id, v) => { const el=document.getElementById(id); if(el){ el.textContent=money(v); el.classList.toggle('neg', v<0); } };
   SECS.forEach(s => set('conc-t-'+s.k, T[s.k]));
   SALDOS.forEach(x => set('conc-t-'+x.k, T[x.k]));
+  ['trip','trip_mg','trip_mf'].forEach(k => set('conc-t-'+k, T[k])); set('conc-k-trip', T.trip);
   set('conc-k-cxc', T.cxc); set('conc-k-disp', T.disp); set('conc-k-s2', T.s2); set('conc-k-s5', T.s5); set('conc-k-s6', T.s6);
 }
 
@@ -19038,6 +19070,11 @@ const api = {
     row.monto = r2(-(Number(row.monto)||0));
     if (row.expr) row.expr = '-(' + row.expr + ')';
     guardarFila('sec', sec, id); render();
+  },
+  irTrip(){
+    st.tab = 'conc'; st.open.trip = true; render();
+    const el = document.getElementById('conc-trip');
+    if (el) { el.scrollIntoView({ behavior:'smooth', block:'start' }); el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'), 1600); }
   },
   verCorte(id){ st.corte = id; st.tab = 'conc'; render(); window.scrollTo(0,0); },
   delCorte(id){
