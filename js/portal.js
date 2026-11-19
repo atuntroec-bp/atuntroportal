@@ -528,6 +528,7 @@
       authSetDashboard(id, u);
       enterDashboard(u.role);
       startPendingLiveSync();
+      try { if (window.ACC) ACC.iniciar(AUTH.realId); } catch(e) {}
       try { if (window.NOTIF) NOTIF.iniciar(); } catch(e) {}
       db.ref(AUTH_PATH + '/users').on('value', function(s){ if (s.val()) AUTH.users = s.val(); });
     }).catch(function(e) {
