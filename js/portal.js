@@ -816,7 +816,8 @@
         firebase.database().ref('atuntro_gestor/data').once('value')
           .then(function(snap){
             var d = snap.val();
-            cb(d && d.tasks ? d.tasks : fallback());
+            // Si la base respondió, manda ella (sin tareas = lista vacía, no la copia local vieja).
+            cb(d ? (Array.isArray(d.tasks) ? d.tasks.filter(Boolean) : []) : fallback());
           })
           .catch(function(){ cb(fallback()); });
         return;

@@ -120,6 +120,32 @@ const GT = (() => {
   };
   const FB_PATH = 'atuntro_gestor/data';
   let _fbHandler = null;
+  // Protección contra datos viejos: no se escribe en la base hasta recibir su estado actual,
+  // y cada guardado se rechaza si la base cambió desde la última vez que se leyó.
+  let syncReady  = false;      // true cuando llegó la primera lectura de Firebase
+  let baseRemote = null;       // huella del último estado leído de la base
+  let lastRemote = null;       // último estado leído (para deshacer un guardado rechazado)
+
+  // JSON con claves ordenadas, para comparar estados sin importar el orden de las claves.
+  function huella(v) {
+    if (v === null || v === undefined) return 'null';
+    if (Array.isArray(v)) return '[' + v.map(huella).join(',') + ']';
+    if (typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + huella(v[k])).join(',') + '}';
+    return JSON.stringify(v);
+  }
+  function lista(v) {          // Firebase devuelve arreglos u objetos; las listas vacías no existen
+    if (Array.isArray(v)) return v.filter(Boolean);
+    if (v && typeof v === 'object') return Object.keys(v).map(k => v[k]).filter(Boolean);
+    return [];
+  }
+  function maxId(arr) { return arr.reduce((m, x) => Math.max(m, Number(x && x.id) || 0), 0); }
+  function aplicarRemoto(data) {
+    tasks        = lista(data.tasks);
+    responsables = lista(data.responsables).length ? lista(data.responsables) : responsables;
+    rutinas      = lista(data.rutinas);
+    nextId       = Math.max(Number(data.nextId) || 0, maxId(tasks) + 1, 200);
+    nextRutinaId = Math.max(Number(data.nextRutinaId) || 0, maxId(rutinas) + 1);
+  }
 
   function _getDb() {
     try {
@@ -143,12 +169,12 @@ const GT = (() => {
     if (_fbHandler) ref.off('value', _fbHandler);
     _fbHandler = snap => {
       const data = snap.val();
+      syncReady  = true;
+      baseRemote = huella(data);
+      lastRemote = data;
       if (!data) return; // nada remoto aún — lo que hay en local se sube en el próximo save()
-      tasks        = data.tasks        || tasks;
-      responsables = data.responsables || responsables;
-      nextId       = data.nextId       || nextId;
-      rutinas      = data.rutinas      || rutinas;
-      nextRutinaId = data.nextRutinaId || nextRutinaId;
+      // La base manda: si una lista no existe allí es porque está vacía (no se conserva la local).
+      aplicarRemoto(data);
       // Limpieza única: la contraseña antigua del Gestor ya no se usa; se borra de la base.
       if (data.adminPass !== undefined && esAdmin()) { ref.child('adminPass').remove().catch(()=>{}); }
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, nextId, rutinas, nextRutinaId })); } catch(e) {}
@@ -170,14 +196,14 @@ const GT = (() => {
         rutinas     = p.rutinas      || JSON.parse(JSON.stringify(SEED_RUTINAS));
         nextRutinaId= p.nextRutinaId || (rutinas.reduce((m,r)=>Math.max(m,r.id),0) + 1);
       } else {
-        tasks        = JSON.parse(JSON.stringify(SEED_TASKS));
+        tasks        = [];   // las tareas vienen de la base; no se siembran ejemplos
         responsables = [...SEED_RESP];
         nextId       = 200;
         rutinas      = JSON.parse(JSON.stringify(SEED_RUTINAS));
         nextRutinaId = 2;
       }
     } catch(e) {
-      tasks        = JSON.parse(JSON.stringify(SEED_TASKS));
+      tasks        = [];
       responsables = [...SEED_RESP];
       rutinas      = JSON.parse(JSON.stringify(SEED_RUTINAS));
       nextRutinaId = 2;
@@ -185,11 +211,37 @@ const GT = (() => {
   }
 
   function save() {
+    const db = _getDb();
+    if (db && !syncReady) {
+      alert('Todavía se está conectando con la base. Espere unos segundos e intente de nuevo.');
+      deshacerLocal();
+      return;
+    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, nextId, rutinas, nextRutinaId }));
     } catch(e) {}
-    const db = _getDb();
-    if (db) { db.ref(FB_PATH).set({ tasks, responsables, nextId, rutinas, nextRutinaId }).then(flashSaveDot).catch(()=>{}); }
+    if (!db) return;
+    const nuevo = JSON.parse(JSON.stringify({ tasks, responsables, nextId, rutinas, nextRutinaId }));
+    const base = baseRemote;
+    db.ref(FB_PATH).transaction(cur => {
+      if (huella(cur) !== base) return;          // la base cambió (otro dispositivo): no pisar
+      return nuevo;
+    }, (err, committed) => {
+      if (err) { alert('No se pudo guardar (sin permiso o sin conexión).'); deshacerLocal(); return; }
+      if (!committed) {
+        alert('El listado cambió en otro dispositivo y se actualizó. Revise y repita el cambio si todavía hace falta.');
+        deshacerLocal();
+        return;
+      }
+      flashSaveDot();
+    });
+  }
+
+  // Vuelve a mostrar el último estado de la base (descarta un cambio que no se guardó).
+  function deshacerLocal() {
+    if (lastRemote) aplicarRemoto(lastRemote); else if (!syncReady) load();
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, nextId, rutinas, nextRutinaId })); } catch(e) {}
+    try { renderAll(); } catch(e) {}
   }
 
   /* ── Stats ──────────────────────────────────────────── */
@@ -570,7 +622,8 @@ const GT = (() => {
     if (!confirm('¿Limpiar todas las tareas?\n\nEl cuadro quedará vacío para ingresar registros nuevos.\nEsta acción no se puede deshacer.')) return;
     if (!confirm('Segunda confirmación: ¿seguro que desea borrar todo el listado?')) return;
     tasks  = [];
-    nextId = 200;
+    // nextId NO vuelve a 200: reutilizar números haría que las tareas nuevas
+    // se confundan con las borradas (y que no se envíen sus notificaciones).
     save(); closeAdmin(); renderAll();
   }
 
