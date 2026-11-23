@@ -3225,6 +3225,29 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     .ckops-cortes-ver{background:#2E75B6;color:#fff;border:none;border-radius:7px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer}
     .ckops-cortes-x{background:none;border:none;color:#c0392b;font-size:15px;cursor:pointer;margin-left:6px}
     @media (max-width:600px){.ckops-cortes-tb th:nth-child(3),.ckops-cortes-tb td:nth-child(3){display:none}}
+
+    /* Gestor — Indicador 6 */
+    .gt-ind-panel{max-width:860px}
+    .gt-ind-filtros{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px}
+    .gt-ind-filtros label{display:flex;flex-direction:column;font-size:11px;color:#64748b;gap:4px}
+    .gt-ind-filtros input{padding:7px 9px;border:1px solid #cbd5e1;border-radius:7px;font:inherit;font-size:13px}
+    .gt-ind-res{display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:14px 16px;border-radius:12px;margin-bottom:14px;border:1px solid}
+    .gt-ind-res.ok{background:#E8F7F0;border-color:#9AD9BE;color:#0F5B3F}
+    .gt-ind-res.no{background:#FDEDEA;border-color:#F2B8AA;color:#8A2D16}
+    .gt-ind-res.nd{background:#F1F5F9;border-color:#CBD5E1;color:#475569}
+    .gt-ind-pct{font-size:34px;font-weight:800;line-height:1}
+    .gt-ind-res small{display:block;font-size:12px;opacity:.85;margin-top:3px}
+    .gt-ind-kpis{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin-left:auto}
+    .gt-ind-kpis b{font-size:16px;display:block}
+    .gt-ind-h{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#1F4E79;margin:16px 0 6px}
+    .gt-ind-tb{width:100%;border-collapse:collapse;font-size:12.5px}
+    .gt-ind-tb th{text-align:left;font-size:10.5px;text-transform:uppercase;color:#64748b;padding:6px 8px;border-bottom:1px solid #e2e8f0}
+    .gt-ind-tb td{padding:7px 8px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+    .gt-ind-tb td.n{text-align:right;font-variant-numeric:tabular-nums}
+    .gt-ind-tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:10px}
+    .gt-ind-tag.tarde{background:#FFF1D6;color:#8A5A00}.gt-ind-tag.venc{background:#FDEDEA;color:#B03A1E}
+    .gt-ind-nota{font-size:11.5px;color:#64748b;margin-top:12px;line-height:1.5}
+    @media (max-width:600px){.gt-ind-kpis{margin-left:0}.gt-ind-tb .m{display:none}}
 </style>
 </head>
 <body>
@@ -3372,6 +3395,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       <p>ATUNTRO S.A. — Seguimiento de compromisos operativos y administrativos</p>
     </div>
     <div class="gt-header-btns">
+      <button class="gt-admin-btn" id="gt-ind-btn" style="display:none" onclick="GT.abrirIndicador()" title="Indicador 6: tareas del área Operativo cumplidas a tiempo (Admin y Master)">📊 Indicador 6</button>
       <button class="gt-admin-btn" id="gt-rut-btn" onclick="GT.openRutinas()" title="Rutinas de tareas por viaje (solo admin)">🚢 Rutinas</button>
       <button class="gt-admin-btn" id="gt-admin-btn" onclick="GT.openAdmin()" title="Panel de administrador (solo Administración y Gerencia)">⚙ Admin</button>
       <button class="gt-add-btn"   onclick="GT.openModal()">+ Nueva tarea</button>

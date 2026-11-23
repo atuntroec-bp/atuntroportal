@@ -840,6 +840,102 @@ const GT = (() => {
     if (btn) btn.style.display = esAdmin() ? '' : 'none';
     const adm = document.getElementById('gt-admin-btn');
     if (adm) adm.style.display = esAdmin() ? '' : 'none';
+    const ind = document.getElementById('gt-ind-btn');
+    if (ind) ind.style.display = esAdmin() ? '' : 'none';
+  }
+
+  /* ══════════════════════════════════════════════════════
+     INDICADOR 6 — Tareas del Gestor cumplidas a tiempo (comunicado al equipo)
+     Cuentan las tareas del área Operativo con fecha de vencimiento dentro del rango.
+     · A tiempo: COMPLETO con hora de completado (t.comp) el día de vencimiento o antes.
+       Las completadas antes de que existiera el registro de hora (sin t.comp) se toman como a tiempo.
+     · Tarde: COMPLETO después del vencimiento.
+     · Vencida: no completada y la fecha de vencimiento ya pasó.
+     · En plazo: no completada y aún no vence → no se evalúa todavía.
+     Meta del equipo: IND_META % o más → cumple; si no, descuento de IND_DESC % (comunicado v5).
+     Solo Administración y Gerencia (Admin / Master).
+     ══════════════════════════════════════════════════════ */
+  const IND_META = 85, IND_DESC = 6, IND_DEPT = 'Operativo';
+  let indDesde = '', indHasta = '';
+  function isoLocal(ts) { const d = new Date(ts), z = n => String(n).padStart(2,'0'); return d.getFullYear() + '-' + z(d.getMonth()+1) + '-' + z(d.getDate()); }
+  function fCorta(iso) { const p = String(iso || '').split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : (iso || '—'); }
+  function indOvl() {
+    let o = document.getElementById('gt-ind-ovl');
+    if (!o) {
+      o = document.createElement('div');
+      o.id = 'gt-ind-ovl'; o.className = 'admin-overlay';
+      o.innerHTML = '<div class="admin-panel gt-ind-panel"><div class="admin-panel-head"><h3>📊 Indicador 6 — Tareas a tiempo (área Operativo)</h3><button class="admin-close" onclick="GT.cerrarIndicador()">×</button></div><div class="admin-panel-body" id="gt-ind-body"></div></div>';
+      o.addEventListener('click', e => { if (e.target === o) cerrarIndicador(); });
+      document.body.appendChild(o);
+    }
+    return o;
+  }
+  function abrirIndicador() {
+    if (!esAdmin()) return;
+    if (!indDesde) { const h = today(); indDesde = h.slice(0, 8) + '01'; indHasta = h; }
+    indOvl().classList.add('show');
+    pintarIndicador();
+  }
+  function cerrarIndicador() { const o = document.getElementById('gt-ind-ovl'); if (o) o.classList.remove('show'); }
+  function indRango(campo, valor) { if (campo === 'desde') indDesde = valor; else indHasta = valor; pintarIndicador(); }
+  function calcularIndicador(desde, hasta) {
+    const hoy = today();
+    const evaluadas = [], enPlazo = [];
+    tasks.filter(t => t && t.dept === IND_DEPT && t.vence && t.vence >= desde && t.vence <= hasta).forEach(t => {
+      let r;
+      if (t.estado === 'COMPLETO') {
+        if (t.comp && t.comp.ts) r = isoLocal(t.comp.ts) <= t.vence ? 'tiempo' : 'tarde';
+        else r = 'tiempo-sin-hora';
+      } else r = t.vence < hoy ? 'vencida' : 'plazo';
+      if (r === 'plazo') enPlazo.push(t); else evaluadas.push({ t, r });
+    });
+    const aTiempo = evaluadas.filter(x => x.r === 'tiempo' || x.r === 'tiempo-sin-hora').length;
+    const pct = evaluadas.length ? Math.round(aTiempo / evaluadas.length * 1000) / 10 : null;
+    const porResp = {};
+    evaluadas.forEach(x => {
+      const k = x.t.resp || 'Sin responsable';
+      const p = porResp[k] = porResp[k] || { resp:k, total:0, tiempo:0, tarde:0, vencida:0 };
+      p.total++;
+      if (x.r === 'tarde') p.tarde++; else if (x.r === 'vencida') p.vencida++; else p.tiempo++;
+    });
+    return { evaluadas, enPlazo, aTiempo, pct,
+             sinHora: evaluadas.filter(x => x.r === 'tiempo-sin-hora').length,
+             porResp: Object.keys(porResp).map(k => porResp[k]).sort((a,b) => (a.tiempo/a.total) - (b.tiempo/b.total) || b.total - a.total) };
+  }
+  function pintarIndicador() {
+    const body = document.getElementById('gt-ind-body'); if (!body) return;
+    const desde = indDesde, hasta = indHasta;
+    let h = '<div class="gt-ind-filtros"><label>Desde<input type="date" value="' + desde + '" onchange="GT.indRango(\'desde\',this.value)"></label>' +
+            '<label>Hasta<input type="date" value="' + hasta + '" onchange="GT.indRango(\'hasta\',this.value)"></label></div>';
+    if (!desde || !hasta || desde > hasta) { body.innerHTML = h + '<p class="gt-ind-nota">Elija un rango de fechas válido.</p>'; return; }
+    const R = calcularIndicador(desde, hasta);
+    const n = R.evaluadas.length, tarde = R.evaluadas.filter(x => x.r === 'tarde').length, venc = R.evaluadas.filter(x => x.r === 'vencida').length;
+    if (R.pct === null) {
+      h += '<div class="gt-ind-res nd"><div><div class="gt-ind-pct">—</div><small>No hay tareas del área Operativo con vencimiento entre el ' + fCorta(desde) + ' y el ' + fCorta(hasta) + ' que ya se puedan evaluar.</small></div></div>';
+    } else {
+      const cumple = R.pct >= IND_META;
+      h += '<div class="gt-ind-res ' + (cumple ? 'ok' : 'no') + '"><div><div class="gt-ind-pct">' + String(R.pct).replace('.', ',') + '%</div>' +
+           '<small>' + (cumple ? '✔️ Cumple' : '❌ No cumple · descuento –' + IND_DESC + '% para todo el equipo') + ' (meta ' + IND_META + '%)</small></div>' +
+           '<div class="gt-ind-kpis"><div><b>' + R.aTiempo + '</b>a tiempo</div><div><b>' + tarde + '</b>tarde</div><div><b>' + venc + '</b>vencidas sin cerrar</div><div><b>' + n + '</b>evaluadas</div></div></div>';
+    }
+    if (R.porResp.length) {
+      h += '<div class="gt-ind-h">Por responsable</div><table class="gt-ind-tb"><thead><tr><th>Responsable</th><th class="n">Evaluadas</th><th class="n">A tiempo</th><th class="n m">Tarde</th><th class="n m">Vencidas</th><th class="n">%</th></tr></thead><tbody>' +
+        R.porResp.map(p => '<tr><td>' + esc(p.resp) + '</td><td class="n">' + p.total + '</td><td class="n">' + p.tiempo + '</td><td class="n m">' + p.tarde + '</td><td class="n m">' + p.vencida + '</td><td class="n"><b>' + String(Math.round(p.tiempo / p.total * 1000) / 10).replace('.', ',') + '%</b></td></tr>').join('') +
+        '</tbody></table>';
+    }
+    const malas = R.evaluadas.filter(x => x.r === 'tarde' || x.r === 'vencida').sort((a,b) => a.t.vence < b.t.vence ? -1 : 1);
+    if (malas.length) {
+      h += '<div class="gt-ind-h">Tareas que no se cumplieron a tiempo (' + malas.length + ')</div><table class="gt-ind-tb"><thead><tr><th>N°</th><th>Tarea</th><th class="m">Responsable</th><th>Vence</th><th>Situación</th></tr></thead><tbody>' +
+        malas.map(x => '<tr><td>#' + x.t.id + '</td><td>' + esc(x.t.tarea) + '</td><td class="m">' + esc(x.t.resp || '') + '</td><td>' + fCorta(x.t.vence) + '</td><td>' +
+          (x.r === 'tarde' ? '<span class="gt-ind-tag tarde">Completada ' + fCorta(isoLocal(x.t.comp.ts)) + '</span>' : '<span class="gt-ind-tag venc">Sin cerrar</span>') + '</td></tr>').join('') +
+        '</tbody></table>';
+    }
+    const notas = [];
+    if (R.enPlazo.length) notas.push(R.enPlazo.length + ' tarea(s) del rango todavía no vencen y no se evalúan aún.');
+    if (R.sinHora) notas.push(R.sinHora + ' tarea(s) se completaron antes de que el portal registrara la hora (23/11/2026) y se toman como a tiempo.');
+    notas.push('Cuentan solo las tareas del área Operativo con fecha de vencimiento. Las que dependen de otra persona deben dejarlo escrito en Observaciones antes del vencimiento; la jefatura decide si se excluyen.');
+    h += '<div class="gt-ind-nota">' + notas.map(esc).join('<br>') + '</div>';
+    body.innerHTML = h;
   }
 
   /* ── Helpers ────────────────────────────────────────── */
@@ -888,6 +984,7 @@ const GT = (() => {
     openAdmin, closeAdmin, closeAdminBg,
     addResponsable, removeResponsable,
     resetTasks, deleteTask, toggleDone, deleteDone,
+    abrirIndicador, cerrarIndicador, indRango,
     openRutinas, closeRutinas, closeRutinasBg,
     openRutEditor, closeRutEditor, closeRutEditorBg,
     rutDraftSet, rutDraftAdd, rutDraftDel, saveRutina, deleteRutina,
