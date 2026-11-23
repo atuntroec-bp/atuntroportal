@@ -590,6 +590,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
 .gt-st-INCOMPLETO{background:#FAEEDA;color:#412402}
 .gt-st-PENDIENTE{background:#FAECE7;color:#4A1B0C}
 .gt-status-cell{cursor:pointer;user-select:none}
+.gt-st-hora{font-size:10px;color:#8a94a6;margin-top:3px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .gt-status-cell:hover .gt-badge{filter:brightness(.92)}
 .gt-edit-icon{font-size:11px;color:#ddd;cursor:pointer;padding:2px 5px;border-radius:4px;transition:.15s;display:inline-block}
 .gt-edit-icon:hover{color:#2E75B6;background:#E6F1FB}
@@ -5761,6 +5762,7 @@ const GT = (() => {
   function startRealtimeSync() {
     const db = _getDb();
     if (!db) return;
+    vigilarReloj();
     const ref = db.ref(FB_PATH);
     if (_fbHandler) ref.off('value', _fbHandler);
     _fbHandler = snap => {
@@ -6008,7 +6010,7 @@ const GT = (() => {
         </div>
         <div class="gt-col-dept">${deptBadge(t.dept)}</div>
         <div class="gt-col-resp gt-resp-cell">${esc(t.resp)}</div>
-        <div class="gt-status-cell" onclick="GT.cycleStatus(${t.id})" title="Click para cambiar estado">${statusBadge(t.estado)}</div>
+        <div class="gt-status-cell" onclick="GT.cycleStatus(${t.id})" title="Click para cambiar estado">${statusBadge(t.estado)}${horasEstado(t)}</div>
         ${adminUnlocked ? `<div class="gt-del-cell"><button class="gt-row-del" onclick="GT.deleteTask(${t.id})" title="Eliminar esta tarea">🗑</button></div>` : ''}
       </div>`;
     }).join('');
@@ -6059,9 +6061,47 @@ const GT = (() => {
   function cycleStatus(id) {
     const t = tasks.find(t => t.id === id);
     if (!t) return;
-    t.estado = ESTADO_ORDER[(ESTADO_ORDER.indexOf(t.estado)+1)%3];
+    marcarEstado(t, ESTADO_ORDER[(ESTADO_ORDER.indexOf(t.estado)+1)%3]);
     t.upd = today();
     save(); renderAll();
+  }
+
+  /* ── Hora de cada cambio de estado ──────────────────────
+     t.enProg = {ts, por}: cuándo y quién la pasó a EN PROGRESO
+     t.comp   = {ts, por}: cuándo y quién la pasó a COMPLETO
+     La hora se corrige con la del servidor de Firebase (no depende del reloj del teléfono). */
+  let relojOffset = 0, relojSub = false;
+  function vigilarReloj() {
+    if (relojSub) return;
+    try { firebase.database().ref('.info/serverTimeOffset').on('value', s => { relojOffset = Number(s.val()) || 0; }); relojSub = true; } catch(e) {}
+  }
+  function ahora() { vigilarReloj(); return Date.now() + relojOffset; }
+  function quienSoy() {
+    try {
+      const sess = JSON.parse(sessionStorage.getItem('atuntro_session') || 'null');
+      if (sess && sess.id && AUTH.users && AUTH.users[sess.id]) return AUTH.users[sess.id].name || sess.id;
+    } catch(e) {}
+    return '';
+  }
+  function marcarEstado(t, nuevo) {
+    if (!t || t.estado === nuevo) return;
+    t.estado = nuevo;
+    const sello = { ts: ahora(), por: quienSoy() };
+    if (nuevo === 'INCOMPLETO') { t.enProg = sello; delete t.comp; }
+    else if (nuevo === 'COMPLETO') { t.comp = sello; }
+    else { delete t.enProg; delete t.comp; }          // vuelve a PENDIENTE: se borran las horas
+  }
+  function fHora(ts) {
+    const d = new Date(ts), z = n => String(n).padStart(2,'0');
+    return z(d.getDate()) + '/' + z(d.getMonth()+1) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
+  }
+  function horasEstado(t) {
+    let h = '';
+    if (t.enProg && t.enProg.ts && (t.estado === 'INCOMPLETO' || t.estado === 'COMPLETO'))
+      h += `<div class="gt-st-hora" title="Pasó a EN PROGRESO${t.enProg.por ? ' · ' + esc(t.enProg.por) : ''}">▶ ${fHora(t.enProg.ts)}</div>`;
+    if (t.comp && t.comp.ts && t.estado === 'COMPLETO')
+      h += `<div class="gt-st-hora" title="Pasó a COMPLETO${t.comp.por ? ' · ' + esc(t.comp.por) : ''}">✓ ${fHora(t.comp.ts)}</div>`;
+    return h;
   }
 
   /* ── Task modal ─────────────────────────────────────── */
@@ -6101,6 +6141,7 @@ const GT = (() => {
     const vence = document.getElementById('gm-vence').value || '';
     if (vence && vence < fecha && !confirm('La fecha de vencimiento es anterior a la fecha de registro. ¿Guardar de todas formas?')) return;
     const anterior = editingId ? (tasks.find(t => t.id === editingId) || {}) : {};
+    const estadoNuevo = document.getElementById('gm-estado').value;
     const obj = Object.assign({}, anterior, {   // conserva datos extra (rutina, buque, zarpe…)
       id:     editingId || nextId++,
       fecha,
@@ -6108,10 +6149,11 @@ const GT = (() => {
       tarea,
       dept:   document.getElementById('gm-dept').value,
       resp:   document.getElementById('gm-resp').value,
-      estado: document.getElementById('gm-estado').value,
+      estado: anterior.estado || 'PENDIENTE',
       obs:    document.getElementById('gm-obs').value.trim(),
       upd:    today(),
     });
+    marcarEstado(obj, estadoNuevo);   // registra la hora si el estado cambió desde el formulario
     if (!obj.vence) delete obj.vence;
     if (editingId) {
       const idx = tasks.findIndex(t => t.id === editingId);
