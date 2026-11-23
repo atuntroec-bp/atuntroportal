@@ -65,9 +65,14 @@ function persistNow(silent) {
   try { localStorage.setItem(lsKey(currentVessel),JSON.stringify(state[currentVessel])); } catch(e){}
   if (fbReady&&!applyingRemote) {
     setSync('saving','Guardando…');
-    db.ref(FB_PATH+'/'+currentVessel).set(state[currentVessel])
-      .then(function(){ setSync('ok','Sincronizado'); refresh(); })
-      .catch(function(){ setSync('local','Solo local'); refresh(); });
+    var v=currentVessel;
+    // Guardado seguro (js/fb-seguro.js): no pisa lo que otra persona guardó antes.
+    FBSEG.guardar(FB_PATH+'/'+v, state[v]).then(function(r){
+      if(r.ok){ setSync('ok','Sincronizado'); refresh(); return; }
+      FBSEG.avisar(r);
+      setSync('ok','Actualizado');
+      db.ref(FB_PATH+'/'+v).once('value').then(function(snap){ aplicarRemoto(v, snap.val(), true); });
+    });
   } else {
     setSync('local','Solo local'); refresh();
   }
@@ -76,24 +81,25 @@ function setSync(cls,label){
   var d=document.getElementById('proy-syncDot'); if(d) d.className='sync-dot '+cls;
   var l=document.getElementById('proy-syncLbl'); if(l) l.textContent=label;
 }
+function aplicarRemoto(v, r, forzar){
+  if(isTyping&&!forzar)return;
+  FBSEG.vio(FB_PATH+'/'+v, r);
+  if(r&&JSON.stringify(r)!==JSON.stringify(state[v])){
+    applyingRemote=true; state[v]=r;
+    try{localStorage.setItem(lsKey(v),JSON.stringify(r));}catch(e){}
+    if(v===currentVessel){
+      /* si el usuario tiene el cursor dentro de un campo, no se
+         redibuja la tabla: solo se refrescan los totales */
+      if(hasFocusInside()&&!forzar) refreshTotals(); else render();
+    }
+    applyingRemote=false;
+  }
+}
 function initFirebase(){
   try {
     db=firebase.database(); fbReady=true; setSync('ok','Sincronizado');
     ['fatima','gracia'].forEach(function(v){
-      db.ref(FB_PATH+'/'+v).on('value',function(snap){
-        if(isTyping)return;
-        var r=snap.val();
-        if(r&&JSON.stringify(r)!==JSON.stringify(state[v])){
-          applyingRemote=true; state[v]=r;
-          try{localStorage.setItem(lsKey(v),JSON.stringify(r));}catch(e){}
-          if(v===currentVessel){
-            /* si el usuario tiene el cursor dentro de un campo, no se
-               redibuja la tabla: solo se refrescan los totales */
-            if(hasFocusInside()) refreshTotals(); else render();
-          }
-          applyingRemote=false;
-        }
-      });
+      db.ref(FB_PATH+'/'+v).on('value',function(snap){ aplicarRemoto(v, snap.val(), false); });
     });
   } catch(e){ setSync('local','Solo local'); }
 }

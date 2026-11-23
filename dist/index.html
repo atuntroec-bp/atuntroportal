@@ -5492,6 +5492,95 @@ return {
 };
 })();
 </script>
+<script>
+/* ════════════════════════════════════════════
+   GUARDADO SEGURO EN FIREBASE — módulo compartido
+   Namespace: FBSEG
+   Evita que un dispositivo con datos viejos (copia local, sin conexión, o que aún
+   no recibió lo último) pise lo que otra persona guardó, y que reaparezcan
+   registros borrados.
+
+   Uso en un módulo que guarda un nodo completo:
+   1. En su listener .on('value'): FBSEG.vio(ruta, snap.val()) cada vez que
+      ACEPTA lo que viene de la base (si lo ignora porque el usuario está
+      escribiendo, no llamar vio: el próximo guardado se rechazará).
+   2. En vez de ref(ruta).set(valor): FBSEG.guardar(ruta, valor).then(r => …)
+      r = {ok:true} | {ok:false, motivo:'sin-lectura'|'cambio'|'error'|'descartado'}
+   3. Si r.ok es false: FBSEG.avisar(r) y volver a leer la base (once('value')).
+
+   Cada guardado es una transacción: solo se escribe si la base sigue igual a lo
+   último que este dispositivo vio. Los guardados de una misma ruta van en cola;
+   si uno se rechaza, los que estaban en cola detrás se descartan.
+════════════════════════════════════════════ */
+var FBSEG = (function(){
+
+const base = {}, listo = {}, cola = {}, gen = {}, pend = {};
+let ultimoAviso = 0;
+
+const MSG = {
+  'sin-lectura': 'Todavía se está conectando con la base. Espere unos segundos e intente de nuevo.',
+  'cambio': 'Otra persona guardó cambios aquí al mismo tiempo. La pantalla se actualizó con lo último: revise y repita su cambio si todavía hace falta.',
+  'error': 'No se pudo guardar (sin permiso o sin conexión).'
+};
+
+// JSON con claves ordenadas: compara estados sin importar el orden de las claves.
+function huella(v){
+  if (v === null || v === undefined) return 'null';
+  if (Array.isArray(v)) return '[' + v.map(huella).join(',') + ']';
+  if (typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + huella(v[k])).join(',') + '}';
+  return JSON.stringify(v);
+}
+function copia(v){ return v === undefined ? null : JSON.parse(JSON.stringify(v)); }
+
+// Firebase guarda listas como objetos y elimina las vacías: devuelve siempre un arreglo.
+function lista(v){
+  if (Array.isArray(v)) return v.filter(x => x !== null && x !== undefined);
+  if (v && typeof v === 'object') return Object.keys(v).map(k => v[k]).filter(x => x !== null && x !== undefined);
+  return [];
+}
+
+function vio(ruta, valor){ base[ruta] = huella(valor); listo[ruta] = true; }
+function estaListo(ruta){ return !!listo[ruta]; }
+function invalidar(ruta){ gen[ruta] = (gen[ruta] || 0) + 1; }
+
+function guardar(ruta, valor){
+  const g = gen[ruta] || 0;
+  const nuevo = copia(valor);
+  pend[ruta] = (pend[ruta] || 0) + 1;
+  const p = (cola[ruta] || Promise.resolve()).then(() => new Promise(res => {
+    if ((gen[ruta] || 0) !== g) return res({ ok:false, motivo:'descartado' });
+    if (!listo[ruta]) { invalidar(ruta); return res({ ok:false, motivo:'sin-lectura' }); }
+    const b = base[ruta];
+    let db;
+    try { db = firebase.database(); } catch(e) { invalidar(ruta); return res({ ok:false, motivo:'error' }); }
+    db.ref(ruta).transaction(cur => (huella(cur) === b ? nuevo : undefined), (err, committed, snap) => {
+      if (err) { invalidar(ruta); return res({ ok:false, motivo:'error', err:err }); }
+      if (!committed) { invalidar(ruta); return res({ ok:false, motivo:'cambio' }); }
+      base[ruta] = huella(snap ? snap.val() : nuevo);
+      res({ ok:true });
+    });
+  })).finally(() => { pend[ruta]--; });
+  cola[ruta] = p.catch(() => {});
+  return p;
+}
+
+// Igual que guardar, pero no escribe si el valor ya es idéntico a lo que hay en la base.
+function guardarSiCambio(ruta, valor){
+  if (listo[ruta] && huella(copia(valor)) === base[ruta] && !pend[ruta]) return Promise.resolve({ ok:true, sinCambios:true });
+  return guardar(ruta, valor);
+}
+
+function avisar(r){
+  if (!r || r.ok || r.motivo === 'descartado') return;
+  const ahora = Date.now();
+  if (ahora - ultimoAviso < 4000) return;   // un solo aviso aunque fallen varias rutas a la vez
+  ultimoAviso = ahora;
+  try { alert(MSG[r.motivo] || MSG.error); } catch(e) {}
+}
+
+return { huella, lista, vio, listo: estaListo, guardar, guardarSiCambio, avisar };
+})();
+</script>
 
 <script>
 // ════════════════════════════════════════════════════════════
@@ -5616,24 +5705,10 @@ const GT = (() => {
   };
   const FB_PATH = 'atuntro_gestor/data';
   let _fbHandler = null;
-  // Protección contra datos viejos: no se escribe en la base hasta recibir su estado actual,
-  // y cada guardado se rechaza si la base cambió desde la última vez que se leyó.
-  let syncReady  = false;      // true cuando llegó la primera lectura de Firebase
-  let baseRemote = null;       // huella del último estado leído de la base
+  // Protección contra datos viejos (js/fb-seguro.js): no se escribe en la base hasta recibir
+  // su estado actual, y cada guardado se rechaza si la base cambió en otro dispositivo.
   let lastRemote = null;       // último estado leído (para deshacer un guardado rechazado)
-
-  // JSON con claves ordenadas, para comparar estados sin importar el orden de las claves.
-  function huella(v) {
-    if (v === null || v === undefined) return 'null';
-    if (Array.isArray(v)) return '[' + v.map(huella).join(',') + ']';
-    if (typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + huella(v[k])).join(',') + '}';
-    return JSON.stringify(v);
-  }
-  function lista(v) {          // Firebase devuelve arreglos u objetos; las listas vacías no existen
-    if (Array.isArray(v)) return v.filter(Boolean);
-    if (v && typeof v === 'object') return Object.keys(v).map(k => v[k]).filter(Boolean);
-    return [];
-  }
+  const lista = v => FBSEG.lista(v);
   function maxId(arr) { return arr.reduce((m, x) => Math.max(m, Number(x && x.id) || 0), 0); }
   function aplicarRemoto(data) {
     tasks        = lista(data.tasks);
@@ -5665,8 +5740,7 @@ const GT = (() => {
     if (_fbHandler) ref.off('value', _fbHandler);
     _fbHandler = snap => {
       const data = snap.val();
-      syncReady  = true;
-      baseRemote = huella(data);
+      FBSEG.vio(FB_PATH, data);
       lastRemote = data;
       if (!data) return; // nada remoto aún — lo que hay en local se sube en el próximo save()
       // La base manda: si una lista no existe allí es porque está vacía (no se conserva la local).
@@ -5708,8 +5782,8 @@ const GT = (() => {
 
   function save() {
     const db = _getDb();
-    if (db && !syncReady) {
-      alert('Todavía se está conectando con la base. Espere unos segundos e intente de nuevo.');
+    if (db && !FBSEG.listo(FB_PATH)) {
+      FBSEG.avisar({ ok:false, motivo:'sin-lectura' });
       deshacerLocal();
       return;
     }
@@ -5717,25 +5791,16 @@ const GT = (() => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, nextId, rutinas, nextRutinaId }));
     } catch(e) {}
     if (!db) return;
-    const nuevo = JSON.parse(JSON.stringify({ tasks, responsables, nextId, rutinas, nextRutinaId }));
-    const base = baseRemote;
-    db.ref(FB_PATH).transaction(cur => {
-      if (huella(cur) !== base) return;          // la base cambió (otro dispositivo): no pisar
-      return nuevo;
-    }, (err, committed) => {
-      if (err) { alert('No se pudo guardar (sin permiso o sin conexión).'); deshacerLocal(); return; }
-      if (!committed) {
-        alert('El listado cambió en otro dispositivo y se actualizó. Revise y repita el cambio si todavía hace falta.');
-        deshacerLocal();
-        return;
-      }
-      flashSaveDot();
+    FBSEG.guardar(FB_PATH, { tasks, responsables, nextId, rutinas, nextRutinaId }).then(r => {
+      if (r.ok) { flashSaveDot(); return; }
+      FBSEG.avisar(r);
+      deshacerLocal();
     });
   }
 
   // Vuelve a mostrar el último estado de la base (descarta un cambio que no se guardó).
   function deshacerLocal() {
-    if (lastRemote) aplicarRemoto(lastRemote); else if (!syncReady) load();
+    if (lastRemote) aplicarRemoto(lastRemote); else if (!FBSEG.listo(FB_PATH)) load();
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, nextId, rutinas, nextRutinaId })); } catch(e) {}
     try { renderAll(); } catch(e) {}
   }
@@ -7388,13 +7453,51 @@ function persistNow(){
   try{localStorage.setItem(lsPpl(),JSON.stringify(people));}catch(e){}
   try{localStorage.setItem(lsThr(),JSON.stringify(thresholds));}catch(e){}
   if(fbReady&&!applyingRemote){
-    setSync('saving','Guardando…');
-    Promise.all([
-      db.ref(FB_PATH+'/'+currentVessel).set(state[currentVessel]),
-      db.ref(FB_PATH+'/personas').set(people),
-      db.ref(FB_PATH+'/thresholds').set(thresholds),
-    ]).then(()=>setSync('ok','Sincronizado')).catch(()=>setSync('local','Solo local'));
+    guardarSeguro([currentVessel,'personas','thresholds']);
   } else if(!fbReady){setSync('local','Solo local');}
+}
+/* Guardado seguro (js/fb-seguro.js): solo escribe si la base sigue igual a lo último que se
+   recibió; si otra persona guardó antes, no la pisa y se vuelve a cargar lo de la base. */
+function valorDe(n){ return n==='personas'?people:(n==='thresholds'?thresholds:state[n]); }
+function guardarSeguro(nodos){
+  setSync('saving','Guardando…');
+  Promise.all(nodos.map(n=>FBSEG.guardarSiCambio(FB_PATH+'/'+n,valorDe(n)))).then(rs=>{
+    const mal=rs.find(r=>!r.ok);
+    if(!mal){setSync('ok','Sincronizado');return;}
+    FBSEG.avisar(mal);
+    recargarRemoto();
+  }).catch(()=>setSync('local','Solo local'));
+}
+/* Vuelve a leer la base y la aplica aunque el usuario esté escribiendo. */
+function recargarRemoto(){
+  if(!db)return;
+  ['fatima','gracia','personas','thresholds'].forEach(n=>{
+    db.ref(FB_PATH+'/'+n).once('value').then(snap=>aplicarRemoto(n,snap.val(),true)).catch(()=>{});
+  });
+  setSync('ok','Actualizado');
+}
+function aplicarRemoto(n,r,forzar){
+  if(isTyping&&!forzar)return;
+  FBSEG.vio(FB_PATH+'/'+n,r);
+  if(n==='personas'){
+    if(r&&Array.isArray(r)){
+      applyingRemote=true;people=soloNombres(r);try{localStorage.setItem(lsPpl(),JSON.stringify(people));}catch(e){}applyingRemote=false;
+      // Limpieza única: si en la base aún quedan PIN antiguos, se guarda la lista sin ellos.
+      if(r.some(p=>p&&p.pin!==undefined)) FBSEG.guardar(FB_PATH+'/personas',people);
+    }
+    return;
+  }
+  if(n==='thresholds'){
+    if(r){applyingRemote=true;thresholds=r;try{localStorage.setItem(lsThr(),JSON.stringify(r));}catch(e){}renderAreaTabs();applyingRemote=false;}
+    return;
+  }
+  if(r&&JSON.stringify(r)!==JSON.stringify(state[n])){
+    applyingRemote=true;state[n]=r;
+    try{localStorage.setItem(lsKey(n),JSON.stringify(r));}catch(e){}
+    applyingRemote=false;
+    migrateRespKeys(n);
+    if(n===currentVessel)conFoco(render);
+  }
 }
 function setSync(cls,label){
   document.getElementById('ckops-syncDot').className='sync-dot '+cls;
@@ -7406,30 +7509,8 @@ function initFirebase(){
   // Firebase already initialized by portal
   try{
     db=firebase.database();fbReady=true;setSync('ok','Sincronizado');
-    ['fatima','gracia'].forEach(v=>{
-      db.ref(FB_PATH+'/'+v).on('value',snap=>{
-        if(isTyping)return;
-        const r=snap.val();
-        if(r&&JSON.stringify(r)!==JSON.stringify(state[v])){
-          applyingRemote=true;state[v]=r;
-          try{localStorage.setItem(lsKey(v),JSON.stringify(r));}catch(e){}
-          applyingRemote=false;
-          migrateRespKeys(v);
-          if(v===currentVessel)conFoco(render);
-        }
-      });
-    });
-    db.ref(FB_PATH+'/personas').on('value',snap=>{
-      if(isTyping)return;const r=snap.val();
-      if(r&&Array.isArray(r)){
-        applyingRemote=true;people=soloNombres(r);try{localStorage.setItem(lsPpl(),JSON.stringify(people));}catch(e){}applyingRemote=false;
-        // Limpieza única: si en la base aún quedan PIN antiguos, se guarda la lista sin ellos.
-        if(r.some(p=>p&&p.pin!==undefined)) db.ref(FB_PATH+'/personas').set(people).catch(()=>{});
-      }
-    });
-    db.ref(FB_PATH+'/thresholds').on('value',snap=>{
-      if(isTyping)return;const r=snap.val();
-      if(r){applyingRemote=true;thresholds=r;try{localStorage.setItem(lsThr(),JSON.stringify(r));}catch(e){}renderAreaTabs();applyingRemote=false;}
+    ['fatima','gracia','personas','thresholds'].forEach(n=>{
+      db.ref(FB_PATH+'/'+n).on('value',snap=>aplicarRemoto(n,snap.val(),false));
     });
   }catch(e){setSync('local','Solo local');}
 }
@@ -7525,7 +7606,7 @@ function migrateRespKeys(v){
   });
   if(changed&&isMaster()){
     try{localStorage.setItem(lsKey(v),JSON.stringify(st));}catch(e){}
-    if(fbReady&&db){ db.ref(FB_PATH+'/'+v).set(st).catch(()=>{}); }
+    if(fbReady&&db){ FBSEG.guardar(FB_PATH+'/'+v,st); }
   }
 }
 
@@ -8029,12 +8110,7 @@ function copyRespFromFatima(){
   /* Persistir gracia en localStorage y Firebase */
   try{localStorage.setItem(lsKey('gracia'),JSON.stringify(state.gracia));}catch(e){}
   if(fbReady&&!applyingRemote){
-    setSync('saving','Guardando…');
-    Promise.all([
-      db.ref(FB_PATH+'/gracia').set(state.gracia),
-      db.ref(FB_PATH+'/personas').set(people),
-      db.ref(FB_PATH+'/thresholds').set(thresholds),
-    ]).then(function(){setSync('ok','Sincronizado');}).catch(function(){setSync('local','Solo local');});
+    guardarSeguro(['gracia','personas','thresholds']);
   }
   render();
   alert('✅ Se copiaron '+copied+' asignaciones de responsables desde María Fátima.');
@@ -8895,13 +8971,18 @@ let _fbListeners = {};   // para cancelar listeners al cambiar barco
 function fbPath(suffix){ return 'atuntro/'+currentVessel+(suffix?'/'+suffix:''); }
 
 function fbSave(path, data){
-  _getDb().ref(path).set(data).catch(e=>console.warn('FB write error',e));
+  // Guardado seguro (js/fb-seguro.js): no pisa lo que otra persona guardó antes.
+  FBSEG.guardar(path, data).then(r=>{
+    if(r.ok) return;
+    FBSEG.avisar(r);
+    _getDb().ref(path).once('value').then(snap=>{ if(_fbListeners[path]) _fbListeners[path](snap); }).catch(()=>{});
+  });
 }
 
 function fbOn(path, cb){
   // cancelar listener anterior si existe
   if(_fbListeners[path]) _getDb().ref(path).off('value', _fbListeners[path]);
-  const handler = snap => cb(snap.val());
+  const handler = snap => { FBSEG.vio(path, snap.val()); cb(snap.val()); };
   _getDb().ref(path).on('value', handler);
   _fbListeners[path] = handler;
 }
@@ -9437,10 +9518,11 @@ function startRealtimeSync(){
   if(_fbHandler) ref.off('value', _fbHandler);
   _fbHandler = snap => {
     const data = snap.val();
-    if(!data) return; // nada remoto aun -- lo local se sube en el proximo persist()
+    if(!data){ FBSEG.vio(FB_PATH, null); return; } // nada remoto aun -- lo local se sube en el proximo persist()
     const json = JSON.stringify(data);
-    if(json === _lastRemoteJSON) return;   // es el eco de nuestro propio guardado
-    if(_isTyping) return;                    // no reconstruir la tabla mientras se escribe
+    if(json === _lastRemoteJSON){ FBSEG.vio(FB_PATH, data); return; }   // es el eco de nuestro propio guardado
+    if(_isTyping && !snap._forzar) return;   // no reconstruir la tabla mientras se escribe
+    FBSEG.vio(FB_PATH, data);
     _lastRemoteJSON = json;
     _fechasReparadas = 0;
     state = normalizeState(data);
@@ -9537,7 +9619,15 @@ function persist(){
   _saveDebounce = setTimeout(()=>{
     _lastRemoteJSON = json;
     const db = _getDb();
-    if(db){ db.ref(FB_PATH).set(state).catch(()=>{}); }
+    if(db){
+      // Guardado seguro (js/fb-seguro.js): no pisa lo que otra persona guardó antes.
+      FBSEG.guardar(FB_PATH, state).then(r => {
+        if(r.ok) return;
+        FBSEG.avisar(r);
+        _lastRemoteJSON = null;
+        db.ref(FB_PATH).once('value').then(snap => { snap._forzar = true; if(_fbHandler) _fbHandler(snap); }).catch(()=>{});
+      });
+    }
   }, 600);
 }
 function flashSave(){
@@ -12643,20 +12733,34 @@ function sv(){
   if(json === lastRemoteJSON) return; // nada cambio, evita loop con el listener remoto
   flashSave();
   clearTimeout(saveDebounce);
+  const ruta = FB_PATH;   // el barco de este cambio (aunque se cambie de barco antes de guardar)
   saveDebounce = setTimeout(()=>{
     lastRemoteJSON = json;
     const db = _getDb();
-    if(db){ db.ref(FB_PATH).set(payload).catch(()=>{}); }
+    if(db){
+      // Guardado seguro (js/fb-seguro.js): no pisa lo que otra persona guardó antes.
+      FBSEG.guardar(ruta, payload).then(r => {
+        if(r.ok) return;
+        FBSEG.avisar(r);
+        lastRemoteJSON = null;
+        if(ruta === FB_PATH) db.ref(ruta).once('value').then(snap => { snap._forzar = true; if(_fbHandler) _fbHandler(snap); }).catch(()=>{});
+      });
+    }
   }, 600);
 }
 
-function applyRemoteData(data){
+function applyRemoteData(data, desdeBase){
   if(!data) return;
   const {vals, provs:ps, rprovs:rps, invItems:iv, repoItems:ri} = data;
   if(vals) Object.entries(vals).forEach(([id,v])=>{
     const el=document.getElementById(id);
     if(el && document.activeElement!==el) el.value=v;
   });
+  if(desdeBase){
+    // En la base, una lista que no existe es una lista vacía (se borró todo): no se conserva la local.
+    provs = FBSEG.lista(ps); rprovs = FBSEG.lista(rps); invItems = FBSEG.lista(iv); repoItems = FBSEG.lista(ri);
+    return;
+  }
   if(ps && ps.length) provs = ps;
   if(rps && rps.length) rprovs = rps;
   if(iv && iv.length) invItems = iv;
@@ -12679,17 +12783,18 @@ function load(){
   if(_fbHandler) ref.off('value', _fbHandler);
   _fbHandler = snap => {
     const data = snap.val();
-    if(!data) return;
+    if(!data){ FBSEG.vio(FB_PATH, null); return; }
 
     const json = JSON.stringify(data);
-    if(json === lastRemoteJSON) return;
+    if(json === lastRemoteJSON){ FBSEG.vio(FB_PATH, data); return; }
 
-    if(isTyping){
+    if(isTyping && !snap._forzar){
       return; // no pisar lo que el usuario esta escribiendo ahora mismo
     }
 
+    FBSEG.vio(FB_PATH, data);
     lastRemoteJSON = json;
-    applyRemoteData(data);
+    applyRemoteData(data, true);
     try{ localStorage.setItem(SK, json); }catch(e){}
 
     // re-render todo lo que depende de arrays (sin sacar el cursor del campo abierto)
@@ -13066,16 +13171,20 @@ function cargar(){
   if(_fbHandler) ref.off('value',_fbHandler);
   _fbHandler=snap=>{
     const data=snap.val();
-    if(!data || !Array.isArray(data.rows)){
-      // primera vez: sube la base local a Firebase
-      if(rows && rows.length){ ref.set({rows, updatedAt:Date.now()}).catch(()=>{}); }
+    if(!data){
+      // primera vez (la base no tiene nada): sube la lista local a Firebase
+      FBSEG.vio(FB_PATH, null);
+      if(rows && rows.length){ FBSEG.guardar(FB_PATH, {rows, updatedAt:Date.now()}); }
       return;
     }
-    const json=JSON.stringify(data.rows);
-    if(json===_lastRemoteJSON) return;
-    if(_isTyping) return; // no pisar lo que el usuario edita ahora
+    // Si la base existe pero no tiene filas es porque se borraron todas: no se resucita la copia local.
+    const remotas=FBSEG.lista(data.rows);
+    const json=JSON.stringify(remotas);
+    if(json===_lastRemoteJSON){ FBSEG.vio(FB_PATH, data); return; }
+    if(_isTyping && !snap._forzar) return; // no pisar lo que el usuario edita ahora
+    FBSEG.vio(FB_PATH, data);
     _lastRemoteJSON=json;
-    rows=data.rows;
+    rows=remotas;
     try{ localStorage.setItem(STORE, JSON.stringify(rows)); }catch(e){}
     render(); flash();
   };
@@ -13090,7 +13199,15 @@ function guardar(){
   _saveDebounce=setTimeout(()=>{
     _lastRemoteJSON=json;
     const db=_getDb();
-    if(db){ db.ref(FB_PATH).set({rows, updatedAt:Date.now()}).catch(()=>{}); }
+    if(db){
+      // Guardado seguro (js/fb-seguro.js): no pisa lo que otra persona guardó antes.
+      FBSEG.guardar(FB_PATH, {rows, updatedAt:Date.now()}).then(r=>{
+        if(r.ok) return;
+        FBSEG.avisar(r);
+        _lastRemoteJSON=null;
+        db.ref(FB_PATH).once('value').then(snap=>{ snap._forzar=true; if(_fbHandler) _fbHandler(snap); }).catch(()=>{});
+      });
+    }
   }, 600);
 }
 
@@ -13518,9 +13635,14 @@ function persistNow(silent) {
   try { localStorage.setItem(lsKey(currentVessel),JSON.stringify(state[currentVessel])); } catch(e){}
   if (fbReady&&!applyingRemote) {
     setSync('saving','Guardando…');
-    db.ref(FB_PATH+'/'+currentVessel).set(state[currentVessel])
-      .then(function(){ setSync('ok','Sincronizado'); refresh(); })
-      .catch(function(){ setSync('local','Solo local'); refresh(); });
+    var v=currentVessel;
+    // Guardado seguro (js/fb-seguro.js): no pisa lo que otra persona guardó antes.
+    FBSEG.guardar(FB_PATH+'/'+v, state[v]).then(function(r){
+      if(r.ok){ setSync('ok','Sincronizado'); refresh(); return; }
+      FBSEG.avisar(r);
+      setSync('ok','Actualizado');
+      db.ref(FB_PATH+'/'+v).once('value').then(function(snap){ aplicarRemoto(v, snap.val(), true); });
+    });
   } else {
     setSync('local','Solo local'); refresh();
   }
@@ -13529,24 +13651,25 @@ function setSync(cls,label){
   var d=document.getElementById('proy-syncDot'); if(d) d.className='sync-dot '+cls;
   var l=document.getElementById('proy-syncLbl'); if(l) l.textContent=label;
 }
+function aplicarRemoto(v, r, forzar){
+  if(isTyping&&!forzar)return;
+  FBSEG.vio(FB_PATH+'/'+v, r);
+  if(r&&JSON.stringify(r)!==JSON.stringify(state[v])){
+    applyingRemote=true; state[v]=r;
+    try{localStorage.setItem(lsKey(v),JSON.stringify(r));}catch(e){}
+    if(v===currentVessel){
+      /* si el usuario tiene el cursor dentro de un campo, no se
+         redibuja la tabla: solo se refrescan los totales */
+      if(hasFocusInside()&&!forzar) refreshTotals(); else render();
+    }
+    applyingRemote=false;
+  }
+}
 function initFirebase(){
   try {
     db=firebase.database(); fbReady=true; setSync('ok','Sincronizado');
     ['fatima','gracia'].forEach(function(v){
-      db.ref(FB_PATH+'/'+v).on('value',function(snap){
-        if(isTyping)return;
-        var r=snap.val();
-        if(r&&JSON.stringify(r)!==JSON.stringify(state[v])){
-          applyingRemote=true; state[v]=r;
-          try{localStorage.setItem(lsKey(v),JSON.stringify(r));}catch(e){}
-          if(v===currentVessel){
-            /* si el usuario tiene el cursor dentro de un campo, no se
-               redibuja la tabla: solo se refrescan los totales */
-            if(hasFocusInside()) refreshTotals(); else render();
-          }
-          applyingRemote=false;
-        }
-      });
+      db.ref(FB_PATH+'/'+v).on('value',function(snap){ aplicarRemoto(v, snap.val(), false); });
     });
   } catch(e){ setSync('local','Solo local'); }
 }
@@ -16449,9 +16572,13 @@ function persistNow() {
   try { localStorage.setItem(lsKey(v), JSON.stringify(data[v])); } catch (e) {}
   if (fbReady && !applyingRemote) {
     setSync('saving', 'Guardando…');
-    db.ref(FB_PATH + '/' + v).set(data[v])
-      .then(function () { setSync('ok', 'Sincronizado'); renderLastMod(); })
-      .catch(function () { setSync('local', 'Solo local'); renderLastMod(); });
+    // Guardado seguro (js/fb-seguro.js): no pisa lo que otra persona guardó antes.
+    FBSEG.guardar(FB_PATH + '/' + v, data[v]).then(function (r) {
+      if (r.ok) { setSync('ok', 'Sincronizado'); renderLastMod(); return; }
+      FBSEG.avisar(r);
+      setSync('ok', 'Actualizado');
+      db.ref(FB_PATH + '/' + v).once('value').then(function (snap) { aplicarRemoto(v, snap.val(), true); });
+    });
   } else {
     setSync('local', 'Solo local'); renderLastMod();
   }
@@ -16482,25 +16609,27 @@ function isBusy() {
   return isTyping;
 }
 
+function aplicarRemoto(v, r, forzar) {
+  if (isTyping && !forzar) return;
+  FBSEG.vio(FB_PATH + '/' + v, r);
+  if (!r) return;
+  var n = normalize(r);
+  if (JSON.stringify(n) === JSON.stringify(data[v])) return;
+  applyingRemote = true;
+  data[v] = n;
+  try { localStorage.setItem(lsKey(v), JSON.stringify(n)); } catch (e) {}
+  if (v === currentVessel) {
+    if (forzar || !isBusy()) renderTable();
+    renderLastMod();
+  }
+  applyingRemote = false;
+}
+
 function initFirebase() {
   try {
     db = firebase.database(); fbReady = true; setSync('ok', 'Sincronizado');
     Object.keys(NETS).forEach(function (v) {
-      db.ref(FB_PATH + '/' + v).on('value', function (snap) {
-        if (isTyping) return;
-        var r = snap.val();
-        if (!r) return;
-        var n = normalize(r);
-        if (JSON.stringify(n) === JSON.stringify(data[v])) return;
-        applyingRemote = true;
-        data[v] = n;
-        try { localStorage.setItem(lsKey(v), JSON.stringify(n)); } catch (e) {}
-        if (v === currentVessel) {
-          if (!isBusy()) renderTable();
-          renderLastMod();
-        }
-        applyingRemote = false;
-      });
+      db.ref(FB_PATH + '/' + v).on('value', function (snap) { aplicarRemoto(v, snap.val(), false); });
     });
   } catch (e) { setSync('local', 'Solo local'); }
 }

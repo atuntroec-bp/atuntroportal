@@ -1248,20 +1248,34 @@ function sv(){
   if(json === lastRemoteJSON) return; // nada cambio, evita loop con el listener remoto
   flashSave();
   clearTimeout(saveDebounce);
+  const ruta = FB_PATH;   // el barco de este cambio (aunque se cambie de barco antes de guardar)
   saveDebounce = setTimeout(()=>{
     lastRemoteJSON = json;
     const db = _getDb();
-    if(db){ db.ref(FB_PATH).set(payload).catch(()=>{}); }
+    if(db){
+      // Guardado seguro (js/fb-seguro.js): no pisa lo que otra persona guardó antes.
+      FBSEG.guardar(ruta, payload).then(r => {
+        if(r.ok) return;
+        FBSEG.avisar(r);
+        lastRemoteJSON = null;
+        if(ruta === FB_PATH) db.ref(ruta).once('value').then(snap => { snap._forzar = true; if(_fbHandler) _fbHandler(snap); }).catch(()=>{});
+      });
+    }
   }, 600);
 }
 
-function applyRemoteData(data){
+function applyRemoteData(data, desdeBase){
   if(!data) return;
   const {vals, provs:ps, rprovs:rps, invItems:iv, repoItems:ri} = data;
   if(vals) Object.entries(vals).forEach(([id,v])=>{
     const el=document.getElementById(id);
     if(el && document.activeElement!==el) el.value=v;
   });
+  if(desdeBase){
+    // En la base, una lista que no existe es una lista vacía (se borró todo): no se conserva la local.
+    provs = FBSEG.lista(ps); rprovs = FBSEG.lista(rps); invItems = FBSEG.lista(iv); repoItems = FBSEG.lista(ri);
+    return;
+  }
   if(ps && ps.length) provs = ps;
   if(rps && rps.length) rprovs = rps;
   if(iv && iv.length) invItems = iv;
@@ -1284,17 +1298,18 @@ function load(){
   if(_fbHandler) ref.off('value', _fbHandler);
   _fbHandler = snap => {
     const data = snap.val();
-    if(!data) return;
+    if(!data){ FBSEG.vio(FB_PATH, null); return; }
 
     const json = JSON.stringify(data);
-    if(json === lastRemoteJSON) return;
+    if(json === lastRemoteJSON){ FBSEG.vio(FB_PATH, data); return; }
 
-    if(isTyping){
+    if(isTyping && !snap._forzar){
       return; // no pisar lo que el usuario esta escribiendo ahora mismo
     }
 
+    FBSEG.vio(FB_PATH, data);
     lastRemoteJSON = json;
-    applyRemoteData(data);
+    applyRemoteData(data, true);
     try{ localStorage.setItem(SK, json); }catch(e){}
 
     // re-render todo lo que depende de arrays (sin sacar el cursor del campo abierto)

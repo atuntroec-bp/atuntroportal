@@ -558,9 +558,13 @@ function persistNow() {
   try { localStorage.setItem(lsKey(v), JSON.stringify(data[v])); } catch (e) {}
   if (fbReady && !applyingRemote) {
     setSync('saving', 'Guardando…');
-    db.ref(FB_PATH + '/' + v).set(data[v])
-      .then(function () { setSync('ok', 'Sincronizado'); renderLastMod(); })
-      .catch(function () { setSync('local', 'Solo local'); renderLastMod(); });
+    // Guardado seguro (js/fb-seguro.js): no pisa lo que otra persona guardó antes.
+    FBSEG.guardar(FB_PATH + '/' + v, data[v]).then(function (r) {
+      if (r.ok) { setSync('ok', 'Sincronizado'); renderLastMod(); return; }
+      FBSEG.avisar(r);
+      setSync('ok', 'Actualizado');
+      db.ref(FB_PATH + '/' + v).once('value').then(function (snap) { aplicarRemoto(v, snap.val(), true); });
+    });
   } else {
     setSync('local', 'Solo local'); renderLastMod();
   }
@@ -591,25 +595,27 @@ function isBusy() {
   return isTyping;
 }
 
+function aplicarRemoto(v, r, forzar) {
+  if (isTyping && !forzar) return;
+  FBSEG.vio(FB_PATH + '/' + v, r);
+  if (!r) return;
+  var n = normalize(r);
+  if (JSON.stringify(n) === JSON.stringify(data[v])) return;
+  applyingRemote = true;
+  data[v] = n;
+  try { localStorage.setItem(lsKey(v), JSON.stringify(n)); } catch (e) {}
+  if (v === currentVessel) {
+    if (forzar || !isBusy()) renderTable();
+    renderLastMod();
+  }
+  applyingRemote = false;
+}
+
 function initFirebase() {
   try {
     db = firebase.database(); fbReady = true; setSync('ok', 'Sincronizado');
     Object.keys(NETS).forEach(function (v) {
-      db.ref(FB_PATH + '/' + v).on('value', function (snap) {
-        if (isTyping) return;
-        var r = snap.val();
-        if (!r) return;
-        var n = normalize(r);
-        if (JSON.stringify(n) === JSON.stringify(data[v])) return;
-        applyingRemote = true;
-        data[v] = n;
-        try { localStorage.setItem(lsKey(v), JSON.stringify(n)); } catch (e) {}
-        if (v === currentVessel) {
-          if (!isBusy()) renderTable();
-          renderLastMod();
-        }
-        applyingRemote = false;
-      });
+      db.ref(FB_PATH + '/' + v).on('value', function (snap) { aplicarRemoto(v, snap.val(), false); });
     });
   } catch (e) { setSync('local', 'Solo local'); }
 }

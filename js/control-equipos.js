@@ -257,10 +257,11 @@ function startRealtimeSync(){
   if(_fbHandler) ref.off('value', _fbHandler);
   _fbHandler = snap => {
     const data = snap.val();
-    if(!data) return; // nada remoto aun -- lo local se sube en el proximo persist()
+    if(!data){ FBSEG.vio(FB_PATH, null); return; } // nada remoto aun -- lo local se sube en el proximo persist()
     const json = JSON.stringify(data);
-    if(json === _lastRemoteJSON) return;   // es el eco de nuestro propio guardado
-    if(_isTyping) return;                    // no reconstruir la tabla mientras se escribe
+    if(json === _lastRemoteJSON){ FBSEG.vio(FB_PATH, data); return; }   // es el eco de nuestro propio guardado
+    if(_isTyping && !snap._forzar) return;   // no reconstruir la tabla mientras se escribe
+    FBSEG.vio(FB_PATH, data);
     _lastRemoteJSON = json;
     _fechasReparadas = 0;
     state = normalizeState(data);
@@ -357,7 +358,15 @@ function persist(){
   _saveDebounce = setTimeout(()=>{
     _lastRemoteJSON = json;
     const db = _getDb();
-    if(db){ db.ref(FB_PATH).set(state).catch(()=>{}); }
+    if(db){
+      // Guardado seguro (js/fb-seguro.js): no pisa lo que otra persona guardó antes.
+      FBSEG.guardar(FB_PATH, state).then(r => {
+        if(r.ok) return;
+        FBSEG.avisar(r);
+        _lastRemoteJSON = null;
+        db.ref(FB_PATH).once('value').then(snap => { snap._forzar = true; if(_fbHandler) _fbHandler(snap); }).catch(()=>{});
+      });
+    }
   }, 600);
 }
 function flashSave(){

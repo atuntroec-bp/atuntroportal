@@ -120,24 +120,10 @@ const GT = (() => {
   };
   const FB_PATH = 'atuntro_gestor/data';
   let _fbHandler = null;
-  // Protección contra datos viejos: no se escribe en la base hasta recibir su estado actual,
-  // y cada guardado se rechaza si la base cambió desde la última vez que se leyó.
-  let syncReady  = false;      // true cuando llegó la primera lectura de Firebase
-  let baseRemote = null;       // huella del último estado leído de la base
+  // Protección contra datos viejos (js/fb-seguro.js): no se escribe en la base hasta recibir
+  // su estado actual, y cada guardado se rechaza si la base cambió en otro dispositivo.
   let lastRemote = null;       // último estado leído (para deshacer un guardado rechazado)
-
-  // JSON con claves ordenadas, para comparar estados sin importar el orden de las claves.
-  function huella(v) {
-    if (v === null || v === undefined) return 'null';
-    if (Array.isArray(v)) return '[' + v.map(huella).join(',') + ']';
-    if (typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + huella(v[k])).join(',') + '}';
-    return JSON.stringify(v);
-  }
-  function lista(v) {          // Firebase devuelve arreglos u objetos; las listas vacías no existen
-    if (Array.isArray(v)) return v.filter(Boolean);
-    if (v && typeof v === 'object') return Object.keys(v).map(k => v[k]).filter(Boolean);
-    return [];
-  }
+  const lista = v => FBSEG.lista(v);
   function maxId(arr) { return arr.reduce((m, x) => Math.max(m, Number(x && x.id) || 0), 0); }
   function aplicarRemoto(data) {
     tasks        = lista(data.tasks);
@@ -169,8 +155,7 @@ const GT = (() => {
     if (_fbHandler) ref.off('value', _fbHandler);
     _fbHandler = snap => {
       const data = snap.val();
-      syncReady  = true;
-      baseRemote = huella(data);
+      FBSEG.vio(FB_PATH, data);
       lastRemote = data;
       if (!data) return; // nada remoto aún — lo que hay en local se sube en el próximo save()
       // La base manda: si una lista no existe allí es porque está vacía (no se conserva la local).
@@ -212,8 +197,8 @@ const GT = (() => {
 
   function save() {
     const db = _getDb();
-    if (db && !syncReady) {
-      alert('Todavía se está conectando con la base. Espere unos segundos e intente de nuevo.');
+    if (db && !FBSEG.listo(FB_PATH)) {
+      FBSEG.avisar({ ok:false, motivo:'sin-lectura' });
       deshacerLocal();
       return;
     }
@@ -221,25 +206,16 @@ const GT = (() => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, nextId, rutinas, nextRutinaId }));
     } catch(e) {}
     if (!db) return;
-    const nuevo = JSON.parse(JSON.stringify({ tasks, responsables, nextId, rutinas, nextRutinaId }));
-    const base = baseRemote;
-    db.ref(FB_PATH).transaction(cur => {
-      if (huella(cur) !== base) return;          // la base cambió (otro dispositivo): no pisar
-      return nuevo;
-    }, (err, committed) => {
-      if (err) { alert('No se pudo guardar (sin permiso o sin conexión).'); deshacerLocal(); return; }
-      if (!committed) {
-        alert('El listado cambió en otro dispositivo y se actualizó. Revise y repita el cambio si todavía hace falta.');
-        deshacerLocal();
-        return;
-      }
-      flashSaveDot();
+    FBSEG.guardar(FB_PATH, { tasks, responsables, nextId, rutinas, nextRutinaId }).then(r => {
+      if (r.ok) { flashSaveDot(); return; }
+      FBSEG.avisar(r);
+      deshacerLocal();
     });
   }
 
   // Vuelve a mostrar el último estado de la base (descarta un cambio que no se guardó).
   function deshacerLocal() {
-    if (lastRemote) aplicarRemoto(lastRemote); else if (!syncReady) load();
+    if (lastRemote) aplicarRemoto(lastRemote); else if (!FBSEG.listo(FB_PATH)) load();
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, responsables, nextId, rutinas, nextRutinaId })); } catch(e) {}
     try { renderAll(); } catch(e) {}
   }

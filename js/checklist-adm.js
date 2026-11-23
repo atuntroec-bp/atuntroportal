@@ -662,13 +662,18 @@ let _fbListeners = {};   // para cancelar listeners al cambiar barco
 function fbPath(suffix){ return 'atuntro/'+currentVessel+(suffix?'/'+suffix:''); }
 
 function fbSave(path, data){
-  _getDb().ref(path).set(data).catch(e=>console.warn('FB write error',e));
+  // Guardado seguro (js/fb-seguro.js): no pisa lo que otra persona guardó antes.
+  FBSEG.guardar(path, data).then(r=>{
+    if(r.ok) return;
+    FBSEG.avisar(r);
+    _getDb().ref(path).once('value').then(snap=>{ if(_fbListeners[path]) _fbListeners[path](snap); }).catch(()=>{});
+  });
 }
 
 function fbOn(path, cb){
   // cancelar listener anterior si existe
   if(_fbListeners[path]) _getDb().ref(path).off('value', _fbListeners[path]);
-  const handler = snap => cb(snap.val());
+  const handler = snap => { FBSEG.vio(path, snap.val()); cb(snap.val()); };
   _getDb().ref(path).on('value', handler);
   _fbListeners[path] = handler;
 }

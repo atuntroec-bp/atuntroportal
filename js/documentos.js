@@ -204,16 +204,20 @@ function cargar(){
   if(_fbHandler) ref.off('value',_fbHandler);
   _fbHandler=snap=>{
     const data=snap.val();
-    if(!data || !Array.isArray(data.rows)){
-      // primera vez: sube la base local a Firebase
-      if(rows && rows.length){ ref.set({rows, updatedAt:Date.now()}).catch(()=>{}); }
+    if(!data){
+      // primera vez (la base no tiene nada): sube la lista local a Firebase
+      FBSEG.vio(FB_PATH, null);
+      if(rows && rows.length){ FBSEG.guardar(FB_PATH, {rows, updatedAt:Date.now()}); }
       return;
     }
-    const json=JSON.stringify(data.rows);
-    if(json===_lastRemoteJSON) return;
-    if(_isTyping) return; // no pisar lo que el usuario edita ahora
+    // Si la base existe pero no tiene filas es porque se borraron todas: no se resucita la copia local.
+    const remotas=FBSEG.lista(data.rows);
+    const json=JSON.stringify(remotas);
+    if(json===_lastRemoteJSON){ FBSEG.vio(FB_PATH, data); return; }
+    if(_isTyping && !snap._forzar) return; // no pisar lo que el usuario edita ahora
+    FBSEG.vio(FB_PATH, data);
     _lastRemoteJSON=json;
-    rows=data.rows;
+    rows=remotas;
     try{ localStorage.setItem(STORE, JSON.stringify(rows)); }catch(e){}
     render(); flash();
   };
@@ -228,7 +232,15 @@ function guardar(){
   _saveDebounce=setTimeout(()=>{
     _lastRemoteJSON=json;
     const db=_getDb();
-    if(db){ db.ref(FB_PATH).set({rows, updatedAt:Date.now()}).catch(()=>{}); }
+    if(db){
+      // Guardado seguro (js/fb-seguro.js): no pisa lo que otra persona guardó antes.
+      FBSEG.guardar(FB_PATH, {rows, updatedAt:Date.now()}).then(r=>{
+        if(r.ok) return;
+        FBSEG.avisar(r);
+        _lastRemoteJSON=null;
+        db.ref(FB_PATH).once('value').then(snap=>{ snap._forzar=true; if(_fbHandler) _fbHandler(snap); }).catch(()=>{});
+      });
+    }
   }, 600);
 }
 

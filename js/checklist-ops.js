@@ -280,13 +280,51 @@ function persistNow(){
   try{localStorage.setItem(lsPpl(),JSON.stringify(people));}catch(e){}
   try{localStorage.setItem(lsThr(),JSON.stringify(thresholds));}catch(e){}
   if(fbReady&&!applyingRemote){
-    setSync('saving','Guardando…');
-    Promise.all([
-      db.ref(FB_PATH+'/'+currentVessel).set(state[currentVessel]),
-      db.ref(FB_PATH+'/personas').set(people),
-      db.ref(FB_PATH+'/thresholds').set(thresholds),
-    ]).then(()=>setSync('ok','Sincronizado')).catch(()=>setSync('local','Solo local'));
+    guardarSeguro([currentVessel,'personas','thresholds']);
   } else if(!fbReady){setSync('local','Solo local');}
+}
+/* Guardado seguro (js/fb-seguro.js): solo escribe si la base sigue igual a lo último que se
+   recibió; si otra persona guardó antes, no la pisa y se vuelve a cargar lo de la base. */
+function valorDe(n){ return n==='personas'?people:(n==='thresholds'?thresholds:state[n]); }
+function guardarSeguro(nodos){
+  setSync('saving','Guardando…');
+  Promise.all(nodos.map(n=>FBSEG.guardarSiCambio(FB_PATH+'/'+n,valorDe(n)))).then(rs=>{
+    const mal=rs.find(r=>!r.ok);
+    if(!mal){setSync('ok','Sincronizado');return;}
+    FBSEG.avisar(mal);
+    recargarRemoto();
+  }).catch(()=>setSync('local','Solo local'));
+}
+/* Vuelve a leer la base y la aplica aunque el usuario esté escribiendo. */
+function recargarRemoto(){
+  if(!db)return;
+  ['fatima','gracia','personas','thresholds'].forEach(n=>{
+    db.ref(FB_PATH+'/'+n).once('value').then(snap=>aplicarRemoto(n,snap.val(),true)).catch(()=>{});
+  });
+  setSync('ok','Actualizado');
+}
+function aplicarRemoto(n,r,forzar){
+  if(isTyping&&!forzar)return;
+  FBSEG.vio(FB_PATH+'/'+n,r);
+  if(n==='personas'){
+    if(r&&Array.isArray(r)){
+      applyingRemote=true;people=soloNombres(r);try{localStorage.setItem(lsPpl(),JSON.stringify(people));}catch(e){}applyingRemote=false;
+      // Limpieza única: si en la base aún quedan PIN antiguos, se guarda la lista sin ellos.
+      if(r.some(p=>p&&p.pin!==undefined)) FBSEG.guardar(FB_PATH+'/personas',people);
+    }
+    return;
+  }
+  if(n==='thresholds'){
+    if(r){applyingRemote=true;thresholds=r;try{localStorage.setItem(lsThr(),JSON.stringify(r));}catch(e){}renderAreaTabs();applyingRemote=false;}
+    return;
+  }
+  if(r&&JSON.stringify(r)!==JSON.stringify(state[n])){
+    applyingRemote=true;state[n]=r;
+    try{localStorage.setItem(lsKey(n),JSON.stringify(r));}catch(e){}
+    applyingRemote=false;
+    migrateRespKeys(n);
+    if(n===currentVessel)conFoco(render);
+  }
 }
 function setSync(cls,label){
   document.getElementById('ckops-syncDot').className='sync-dot '+cls;
@@ -298,30 +336,8 @@ function initFirebase(){
   // Firebase already initialized by portal
   try{
     db=firebase.database();fbReady=true;setSync('ok','Sincronizado');
-    ['fatima','gracia'].forEach(v=>{
-      db.ref(FB_PATH+'/'+v).on('value',snap=>{
-        if(isTyping)return;
-        const r=snap.val();
-        if(r&&JSON.stringify(r)!==JSON.stringify(state[v])){
-          applyingRemote=true;state[v]=r;
-          try{localStorage.setItem(lsKey(v),JSON.stringify(r));}catch(e){}
-          applyingRemote=false;
-          migrateRespKeys(v);
-          if(v===currentVessel)conFoco(render);
-        }
-      });
-    });
-    db.ref(FB_PATH+'/personas').on('value',snap=>{
-      if(isTyping)return;const r=snap.val();
-      if(r&&Array.isArray(r)){
-        applyingRemote=true;people=soloNombres(r);try{localStorage.setItem(lsPpl(),JSON.stringify(people));}catch(e){}applyingRemote=false;
-        // Limpieza única: si en la base aún quedan PIN antiguos, se guarda la lista sin ellos.
-        if(r.some(p=>p&&p.pin!==undefined)) db.ref(FB_PATH+'/personas').set(people).catch(()=>{});
-      }
-    });
-    db.ref(FB_PATH+'/thresholds').on('value',snap=>{
-      if(isTyping)return;const r=snap.val();
-      if(r){applyingRemote=true;thresholds=r;try{localStorage.setItem(lsThr(),JSON.stringify(r));}catch(e){}renderAreaTabs();applyingRemote=false;}
+    ['fatima','gracia','personas','thresholds'].forEach(n=>{
+      db.ref(FB_PATH+'/'+n).on('value',snap=>aplicarRemoto(n,snap.val(),false));
     });
   }catch(e){setSync('local','Solo local');}
 }
@@ -417,7 +433,7 @@ function migrateRespKeys(v){
   });
   if(changed&&isMaster()){
     try{localStorage.setItem(lsKey(v),JSON.stringify(st));}catch(e){}
-    if(fbReady&&db){ db.ref(FB_PATH+'/'+v).set(st).catch(()=>{}); }
+    if(fbReady&&db){ FBSEG.guardar(FB_PATH+'/'+v,st); }
   }
 }
 
@@ -921,12 +937,7 @@ function copyRespFromFatima(){
   /* Persistir gracia en localStorage y Firebase */
   try{localStorage.setItem(lsKey('gracia'),JSON.stringify(state.gracia));}catch(e){}
   if(fbReady&&!applyingRemote){
-    setSync('saving','Guardando…');
-    Promise.all([
-      db.ref(FB_PATH+'/gracia').set(state.gracia),
-      db.ref(FB_PATH+'/personas').set(people),
-      db.ref(FB_PATH+'/thresholds').set(thresholds),
-    ]).then(function(){setSync('ok','Sincronizado');}).catch(function(){setSync('local','Solo local');});
+    guardarSeguro(['gracia','personas','thresholds']);
   }
   render();
   alert('✅ Se copiaron '+copied+' asignaciones de responsables desde María Fátima.');
