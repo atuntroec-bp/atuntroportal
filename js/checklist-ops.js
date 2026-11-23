@@ -230,6 +230,9 @@ let activeUser   = null;
 let currentVessel= 'fatima';
 let currentArea  = 'a1';
 let isTyping=false, typingTimer=null, persistTimer=null;
+const CORTES='checklist_ops_cortes';
+let corteVista=null;   // {id, f, n, trip, data} mientras se ve un viaje anterior (solo lectura)
+let cortesLista=[];
 let db = null, fbReady=false, applyingRemote=false;
 
 const VESSEL_INFO={fatima:'María Fátima (180 TM · ~20 tripulantes)',gracia:'María de Gracia (215 TM · ~21 tripulantes)'};
@@ -274,8 +277,9 @@ function conFoco(fn){
   try{ el.focus({preventScroll:true}); if(k.s!=null) el.setSelectionRange(k.s,k.e); }catch(x){}
 }
 function markTyping(){isTyping=true;clearTimeout(typingTimer);typingTimer=setTimeout(()=>{isTyping=false;},900);}
-function persistDebounced(){clearTimeout(persistTimer);persistTimer=setTimeout(persistNow,600);}
+function persistDebounced(){if(corteVista)return;clearTimeout(persistTimer);persistTimer=setTimeout(persistNow,600);}
 function persistNow(){
+  if(corteVista)return;   // viendo un viaje anterior: solo lectura
   try{localStorage.setItem(lsKey(currentVessel),JSON.stringify(state[currentVessel]));}catch(e){}
   try{localStorage.setItem(lsPpl(),JSON.stringify(people));}catch(e){}
   try{localStorage.setItem(lsThr(),JSON.stringify(thresholds));}catch(e){}
@@ -364,7 +368,7 @@ function updateUserChip(){
     badge.style.display='none'; peopleBtn.style.display='none';
   }
 }
-function isMaster(){ return !!activeUser && !!activeUser.isAdmin; }
+function isMaster(){ return !corteVista && !!activeUser && !!activeUser.isAdmin; }
 
 /* ══════════════════════════════════════════
    RESPONSABLES ↔ USUARIOS DEL PORTAL
@@ -516,7 +520,7 @@ function refreshUrgency(){
 /* ══════════════════════════════════════════
    ESTADO
    ══════════════════════════════════════════ */
-function vesselState(){return state[currentVessel];}
+function vesselState(){return corteVista?corteVista.data:state[currentVessel];}
 function areaData(aid){
   const vs=vesselState();
   if(!vs.areas)vs.areas={};
@@ -882,6 +886,7 @@ function loadTripInfo(){
    EMBARCACIÓN / ÁREA
    ══════════════════════════════════════════ */
 function switchVessel(v,btn){
+  if(corteVista)salirCorte(true);
   currentVessel=v;
   document.querySelectorAll('.vtab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
@@ -890,16 +895,112 @@ function switchVessel(v,btn){
 }
 function switchArea(aid){currentArea=aid;render();}
 function resetVessel(){
+  if(corteVista){alert('Está viendo un viaje anterior. Vuelva al viaje actual para reiniciarlo.');return;}
   const nm=currentVessel==='fatima'?'María Fátima':'María de Gracia';
-  if(!confirm('¿Reiniciar el viaje de '+nm+'?\n\nSe borrarán checks, historial, notas y fechas.\nSe conservan textos editados, pasos agregados y responsables asignados.'))return;
-  const vs=vesselState();
-  if(vs.areas)Object.keys(vs.areas).forEach(aid=>{
-    const ad=vs.areas[aid];
-    ad.notes='';
-    Object.keys(ad.steps||{}).forEach(sid=>{delete ad.steps[sid].done;delete ad.steps[sid].hist;});
+  if(!confirm('¿Reiniciar el viaje de '+nm+'?\n\nSe guardará una copia del viaje en "Viajes anteriores" y luego se borrarán checks, historial, notas y fechas.\nSe conservan textos editados, pasos agregados y responsables asignados.'))return;
+  if(!fbReady||!db){alert('Sin conexión con la base: no se puede guardar la copia del viaje, así que no se reinició.');return;}
+  const v=currentVessel,vs=state[v];
+  // 1) Se guarda la copia del viaje; 2) solo si se guardó, se reinicia.
+  let hechos=0,total=0;
+  AREAS.forEach(a=>{const c=areaCounts(a);hechos+=c.done;total+=c.total;});
+  const corte={f:hoyISO(),ts:Date.now(),u:activeUser?activeUser.key:'',n:activeUser?activeUser.name:'',
+    trip:vs._trip||{},hechos:hechos,total:total,data:JSON.parse(JSON.stringify(vs))};
+  setSync('saving','Guardando copia del viaje…');
+  db.ref(CORTES+'/'+v).push(corte).then(()=>{
+    if(vs.areas)Object.keys(vs.areas).forEach(aid=>{
+      const ad=vs.areas[aid];
+      ad.notes='';
+      Object.keys(ad.steps||{}).forEach(sid=>{delete ad.steps[sid].done;delete ad.steps[sid].hist;});
+    });
+    vs._trip={};
+    persistNow();render();
+    alert('✅ Viaje guardado en "Viajes anteriores" y checklist reiniciado.');
+  }).catch(()=>{
+    setSync('local','Sin guardar');
+    alert('No se pudo guardar la copia del viaje (sin permiso o sin conexión). El viaje NO se reinició.');
   });
-  vs._trip={};
-  persistNow();render();
+}
+
+/* ══════════════════════════════════════════
+   VIAJES ANTERIORES (cortes) — copia de cada viaje al reiniciar
+   Firebase: checklist_ops_cortes/<barco>/<id> = {f, ts, u, n, trip, hechos, total, data}
+   Los ven Jefe de Operaciones, Admin y Master; solo el Master los borra.
+   ══════════════════════════════════════════ */
+function hoyISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function puedeVerCortes(){return !!activeUser&&['master','admin','operaciones_master'].indexOf(activeUser.role)>=0;}
+function puedeBorrarCortes(){return !!activeUser&&activeUser.role==='master';}
+function fCorta(iso){if(!iso)return'—';const p=String(iso).slice(0,10).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:iso;}
+function cortesOvl(){
+  let o=document.getElementById('ckops-cortesOvl');
+  if(!o){
+    o=document.createElement('div');o.id='ckops-cortesOvl';o.className='admin-overlay';
+    o.innerHTML='<div class="admin-panel ckops-cortes-panel"><div class="admin-panel-head"><h3>🗂 Viajes anteriores</h3><button class="admin-close" onclick="CKOPS.cerrarCortes()">×</button></div><div class="admin-panel-body" id="ckops-cortesBody"></div></div>';
+    o.addEventListener('click',e=>{if(e.target===o)cerrarCortes();});
+    document.body.appendChild(o);
+  }
+  return o;
+}
+function abrirCortes(){
+  if(!puedeVerCortes())return;
+  cortesOvl().classList.add('show');
+  const body=document.getElementById('ckops-cortesBody');
+  const nm=currentVessel==='fatima'?'María Fátima':'María de Gracia';
+  body.innerHTML='<p class="ckops-cortes-sub">'+nm+' · Cargando…</p>';
+  db.ref(CORTES+'/'+currentVessel).once('value').then(snap=>{
+    const v=snap.val()||{};
+    cortesLista=Object.keys(v).map(id=>Object.assign({id:id},v[id])).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    pintarCortes();
+  }).catch(()=>{body.innerHTML='<p class="ckops-cortes-sub">No se pudo leer los viajes anteriores (sin permiso o sin conexión).</p>';});
+}
+function pintarCortes(){
+  const body=document.getElementById('ckops-cortesBody');if(!body)return;
+  const nm=currentVessel==='fatima'?'María Fátima':'María de Gracia';
+  let h='<p class="ckops-cortes-sub">'+nm+' · Se guarda una copia automáticamente cada vez que se reinicia el viaje.</p>';
+  if(!cortesLista.length)return body.innerHTML=h+'<p class="ckops-cortes-vacio">Todavía no hay viajes guardados. El primero se guardará la próxima vez que se reinicie el checklist.</p>';
+  h+='<table class="ckops-cortes-tb"><thead><tr><th>Viaje</th><th>Arribo</th><th>Zarpe</th><th>Avance</th><th>Reiniciado</th><th></th></tr></thead><tbody>';
+  cortesLista.forEach(c=>{
+    const t=c.trip||{},pct=c.total?Math.round((c.hechos||0)/c.total*100):0;
+    h+='<tr><td><b>'+escH(t.id||'—')+'</b></td><td>'+fCorta(t.arribo)+'</td><td>'+fCorta(t.zarpe)+'</td>'+
+      '<td>'+pct+'% <span class="ckops-cortes-n">('+(c.hechos||0)+'/'+(c.total||0)+')</span></td>'+
+      '<td>'+fCorta(c.f)+'<div class="ckops-cortes-n">'+escH(c.n||'')+'</div></td>'+
+      '<td class="ckops-cortes-acc"><button class="ckops-cortes-ver" onclick="CKOPS.verCorte(\''+c.id+'\')">Ver</button>'+
+      (puedeBorrarCortes()?'<button class="ckops-cortes-x" title="Eliminar" onclick="CKOPS.borrarCorte(\''+c.id+'\')">✕</button>':'')+'</td></tr>';
+  });
+  body.innerHTML=h+'</tbody></table>';
+}
+function cerrarCortes(){const o=document.getElementById('ckops-cortesOvl');if(o)o.classList.remove('show');}
+function verCorte(id){
+  const c=cortesLista.find(x=>x.id===id);if(!c)return;
+  clearTimeout(persistTimer);
+  corteVista={id:id,f:c.f,n:c.n,trip:c.trip||{},data:Object.assign({areas:{}},c.data||{})};
+  cerrarCortes();
+  const scr=document.getElementById('screen-checklist-ops');if(scr)scr.classList.add('ckops-corte');
+  const bar=document.getElementById('ckops-cortebar');
+  if(bar){
+    const t=corteVista.trip;
+    bar.innerHTML='<span>📸 Viendo el viaje <b>'+escH(t.id||'sin número')+'</b>'+(t.arribo?' · arribo '+fCorta(t.arribo):'')+(t.zarpe?' · zarpe '+fCorta(t.zarpe):'')+
+      ' · guardado el '+fCorta(corteVista.f)+(corteVista.n?' por '+escH(corteVista.n):'')+' — solo lectura</span>'+
+      '<button class="hdr-btn" onclick="CKOPS.salirCorte()">← Volver al viaje actual</button>';
+    bar.hidden=false;
+  }
+  updateUserChip();render();window.scrollTo(0,0);
+}
+function salirCorte(sinRender){
+  corteVista=null;
+  const scr=document.getElementById('screen-checklist-ops');if(scr)scr.classList.remove('ckops-corte');
+  const bar=document.getElementById('ckops-cortebar');if(bar){bar.hidden=true;bar.innerHTML='';}
+  updateUserChip();
+  if(!sinRender)render();
+}
+function borrarCorte(id){
+  if(!puedeBorrarCortes()){alert('Solo el Master puede eliminar viajes guardados.');return;}
+  const c=cortesLista.find(x=>x.id===id);if(!c)return;
+  if(!confirm('¿Eliminar el viaje '+((c.trip&&c.trip.id)||'')+' guardado el '+fCorta(c.f)+'?\n\nNo se puede deshacer.'))return;
+  db.ref(CORTES+'/'+currentVessel+'/'+id).remove().then(()=>{
+    cortesLista=cortesLista.filter(x=>x.id!==id);
+    if(corteVista&&corteVista.id===id)salirCorte();
+    pintarCortes();
+  }).catch(()=>alert('No se pudo eliminar (sin permiso o sin conexión).'));
 }
 
 /* ══════════════════════════════════════════
@@ -1094,8 +1195,11 @@ thresholds=loadThr();
     activeUser = {
       name: portalUser.name,
       key:  portalUser.key,
-      isAdmin: portalUser.role === 'master' || portalUser.role === 'operaciones_master'
+      isAdmin: portalUser.role === 'master' || portalUser.role === 'operaciones_master',
+      role: portalUser.role
     };
+    var cb = document.getElementById('ckops-cortesBtn');
+    if (cb) cb.style.display = puedeVerCortes() ? '' : 'none';
     /* Set vessel subtitle */
     var vs = document.getElementById('ckops-vesselSub');
     if (vs) vs.textContent = VESSEL_INFO[currentVessel] || VESSEL_INFO.fatima;
@@ -1127,6 +1231,7 @@ thresholds=loadThr();
      via Block 3 dispatchers — do NOT set window.X here or the dispatcher
      gets overridden. Expose via return object instead. */
   return { init: init, switchVessel: switchVessel, resetVessel: resetVessel, moveStep: moveStep,
+           abrirCortes: abrirCortes, cerrarCortes: cerrarCortes, verCorte: verCorte, salirCorte: salirCorte, borrarCorte: borrarCorte,
            toggleStep: toggleStep, updateNote: updateNote,
            updateStepText: updateStepText, saveTripInfo: saveTripInfo };
 

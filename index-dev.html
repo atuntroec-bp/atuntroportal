@@ -3199,6 +3199,31 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
     .acc-falta-t { width:100%; font-size:11px; font-weight:700; color:#FF9A9A; text-transform:uppercase; letter-spacing:.6px; margin-bottom:4px; }
     .acc-vacio { font-size:13px; color:var(--gray-500); text-align:center; padding:16px 0; }
     .acc-nota { font-size:10px; color:var(--gray-500); margin-top:12px; }
+
+    /* Checklist Operativo — viajes anteriores */
+    .ckops-cortebar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:10px 16px 0;padding:10px 14px;border-radius:10px;background:#FFF4D6;border:1px solid #F2C94C;color:#5C4400;font-size:13px}
+    .ckops-cortebar[hidden]{display:none}
+    .ckops-cortebar .hdr-btn{margin-left:auto;background:#1F4E79;color:#fff;border-color:#1F4E79}
+    #screen-checklist-ops.ckops-corte .dates-bar input,
+    #screen-checklist-ops.ckops-corte #ckops-areaPanel input,
+    #screen-checklist-ops.ckops-corte #ckops-areaPanel textarea,
+    #screen-checklist-ops.ckops-corte #ckops-areaPanel select,
+    #screen-checklist-ops.ckops-corte #ckops-areaPanel button:not(.hist-btn){pointer-events:none;opacity:.75}
+    #screen-checklist-ops.ckops-corte #ckops-areaPanel .step,
+    #screen-checklist-ops.ckops-corte #ckops-areaPanel [onclick]:not(.hist-btn){pointer-events:none}
+    #screen-checklist-ops.ckops-corte #ckops-areaPanel .hist-btn{pointer-events:auto}
+    .ckops-cortes-panel{max-width:760px}
+    .ckops-cortes-sub{font-size:12px;color:#64748b;margin:0 0 12px}
+    .ckops-cortes-vacio{font-size:13px;color:#94a3b8;padding:18px 0;text-align:center}
+    .ckops-cortes-tb{width:100%;border-collapse:collapse;font-size:13px}
+    .ckops-cortes-tb th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;padding:6px 8px;border-bottom:1px solid #e2e8f0}
+    .ckops-cortes-tb td{padding:8px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+    .ckops-cortes-n{font-size:11px;color:#94a3b8}
+    .ckops-cortes-acc{white-space:nowrap;text-align:right}
+    #screen-checklist-ops.ckops-corte .ds-badge{display:none!important}
+    .ckops-cortes-ver{background:#2E75B6;color:#fff;border:none;border-radius:7px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer}
+    .ckops-cortes-x{background:none;border:none;color:#c0392b;font-size:15px;cursor:pointer;margin-left:6px}
+    @media (max-width:600px){.ckops-cortes-tb th:nth-child(3),.ckops-cortes-tb td:nth-child(3){display:none}}
 </style>
 </head>
 <body>
@@ -4025,10 +4050,14 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f3;color:#1a1a18;mi
       </div>
       <button class="hdr-btn" id="ckops-peopleBtn" style="display:none" onclick="openPeople()">⚙ Personas</button>
       <button class="hdr-btn" onclick="exportCumplimientoPDF()" title="Descargar reporte de cumplimiento en PDF">📄 PDF</button>
+      <button class="hdr-btn" id="ckops-cortesBtn" style="display:none" onclick="CKOPS.abrirCortes()" title="Copias de los viajes anteriores">🗂 Viajes anteriores</button>
       <button class="hdr-btn" onclick="resetVessel()">↺ Reiniciar</button>
       <div class="sync-pill"><span class="sync-dot" id="ckops-syncDot"></span><span id="ckops-syncLbl">…</span></div>
     </div>
   </div>
+
+  <!-- VIAJE ANTERIOR (solo lectura) -->
+  <div class="ckops-cortebar" id="ckops-cortebar" hidden></div>
 
   <!-- DATES -->
   <div class="dates-bar">
