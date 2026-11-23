@@ -324,10 +324,26 @@ function kpiUltimo(b,lbl){
   if(ec.length) sub+='<br><span class="cont-curso-txt">En curso: '+ec.map(function(v){ return 'V'+escH(v.viaje)+' '+fmtK(v.total); }).join(', ')+'</span>';
   return kpi(lbl, u?fmtUSD(u.total):'—', sub, "CONT.irA('cv','')");
 }
-function kpiOtros(){
+function kpiOtros(ancho){
   var og=otrosGastos(), tot=suma(og);
   var det=og.length?og.map(function(x){ return escH(x.concepto)+' '+fmtK(x.valor); }).join(' + '):'Sin datos';
-  return kpi('Otros gastos '+anioActual(), fmtUSD(tot), '<span class="cont-small">'+det+'</span>', '', 'k-wide k-otros');
+  return kpi('Otros gastos '+anioActual(), fmtUSD(tot), '<span class="cont-small">'+det+'</span>', '', (ancho?'k-wide ':'')+'k-otros');
+}
+/* Resultado final acumulado de la empresa (Estado de Resultados de Tucán, enero → mes de corte).
+   Incluye todo: viajes, administración, intereses y otros gastos. Viene en data.estado_resultados
+   y se publica aparte (archivo con meta.tipo = 'estado_resultados'). */
+function fmtM(n){ var v=num(n); return Math.abs(v)>=1e6?(v<0?'-':'')+'$'+(Math.abs(v)/1e6).toFixed(2)+'M':fmtK(v); }
+var MES_LARGO=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function kpiResultado(){
+  var er=data&&data.estado_resultados;
+  if(!er||er.resultado==null) return kpi('Resultado final acumulado', '<span class="cont-pend">Pendiente</span>', 'Falta el Estado de Resultados de Tucán', '', 'k-res');
+  var ing=num(er.ingresos), gas=num(er.gastos), res=num(er.resultado), m=parseInt(er.mes,10);
+  var hasta=m>=1&&m<=12?(m===1?'enero':'ene – '+MES_LARGO[m-1].slice(0,3)):'';
+  var sub='Toda la empresa · '+escH(hasta)+' '+escH(er.anio||'')+' (Tucán)'+
+    '<br><span class="cont-small">Ingresos '+fmtM(ing)+' − gastos '+fmtM(gas)+(ing?' · margen '+fmtPct(res/ing):'')+'</span>';
+  var tip=(er.grupos||[]).map(function(g){ return g.cuenta+': '+fmtUSD(g.valor); }).join('\n');
+  return '<div class="cont-kpi k-res no-click"'+(tip?' title="'+escH(tip)+'"':'')+'><div class="cont-kpi-lbl">Resultado final acumulado '+escH(er.anio||'')+'</div>'+
+    '<div class="cont-kpi-val"><span class="'+(res<0?'neg':'')+'">'+fmtUSD(res)+'</span></div><div class="cont-kpi-sub">'+sub+'</div></div>';
 }
 function kpis(){
   var anio=anioActual();
@@ -344,11 +360,12 @@ function kpis(){
   var rentSub='Margen '+fmtPct(r.margen)+' · viajes cerrados'+(pend?' · <b>sin roles (pendiente)</b>':' · fact. − costo − rol trip.')+
     (r.enCurso.length?'<br><span class="cont-curso-txt">Excluye en curso: '+r.enCurso.map(function(v){ return 'V'+escH(v.viaje)+' '+escH(v.barco); }).join(', ')+'</span>':'');
   out.push(kpi('Rentabilidad operativa '+anio, '<span class="'+(r.res<0?'neg':'')+'">'+fmtUSD(r.res)+'</span>', rentSub, "CONT.irA('cv','')", 'k-rent'));
+  if(barco==='todos') out.push(kpiResultado());
   var rt=rolesDe('tripulacion');
   var rolVal=function(arr,p){ return p?'<span class="cont-pend">Pendiente</span>':fmtUSD(suma(arr)); };
   var rolSub=function(t,p){ return p?'Falta la fuente de roles':t; };
   if(barco==='todos'){
-    out.push(kpiOtros());
+    out.push(kpiOtros(false));
     out.push(kpiUltimo('MF','Costo último viaje · María Fátima'));
     out.push(kpiUltimo('MG','Costo último viaje · María de Gracia'));
     out.push(kpi('Rol tripulación '+anio, rolVal(rt,pend), rolSub('Ambos barcos · ver detalle →',pend), "CONT.irA('rol','tripulacion')", 'k-rol'));
@@ -649,6 +666,7 @@ function cargarArchivo(input){
   var rd=new FileReader();
   rd.onload=function(){
     var d; try{ d=JSON.parse(rd.result); }catch(e){ panel('<h4>No se pudo leer el archivo</h4>Elige el archivo <b>atuntro_contable.json</b> que dejó Claude en OneDrive.','err'); return; }
+    if(d&&d.meta&&d.meta.tipo==='estado_resultados'){ prepararER(d); return; }
     var err=validar(d);
     if(err){ panel('<h4>Archivo no válido</h4>'+escH(err),'err'); return; }
     pendiente=d;
@@ -667,10 +685,38 @@ function cargarArchivo(input){
   rd.onerror=function(){ panel('<h4>No se pudo leer el archivo</h4>Intenta de nuevo.','err'); };
   rd.readAsText(f);
 }
+/* Archivo solo con el Estado de Resultados: se publica en atuntro_contable/estado_resultados
+   sin tocar el resto del dashboard. */
+function prepararER(d){
+  var er=d.estado_resultados;
+  if(!er||er.resultado==null||!er.anio||!er.mes){ panel('<h4>Archivo no válido</h4>Al Estado de Resultados le faltan el año, el mes o el resultado.','err'); return; }
+  pendiente={soloER:true, er:er, corte:d.meta.corte};
+  panel('<h4>¿Publicar el Estado de Resultados?</h4><ul>'+
+    '<li>Período: <b>enero a '+escH(MES_LARGO[parseInt(er.mes,10)-1]||er.mes)+' '+escH(er.anio)+'</b></li>'+
+    '<li>Ingresos: <b>'+fmtUSD(er.ingresos)+'</b> · Gastos: <b>'+fmtUSD(er.gastos)+'</b></li>'+
+    '<li>Resultado final acumulado: <b>'+fmtUSD(er.resultado)+'</b></li>'+
+    '</ul>Solo actualiza el resultado acumulado; el resto del dashboard no cambia.'+
+    '<div class="cont-upd-acts" style="margin-top:12px"><button type="button" class="cont-upd-pub" onclick="CONT.publicar()">Publicar</button>'+
+    '<button type="button" class="cont-upd-can" onclick="CONT.cancelarCarga()">Cancelar</button></div>');
+}
 function publicar(){
   if(!pendiente) return;
   if(!fbReady||!db){ panel('<h4>Sin conexión</h4>Revisa tu internet y vuelve a intentarlo.','err'); return; }
+  if(pendiente.soloER){
+    var p=pendiente;
+    panel('<h4>Publicando…</h4>No cierres esta pestaña.');
+    db.ref(FB_PATH+'/estado_resultados').set(p.er).then(function(){
+      pendiente=null;
+      panel('<h4>Publicado</h4>Resultado acumulado a '+escH(MES_LARGO[parseInt(p.er.mes,10)-1]||'')+' '+escH(p.er.anio)+'. <button type="button" class="cont-link" onclick="CONT.cancelarCarga()">Cerrar</button>','ok');
+    }).catch(function(e){
+      var perm=/PERMISSION|permission/i.test(String(e&&(e.code||e.message)));
+      panel('<h4>No se publicó</h4>'+(perm?'Solo un usuario Master puede publicar.':'Firebase no respondió. Revisa tu conexión y vuelve a intentarlo.'),'err');
+    });
+    return;
+  }
   var d=pendiente;
+  // El corte completo no trae el Estado de Resultados: se conserva el que ya estaba publicado.
+  if(!d.estado_resultados&&data&&data.estado_resultados) d.estado_resultados=data.estado_resultados;
   panel('<h4>Publicando…</h4>No cierres esta pestaña.');
   db.ref(FB_PATH).set(d).then(function(){
     pendiente=null;
