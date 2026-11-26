@@ -10,6 +10,7 @@ const BARCOS_FIJOS = ['Maria Fatima','Maria de Gracia','Atun Tropical Atuntro SA
 
 let rows = [];
 let sortKey='dias', sortDir=1;
+let _renderPend=false;
 let estadoFiltro = new Set();
 let nuevosIds = new Set();
 
@@ -219,6 +220,8 @@ function cargar(){
     _lastRemoteJSON=json;
     rows=remotas;
     try{ localStorage.setItem(STORE, JSON.stringify(rows)); }catch(e){}
+    const _a=document.activeElement;
+    if(_a && _a.type==='date' && _a.closest && _a.closest('#screen-documentos')){ _renderPend=true; flash(); return; }
     render(); flash();
   };
   ref.on('value',_fbHandler);
@@ -256,6 +259,8 @@ const EST = {
 function hoy(){ const t=new Date(); return new Date(t.getFullYear(),t.getMonth(),t.getDate()); }
 function parse(s){ if(!s) return null; const p=String(s).split('-'); if(p.length!==3) return null; return new Date(+p[0],+p[1]-1,+p[2]); }
 function dias(s){ const d=parse(s); if(!d||isNaN(d)) return null; return Math.round((d-hoy())/86400000); }
+/* Una fecha con año fuera de rango casi siempre es un error de tipeo (ej. 0001-01-06). */
+function fechaMala(s){ const d=parse(s); return !!d && (d.getFullYear()<1990 || d.getFullYear()>2199); }
 function estado(dv,fecha){
   if(dv===null) return 'sf';
   if(parse(fecha).getFullYear()>=2090) return 'perm';
@@ -297,8 +302,9 @@ function renderKPIs(rs){
     `<button class="chip" onclick="DOCS.limpiarEstado()">Todos</button>`+
     `<button class="chip" onclick="DOCS.descargarTodosPdf()" title="Descarga en ZIP los PDF de la vista actual">${zipEnCurso?'Preparando ZIP…':'⬇ PDFs (ZIP)'}</button>`;
   const sinPdf=base.filter(r=>!r.pdf).length;
+  const malas=base.filter(r=>fechaMala(r.emi)||fechaMala(r.ven)).length;
   document.getElementById('subHeader').textContent =
-    base.length+' documentos · '+cnt.venc+' vencidos · '+cnt.pv+' por vencer en 30 días · '+sinPdf+' sin PDF';
+    base.length+' documentos · '+cnt.venc+' vencidos · '+cnt.pv+' por vencer en 30 días · '+sinPdf+' sin PDF'+(malas?' · ⚠ '+malas+' con fecha por revisar':'');
 }
 function toggleEstado(k){ estadoFiltro.has(k)?estadoFiltro.delete(k):estadoFiltro.add(k); render(); }
 function limpiarEstado(){ estadoFiltro.clear(); render(); }
@@ -357,8 +363,8 @@ function renderTabla(rs){
         ${opts.map(b=>`<option value="${att(b)}"${b===r.barco?' selected':''}>${esc(b)}</option>`).join('')}
       </select></td>
     <td><input class="cell-in${r.num&&r.num!=='FALTA'?'':' vacio'}" value="${att(r.num)}" placeholder="FALTA N°" onchange="DOCS.setCampo('${r.id}','num',this.value)"></td>
-    <td><input type="date" class="cell-in" value="${att(r.emi)}" onchange="DOCS.setCampo('${r.id}','emi',this.value)"></td>
-    <td><input type="date" class="cell-in${r.ven?'':' vacio'}" value="${att(r.ven)}" onchange="DOCS.setCampo('${r.id}','ven',this.value)"></td>
+    <td><input type="date" class="cell-in${fechaMala(r.emi)?' fmala':''}" value="${att(r.emi)}" min="1990-01-01" max="2199-12-31" onchange="DOCS.setFecha('${r.id}','emi',this)" onblur="DOCS.soltarFecha()">${fechaMala(r.emi)?'<div class="fmala-t">⚠ Revisar fecha</div>':''}</td>
+    <td><input type="date" class="cell-in${r.ven?'':' vacio'}${fechaMala(r.ven)?' fmala':''}" value="${att(r.ven)}" min="1990-01-01" max="2199-12-31" onchange="DOCS.setFecha('${r.id}','ven',this)" onblur="DOCS.soltarFecha()">${fechaMala(r.ven)?'<div class="fmala-t">⚠ Revisar fecha</div>':''}</td>
     <td class="dias-cell" style="color:${EST[r.st].color}">${r.dias===null?'—':r.dias}</td>
     <td><span class="pill ${EST[r.st].cls}">${EST[r.st].lab}</span></td>
     <td><input class="cell-in" value="${att(r.val)}" placeholder="—" style="min-width:70px" onchange="DOCS.setCampo('${r.id}','val',this.value)"></td>
@@ -375,6 +381,25 @@ function setCampo(id,campo,val){ _markTyping();
   render();
 }
 
+/* Fechas: el navegador avisa cada dígito (ej. año 0002 → 0020 → 0202 → 2027). No se redibuja la tabla
+   mientras el campo tiene el foco, para no perder lo que se está escribiendo; se guarda solo cuando la fecha es válida. */
+let _fechaPend=false;
+function setFecha(id,campo,el){ _markTyping();
+  const r=rows.find(x=>x.id===id); if(!r) return;
+  const v=el.value;
+  if(v && fechaMala(v)) return;            // año incompleto: esperar a que termine de escribir
+  r[campo]=v;
+  guardar();
+  _fechaPend=true;
+  if(document.activeElement!==el){ _fechaPend=false; render(); }
+}
+function soltarFecha(){
+  setTimeout(()=>{
+    const a=document.activeElement;
+    if(a && a.type==='date' && a.closest && a.closest('#screen-documentos')) return;
+    if(_fechaPend || _renderPend){ _fechaPend=false; _renderPend=false; render(); }
+  },0);
+}
 function eliminar(id){
   const r=rows.find(x=>x.id===id); if(!r) return;
   if(!confirm('¿Eliminar el documento "'+(r.nom||'sin nombre')+'" de '+r.barco+'?')) return;
@@ -480,6 +505,6 @@ function render(){
 
 function init(){ _pdfCSS(); cargar(); render(); }
 
-return { subirPdf, verPdf, descargarPdf, quitarPdf, descargarTodosPdf, abrirModal, cerrarModal, guardarNuevo, exportCSV, respaldar, cargarRespaldo, restaurarBase, render, toggleEstado, limpiarEstado, setSort, setCampo, eliminar, init };
+return { subirPdf, verPdf, descargarPdf, quitarPdf, descargarTodosPdf, abrirModal, cerrarModal, guardarNuevo, exportCSV, respaldar, cargarRespaldo, restaurarBase, render, toggleEstado, limpiarEstado, setSort, setCampo, setFecha, soltarFecha, eliminar, init };
 })();
 
