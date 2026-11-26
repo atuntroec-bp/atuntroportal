@@ -14596,7 +14596,10 @@ function costosPorViaje(b){
   return Object.keys(map).map(function(k){
       var v=map[k];
       var est=explicitos[k];
-      v.enCurso = est ? est==='en_curso' : (v.fact<=0 && v.total>0);
+      /* 'en_curso' = ya zarpó · 'preparacion' = en puerto preparando la salida (costos como inventario).
+         Ambos se excluyen de la rentabilidad hasta que el viaje cierre. */
+      v.prep = est==='preparacion';
+      v.enCurso = est ? (est==='en_curso'||v.prep) : (v.fact<=0 && v.total>0);
       v.res=v.fact-v.total-v.rol;
       return v; })
     .sort(function(a,b){ return (num(a.viaje)-num(b.viaje))||String(a.barco).localeCompare(b.barco); });
@@ -14674,11 +14677,23 @@ function kpi(lbl,val,sub,accion,clase){
   return '<div class="cont-kpi'+(clase?' '+clase:'')+(accion?'':' no-click')+'"'+(accion?' onclick="'+accion+'" title="Ver detalle"':'')+'><div class="cont-kpi-lbl">'+lbl+'</div>'+
     '<div class="cont-kpi-val">'+val+'</div><div class="cont-kpi-sub">'+sub+'</div></div>';
 }
+/* Último viaje: si hay un viaje que ya zarpó (en curso) se muestra ese, con su costo acumulado.
+   Si el barco sigue en puerto, se muestra el último viaje cerrado y abajo la preparación de la salida. */
 function kpiUltimo(b,lbl){
-  var u=ultimoViaje(b), ec=viajesEnCurso(b);
-  var sub=u?('Viaje '+escH(u.viaje)+(u.costoPrev>0?' · incluye costos '+(anioActual()-1):'')):'Sin viajes cerrados';
-  if(ec.length) sub+='<br><span class="cont-curso-txt">En curso: '+ec.map(function(v){ return 'V'+escH(v.viaje)+' '+fmtK(v.total); }).join(', ')+'</span>';
-  return kpi(lbl, u?fmtUSD(u.total):'—', sub, "CONT.irA('cv','')");
+  var ec=viajesEnCurso(b), sal=ec.filter(function(v){ return !v.prep; }), prep=ec.filter(function(v){ return v.prep; });
+  var multi=(b==='todos'||!b);
+  var nom=function(v){ return 'V'+escH(v.viaje)+(multi?' '+escH(v.barco):''); };
+  if(sal.length){
+    var c=sal.slice().sort(function(a,x){ return num(x.viaje)-num(a.viaje); })[0];
+    var sub='Viaje '+escH(c.viaje)+' · '+pill({cls:'curso',txt:'En curso'})+'<br><span class="cont-curso-txt">Costo acumulado; se cierra al facturar</span>';
+    var otros=ec.filter(function(v){ return v!==c; });
+    if(otros.length) sub+='<br><span class="cont-curso-txt">'+otros.map(function(v){ return (v.prep?'En preparación: ':'En curso: ')+nom(v)+' '+fmtK(v.total); }).join(' · ')+'</span>';
+    return kpi(lbl, fmtUSD(c.total), sub, "CONT.irA('cv','')");
+  }
+  var u=ultimoViaje(b);
+  var sub2=u?('Viaje '+escH(u.viaje)+(u.costoPrev>0?' · incluye costos '+(anioActual()-1):'')):'Sin viajes cerrados';
+  if(prep.length) sub2+='<br><span class="cont-curso-txt">En preparación: '+prep.map(function(v){ return nom(v)+' '+fmtK(v.total); }).join(', ')+'</span>';
+  return kpi(lbl, u?fmtUSD(u.total):'—', sub2, "CONT.irA('cv','')");
 }
 function kpiOtros(ancho){
   var og=otrosGastos(), tot=suma(og);
@@ -14714,7 +14729,7 @@ function kpis(){
     (desc.length?'Incluye '+fmtUSD(suma(desc))+' en descuentos por salinidad ('+desc.length+' NC)':escH(factAnio.length+' registros')), "CONT.irA('fact','')", 'k-fact'));
   var pend=rolesPendientes('tripulacion'), pendAdm=rolesPendientes('admin');
   var rentSub='Margen '+fmtPct(r.margen)+' · viajes cerrados'+(pend?' · <b>sin roles (pendiente)</b>':' · fact. − costo − rol trip.')+
-    (r.enCurso.length?'<br><span class="cont-curso-txt">Excluye en curso: '+r.enCurso.map(function(v){ return 'V'+escH(v.viaje)+' '+escH(v.barco); }).join(', ')+'</span>':'');
+    (r.enCurso.length?'<br><span class="cont-curso-txt">Excluye en curso: '+r.enCurso.map(function(v){ return 'V'+escH(v.viaje)+' '+escH(v.barco)+(v.prep?' (en preparación)':''); }).join(', ')+'</span>':'');
   out.push(kpi('Rentabilidad operativa '+anio, '<span class="'+(r.res<0?'neg':'')+'">'+fmtUSD(r.res)+'</span>', rentSub, "CONT.irA('cv','')", 'k-rent'));
   if(barco==='todos') out.push(kpiResultado());
   var rt=rolesDe('tripulacion');
@@ -14823,7 +14838,7 @@ function tabla(){
         '<td class="r strong">'+fmtUSD(v.total)+'</td><td class="r">'+(v.rol?fmtUSD(v.rol):'—')+'</td>'+
         '<td class="r">'+(v.fact?fmtUSD(v.fact):'—')+'</td>'+
         (v.enCurso
-          ? '<td class="r">'+pill({cls:'curso',txt:'En curso'})+'</td><td class="r">—</td></tr>'
+          ? '<td class="r">'+pill({cls:'curso',txt:v.prep?'En preparación':'En curso'})+'</td><td class="r">—</td></tr>'
           : '<td class="r strong'+(v.res<0?' neg':' pos')+'">'+fmtUSD(v.res)+'</td>'+
             '<td class="r">'+(v.fact?fmtPct(v.res/v.fact):'—')+'</td></tr>');
     });
